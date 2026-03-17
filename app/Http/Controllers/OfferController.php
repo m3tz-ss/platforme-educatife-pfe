@@ -12,7 +12,12 @@ class OfferController extends Controller
     // ✅ Offres publiques pour les étudiants
     public function publicIndex()
     {
-        $offers = Offer::with(['user'])->latest()->get();
+        $perPage = request()->integer('per_page', 0);
+        $query   = Offer::with(['user'])->latest();
+
+        $offers = $perPage && $perPage > 0
+            ? $query->paginate($perPage)
+            : $query->get();
 
         return OfferResource::collection($offers);
     }
@@ -21,9 +26,10 @@ class OfferController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $perPage = $request->integer('per_page', 0);
 
         if ($user->role === 'manager') {
-            $offers = Offer::with('user')
+            $query = Offer::with('user')
                 ->where(function ($q) use ($user) {
                     $q->where('enterprise_id', $user->id)
                       ->orWhereIn('enterprise_id', function ($q2) use ($user) {
@@ -32,13 +38,16 @@ class OfferController extends Controller
                              ->where('manager_id', $user->id);
                       });
                 })
-                ->latest()
-                ->get();
+                ->latest();
         } else {
-            $offers = Offer::where('enterprise_id', $user->id)->latest()->get();
+            $query = Offer::where('enterprise_id', $user->id)->latest();
         }
 
-        return response()->json($offers);
+        $offers = $perPage && $perPage > 0
+            ? $query->paginate($perPage)
+            : $query->get();
+
+        return OfferResource::collection($offers);
     }
 
     // ✅ Créer une offre

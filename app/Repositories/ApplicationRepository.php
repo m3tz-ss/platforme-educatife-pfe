@@ -19,15 +19,18 @@ class ApplicationRepository
         return Application::create($data);
     }
 
-    public function getByStudent(int $studentId)
+    public function getByStudent(int $studentId, ?int $perPage = null)
     {
-        return Application::with(['offer.user'])
+        $query = Application::with(['offer.user'])
             ->where('student_id', $studentId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
+
+        return $perPage && $perPage > 0
+            ? $query->paginate($perPage)
+            : $query->get();
     }
 
-    public function getByEnterprise(int $userId)
+    public function getByEnterprise(int $userId, ?int $perPage = null)
     {
         $user = User::find($userId);
 
@@ -48,9 +51,13 @@ class ApplicationRepository
             });
         }
 
-        return $query->orderBy('created_at', 'desc')
-                     ->get()
-                     ->map(fn($app) => [
+        $query = $query->orderBy('created_at', 'desc');
+
+        $results = ($perPage && $perPage > 0)
+            ? $query->paginate($perPage)
+            : $query->get();
+
+        $transform = fn($app) => [
                          'id'         => $app->id,
                          'status'     => $app->status,
                          'cv'         => $app->cv,
@@ -68,7 +75,14 @@ class ApplicationRepository
                              'start_date'       => $app->offer->start_date,
                              'available_places' => $app->offer->available_places,
                          ] : null,
-                     ]);
+                     ];
+
+        if ($results instanceof \Illuminate\Contracts\Pagination\Paginator) {
+            $results->getCollection()->transform($transform);
+            return $results;
+        }
+
+        return $results->map($transform);
     }
 
     // ✅ Méthode manquante ajoutée

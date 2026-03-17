@@ -123,16 +123,16 @@ class ApplicationService
     /**
      * Candidatures d'un étudiant
      */
-    public function getStudentApplications(int $studentId)
+    public function getStudentApplications(int $studentId, ?int $perPage = null)
     {
-        return $this->repository->getByStudent($studentId);
+        return $this->repository->getByStudent($studentId, $perPage);
     }
 
     /**
      * Candidatures reçues par une entreprise
      */
-    public function getEnterpriseApplications(int $enterpriseId)
+    public function getEnterpriseApplications(int $enterpriseId, ?int $perPage = null)
     {
-        return $this->repository->getByEnterprise($enterpriseId);
+        return $this->repository->getByEnterprise($enterpriseId, $perPage);
     }
 }

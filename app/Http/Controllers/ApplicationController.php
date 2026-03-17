@@ -42,7 +42,8 @@ class ApplicationController extends Controller
      */
     public function myApplications()
     {
-        $applications = $this->service->getStudentApplications(auth()->id());
+        $perPage      = request()->integer('per_page', 0);
+        $applications = $this->service->getStudentApplications(auth()->id(), $perPage ?: null);
         return response()->json($applications);
     }
 
@@ -51,7 +52,8 @@ class ApplicationController extends Controller
      */
     public function receivedApplications()
     {
-        $applications = $this->service->getEnterpriseApplications(auth()->id());
+        $perPage      = request()->integer('per_page', 0);
+        $applications = $this->service->getEnterpriseApplications(auth()->id(), $perPage ?: null);
         return response()->json($applications);
     }
 
