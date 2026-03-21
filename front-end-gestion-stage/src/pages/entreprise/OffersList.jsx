@@ -11,9 +11,13 @@ import {
   Chip,
 } from "@material-tailwind/react";
 import {
+  HomeIcon,
   BriefcaseIcon,
   ChatBubbleLeftIcon,
   UserCircleIcon,
+  Bars3Icon,
+  XMarkIcon,
+  ArrowRightOnRectangleIcon,
   PlusIcon,
   MapPinIcon,
   ClockIcon,
@@ -27,12 +31,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
-import BaseLayout from "../../components/layout/BaseLayout";
-import { EnterpriseSidebarHeader } from "../../components/layout/SidebarHeaders";
-import { getEnterpriseMenuItems } from "../../config/sidebarConfig";
 
 export default function EnterpriseDashboard() {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [offers, setOffers] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,34 +97,113 @@ export default function EnterpriseDashboard() {
   const interviewApps = applications.filter((a) => normalizeStatus(a.status) === "interview").length;
   const acceptedApps  = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
 
-  const sidebarExtra = (
-    <>
-      <div className="bg-blue-50 rounded-lg p-4">
-        <Typography variant="small" className="text-blue-gray-600 mb-1">Activité globale</Typography>
-        <Progress value={applications.length > 0 ? Math.min((acceptedApps / applications.length) * 100, 100) : 0} color="blue" className="h-2" />
-        <Typography variant="caption" className="text-blue-gray-500 mt-2">{acceptedApps} stagiaire(s) accepté(s)</Typography>
-      </div>
-      <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
-    </>
-  );
+  const menuItems = [
+    { icon: HomeIcon,           label: "Tableau de bord",  path: "/enterprise/offers",           badge: null },
+    { icon: PlusIcon,           label: "Publier une offre", path: "/enterprise/publish",          badge: null },
+    { icon: BriefcaseIcon,      label: "Mes offres",        path: "/enterprise/offersliste",      badge: offers.length },
+    { icon: CheckCircleIcon,    label: "Candidatures",      path: "/enterprise/condidateurliste", badge: applications.length },
+    { icon: ChatBubbleLeftIcon, label: "Entretiens",        path: "/enterprise/enterview",        badge: interviewApps || null },
+    { icon: UserCircleIcon,     label: "Mon profil",        path: "/enterprise/profile",          badge: null },
+  ];
 
   return (
-    <BaseLayout
-      title="Tableau de Bord"
-      headerSubtitle={`${enterpriseName} • ${enterpriseEmail}`}
-      menuItems={getEnterpriseMenuItems(
-        { offers: offers.length, applications: applications.length, interviewApps: interviewApps },
-        role
-      )}
-      sidebarHeader={<EnterpriseSidebarHeader enterpriseName={enterpriseName} enterpriseEmail={enterpriseEmail} roleConfig={currentRole} />}
-      sidebarExtra={sidebarExtra}
-      headerActions={
-        <>
-          <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
-          <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
-        </>
-      }
-    >
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside className={`${sidebarOpen ? "w-64" : "w-0"} bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col`}>
+
+        {/* ✅ Logo + Nom entreprise + Email */}
+        <div className="p-6 border-b border-blue-gray-100">
+          <Typography variant="h5" className="font-bold text-blue-500">🏢 MyStage</Typography>
+          <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2 mb-1">
+              <BuildingOfficeIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              <Typography variant="small" className="font-bold text-blue-gray-900 truncate">
+                {enterpriseName}
+              </Typography>
+            </div>
+            <div className="flex items-center gap-2">
+              <EnvelopeIcon className="w-3 h-3 text-blue-gray-400 flex-shrink-0" />
+              <Typography variant="small" className="text-blue-gray-500 text-xs truncate">
+                {enterpriseEmail}
+              </Typography>
+            </div>
+            <div className="mt-2">
+              <Chip
+                value={`${currentRole.icon} ${currentRole.label}`}
+                color={currentRole.color}
+                size="sm"
+                className="text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        <nav className="p-6 space-y-2 flex-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.path} to={item.path}>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">
+                  <Icon className="w-5 h-5 text-blue-gray-600 group-hover:text-blue-500" />
+                  <span className="text-sm font-medium text-blue-gray-700 group-hover:text-blue-600">{item.label}</span>
+                  {item.badge !== null && item.badge > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{item.badge}</span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mx-6 border-t border-blue-gray-100"></div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-blue-50 rounded-lg p-4">
+            <Typography variant="small" className="text-blue-gray-600 mb-1">Activité globale</Typography>
+            <Progress
+              value={applications.length > 0 ? Math.min((acceptedApps / applications.length) * 100, 100) : 0}
+              color="blue" className="h-2"
+            />
+            <Typography variant="caption" className="text-blue-gray-500 mt-2">
+              {acceptedApps} stagiaire(s) accepté(s)
+            </Typography>
+          </div>
+          <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
+        </div>
+
+        <div className="p-6 border-t border-blue-gray-100">
+          <Link to="/auth/sign-in">
+            <Button fullWidth color="red" variant="outlined" size="sm" className="flex items-center justify-center gap-2">
+              <ArrowRightOnRectangleIcon className="w-4 h-4" /> Déconnexion
+            </Button>
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* ✅ Header avec nom + email entreprise */}
+        <header className="bg-white shadow-sm border-b border-blue-gray-100">
+          <div className="px-6 py-4 flex justify-between items-center">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-gray-50 rounded-lg transition-colors">
+              {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
+            </button>
+            <div className="text-center">
+              <Typography variant="h5" className="font-bold text-blue-gray-900">Tableau de Bord</Typography>
+              <Typography variant="small" className="text-blue-gray-400 text-xs">
+                {enterpriseName} • {enterpriseEmail}
+              </Typography>
+            </div>
+            <div className="flex gap-3">
+              <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
+              <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-8">
 
             {/* ✅ Greeting avec nom, entreprise et email */}
             <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
@@ -289,6 +370,10 @@ export default function EnterpriseDashboard() {
                 </div>
               </CardBody>
             </Card>
-    </BaseLayout>
+
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }
