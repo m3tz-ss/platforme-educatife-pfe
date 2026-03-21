@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Typography, Button } from "@material-tailwind/react";
 import { ShieldExclamationIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import AppFooter from "../components/layout/AppFooter";
 
 export default function AccessDenied() {
   const location = useLocation();
@@ -8,7 +9,8 @@ export default function AccessDenied() {
   const requiredRoles = location.state?.requiredRoles;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100">
           <ShieldExclamationIcon className="w-12 h-12 text-red-600" />
@@ -46,6 +48,8 @@ export default function AccessDenied() {
           </Link>
         </div>
       </div>
+      </div>
+      <AppFooter />
     </div>
   );
 }

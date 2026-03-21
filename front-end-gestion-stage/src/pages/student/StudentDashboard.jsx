@@ -21,27 +21,24 @@ import {
 } from "@material-tailwind/react";
 import {
   MagnifyingGlassIcon,
-  HomeIcon,
   BriefcaseIcon,
-  BookmarkIcon,
-  ChatBubbleLeftIcon,
-  UserCircleIcon,
-  Bars3Icon,
-  XMarkIcon,
-  ArrowRightOnRectangleIcon,
   MapPinIcon,
   ClockIcon,
   CalendarIcon,
-  UsersIcon,
+  ChatBubbleLeftIcon,
+  UserCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
+import BaseLayout from "../../components/layout/BaseLayout";
+import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
+import { getStudentMenuItems } from "../../config/sidebarConfig";
 
 export function StudentDashboard() {
   const [applications, setApplications] = useState([]);
   const [offers, setOffers] = useState([]);
   const [search, setSearch] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [activeTab, setActiveTab] = useState("description");
@@ -196,81 +193,31 @@ export function StudentDashboard() {
   const acceptedCount  = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
   const interviewCount = applications.filter((a) => normalizeStatus(a.status) === "interview").length;
 
-  const menuItems = [
-    { icon: HomeIcon,           label: "Tableau de bord",     path: "/student",              badge: null },
-    { icon: BriefcaseIcon,      label: "Offres de stage",     path: "/student/offers",       badge: offers.length },
-    { icon: CheckCircleIcon,    label: "Mes candidatures",    path: "/student/applications", badge: applications.length },
-    { icon: BookmarkIcon,       label: "Offres sauvegardées", path: "/student/saved",        badge: null },
-    { icon: ChatBubbleLeftIcon, label: "Messages",            path: "/student/messages",     badge: null },
-    { icon: UserCircleIcon,     label: "Mon profil",          path: "/student/profile",      badge: null },
-  ];
+  const sidebarExtra = (
+    <>
+      <div className="bg-blue-50 rounded-lg p-4">
+        <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
+        <Progress value={65} color="blue" className="h-2" />
+        <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
+      </div>
+      <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
+    </>
+  );
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-0"} bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col`}>
-        <div className="p-6 border-b border-blue-gray-100">
-          <Typography variant="h5" className="font-bold text-blue-500">🎓 MyStage</Typography>
-          <Typography variant="small" className="text-blue-gray-500">Plateforme de stages</Typography>
-        </div>
-
-        <nav className="p-6 space-y-2 flex-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.path} to={item.path}>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">
-                  <Icon className="w-5 h-5 text-blue-gray-600 group-hover:text-blue-500" />
-                  <span className="text-sm font-medium text-blue-gray-700 group-hover:text-blue-600">{item.label}</span>
-                  {item.badge !== null && item.badge > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{item.badge}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mx-6 border-t border-blue-gray-100"></div>
-
-        <div className="p-6 space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
-            <Progress value={65} color="blue" className="h-2" />
-            <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
-          </div>
-          <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
-        </div>
-
-        <div className="p-6 border-t border-blue-gray-100">
-          <Link to="/auth/sign-in">
-            <Button fullWidth color="red" variant="outlined" size="sm" className="flex items-center justify-center gap-2">
-              <ArrowRightOnRectangleIcon className="w-4 h-4" />
-              Déconnexion
-            </Button>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm border-b border-blue-gray-100">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-gray-50 rounded-lg transition-colors">
-              {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
-            </button>
-            <Typography variant="h5" className="font-bold text-blue-gray-900">Tableau de Bord</Typography>
-            <div className="flex gap-3">
-              <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
-              <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-8">
-
-            {/* ✅ Salut personnalisé depuis localStorage */}
+    <BaseLayout
+      title="Tableau de Bord"
+      menuItems={getStudentMenuItems({ offers: offers.length, applications: applications.length })}
+      sidebarHeader={<StudentSidebarHeader />}
+      sidebarExtra={sidebarExtra}
+      headerActions={
+        <>
+          <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
+          <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
+        </>
+      }
+    >
+      {/* ✅ Salut personnalisé depuis localStorage */}
             <div className="mb-8">
               <Typography variant="h4" className="font-bold text-blue-gray-900">
                 Bonjour, {userName} 👋
@@ -423,9 +370,6 @@ export function StudentDashboard() {
                 </CardBody>
               </Card>
             </div>
-          </div>
-        </main>
-      </div>
 
       {/* Modal Détails Offre */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
@@ -553,7 +497,7 @@ export function StudentDashboard() {
           </Button>
         </DialogFooter>
       </Dialog>
-    </div>
+    </BaseLayout>
   );
 }
 

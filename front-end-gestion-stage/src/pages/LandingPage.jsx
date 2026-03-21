@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import AppFooter from "../components/layout/AppFooter";
 
 export default function LandingPage() {
   return (
@@ -129,12 +130,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-gray-900 text-white text-center py-6">
-        <p>
-          © {new Date().getFullYear()} StageManager — Plateforme de gestion des stages
-        </p>
-      </footer>
+      <AppFooter variant="dark" />
 
     </div>
   );
