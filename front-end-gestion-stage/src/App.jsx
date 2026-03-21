@@ -1,31 +1,43 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
 import LandingPage from "./pages/LandingPage";
 import { SignIn, SignUp } from "./pages/auth";
-import StudentDashboard from "./pages/student/StudentDashboard";
-import EnterpriseDashboard from "./pages/entreprise/EnterpriseDashboard";
-import OffersList from "./pages/entreprise/OffersList";
-import OffersCatalog from "./pages/student/OffersCatalog";
-import OfferDetails from "./pages/student/OfferDetails";
-import PublishOffer from "./pages/entreprise/PublishOffer";
-import MyApplications from "./pages/student/MyApplications";
-import Offertable from "./pages/entreprise/offerstable";
-import ReceivedApplications from "./pages/entreprise/ReceivedApplications";
-import InterviewsHistoryPage from "./pages/entreprise/InterviewsHistoryPage";
-import EspaceEntreprise from "./pages/entreprise/EspaceEntreprise";
-import ManagerDashboard from "./pages/entreprise/ManagerDashboard";
-import AdminDashboard from "./pages/Admindashboard";
-import Manager from "./pages/entreprise/CreateManager";
-import EncadrantDashboard from "./pages/entreprise/Encadrantdashboard";
-import StudentProfile from "./pages/student/Studentprofile";
-import EnterpriseProfile from "./pages/entreprise/Enterpriseprofile";
-import EnterpriseLogin from "./pages/entreprise/EnterpriseLogin";
+
+// Lazy loading pour réduire le temps de chargement initial
+const StudentDashboard = lazy(() => import("./pages/student/StudentDashboard"));
+const EnterpriseDashboard = lazy(() => import("./pages/entreprise/EnterpriseDashboard"));
+const OffersList = lazy(() => import("./pages/entreprise/OffersList"));
+const OffersCatalog = lazy(() => import("./pages/student/OffersCatalog"));
+const OfferDetails = lazy(() => import("./pages/student/OfferDetails"));
+const PublishOffer = lazy(() => import("./pages/entreprise/PublishOffer"));
+const MyApplications = lazy(() => import("./pages/student/MyApplications"));
+const Offertable = lazy(() => import("./pages/entreprise/offerstable"));
+const ReceivedApplications = lazy(() => import("./pages/entreprise/ReceivedApplications"));
+const InterviewsHistoryPage = lazy(() => import("./pages/entreprise/InterviewsHistoryPage"));
+const EspaceEntreprise = lazy(() => import("./pages/entreprise/EspaceEntreprise"));
+const ManagerDashboard = lazy(() => import("./pages/entreprise/ManagerDashboard"));
+const AdminDashboard = lazy(() => import("./pages/Admindashboard"));
+const Manager = lazy(() => import("./pages/entreprise/CreateManager"));
+const EncadrantDashboard = lazy(() => import("./pages/entreprise/Encadrantdashboard"));
+const StudentProfile = lazy(() => import("./pages/student/Studentprofile"));
+const EnterpriseProfile = lazy(() => import("./pages/entreprise/Enterpriseprofile"));
+const EnterpriseLogin = lazy(() => import("./pages/entreprise/EnterpriseLogin"));
 
 
 
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent" />
+    </div>
+  );
+}
 
 function App() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Landing Page */}
       <Route path="/" element={<LandingPage />} />
@@ -65,8 +77,7 @@ function App() {
 
       <Route path="/admin" element={<AdminDashboard/>} />
     </Routes>
-
-    
+    </Suspense>
   );
 }
 

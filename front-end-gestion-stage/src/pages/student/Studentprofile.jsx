@@ -40,6 +40,7 @@ export default function StudentProfile() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState("personal");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [applications, setApplications] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,8 +70,12 @@ export default function StudentProfile() {
   });
 
   useEffect(() => {
-    fetchProfile();
-    fetchApplications();
+    const load = async () => {
+      setInitialLoading(true);
+      await Promise.all([fetchProfile(), fetchApplications()]);
+      setInitialLoading(false);
+    };
+    load();
   }, []);
 
   const formatDate = (dateStr) => {
@@ -84,7 +89,6 @@ export default function StudentProfile() {
 
   const fetchProfile = async () => {
     try {
-      // Try API first, fallback to localStorage
       const res = await api.get("/user/profile");
       setProfile((prev) => ({ ...prev, ...res.data }));
     } catch {
@@ -197,6 +201,17 @@ export default function StudentProfile() {
     { id: "applications",  label: "Historique",          icon: BriefcaseIcon },
     { id: "password",      label: "Mot de passe",        icon: LockClosedIcon },
   ];
+
+  if (initialLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-14 w-14 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
+          <Typography variant="small" className="text-blue-gray-500">Chargement du profil...</Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
