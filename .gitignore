@@ -1,24 +1,64 @@
-*.log
-.DS_Store
+# Laravel
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
+.env.local
+.env.*.local
+/vendor
 /node_modules
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+
+# PHP
+.phpactor.json
+.phpunit.result.cache
+/.phpunit.cache
+composer.phar
+
+# Frontend React (front-end-gestion-stage)
+/front-end-gestion-stage/node_modules
+/front-end-gestion-stage/dist
+/front-end-gestion-stage/dist-ssr
+/front-end-gestion-stage/.env.local
+/front-end-gestion-stage/*.local
+
+# Logs
+*.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE / Editors
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Auth / Secrets
+/auth.json
+
+# Laravel / Homestead
 Homestead.json
 Homestead.yaml
-Thumbs.db
+npm-debug.log
+yarn-error.log

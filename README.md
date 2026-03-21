@@ -88,7 +88,12 @@ Cette structure permet :
   - Sanctum pour l’authentification API
   - Spatie Permission pour les rôles & permissions
 
-- **Frontend / Build**
+- **Frontend React** – dans `front-end-gestion-stage/`
+  - React 18, Material Tailwind, Vite, Tailwind CSS
+  - Interface complète : étudiants, entreprises, encadrants, admin
+  - API consommée via proxy Vite en dev (port 5173 → 8000)
+
+- **Frontend / Build Laravel**
   - Vite `^7.0.7`
   - Tailwind CSS `^4.0.0`
   - `resources/views/welcome.blade.php` comme page d’accueil par défaut Laravel (peut servir pour tester rapidement que le projet fonctionne).
@@ -114,6 +119,7 @@ php artisan migrate
 
 npm install
 npm run build          # ou `npm run dev` pour le mode développement
+cd front-end-gestion-stage && npm install   # dépendances du frontend React
 ```
 
 > Astuce : le projet inclut aussi un script `composer setup` qui enchaîne l’installation, la génération de clé, les migrations et le build front.
@@ -146,6 +152,7 @@ Les routes sont déclarées principalement dans `routes/api.php`. Quelques exemp
 
 - **Offres**
   - `GET /api/public/offers` : liste des offres publiques pour les étudiants.
+  - `GET /api/public/offers/{id}` : détail d'une offre publique.
   - `GET /api/offers` : offres de l’entreprise/manager connecté.
   - `POST /api/offers` : créer une offre.
   - `PUT /api/offers/{offer}` : modifier une offre.

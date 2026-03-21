@@ -9,6 +9,13 @@ use App\Http\Resources\OfferResource;
 
 class OfferController extends Controller
 {
+    // ✅ Détail d'une offre publique (étudiants)
+    public function publicShow(Offer $offer)
+    {
+        $offer->load('user');
+        return new OfferResource($offer);
+    }
+
     // ✅ Offres publiques pour les étudiants
     public function publicIndex()
     {

@@ -4,7 +4,10 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "dev:front": "cd front-end-gestion-stage && npm run dev",
+        "build:front": "cd front-end-gestion-stage && npm run build",
+        "dev:all": "concurrently \"npm run dev\" \"npm run dev:front\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

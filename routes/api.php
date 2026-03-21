@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // 🧑‍🎓 Étudiant : offres publiques
 Route::get('/public/offers', [OfferController::class, 'publicIndex']);
+Route::get('/public/offers/{offer}', [OfferController::class, 'publicShow']);
 
 Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
 
