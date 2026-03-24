@@ -23,7 +23,22 @@ class Application extends Model
     return $this->belongsTo(Offer::class, 'offer_id');
 }
     public function encadrant()
-{
-    return $this->belongsTo(User::class, 'encadrant_id');
-}
+    {
+        return $this->belongsTo(User::class, 'encadrant_id');
+    }
+
+    public function encadrantTasks()
+    {
+        return $this->hasMany(EncadrantTask::class);
+    }
+
+    public function encadrantComments()
+    {
+        return $this->hasMany(EncadrantComment::class);
+    }
+
+    public function encadrantEvaluation()
+    {
+        return $this->hasOne(EncadrantEvaluation::class);
+    }
 }

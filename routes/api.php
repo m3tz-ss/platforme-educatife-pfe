@@ -9,8 +9,17 @@ use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\EncadrantController;
+use App\Http\Controllers\Encadrant\EncadrantSupervisionController;
+use App\Http\Controllers\Encadrant\EncadrantTaskController;
+use App\Http\Controllers\Encadrant\EncadrantCommentController;
+use App\Http\Controllers\Encadrant\EncadrantEvaluationController;
+use App\Http\Controllers\Encadrant\EncadrantInterviewController;
+use App\Http\Controllers\Encadrant\EncadrantNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EnterpriseController;
+use App\Http\Controllers\Student\StudentSupervisionController;
+use App\Http\Controllers\Student\StudentTaskController;
+use App\Http\Controllers\Student\StudentNotificationController;
 
 
 
@@ -40,8 +49,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/enterprise/interviews/{id}/result', [InterviewController::class, 'updateResult']);
     Route::get('/enterprise/applications/{id}/interviews', [InterviewController::class, 'history']);
     Route::get('/student/applications/{id}/interviews', [InterviewController::class, 'candidateInterviews']);
-    
-    
+    Route::get('/student/applications/{applicationId}/supervision', [StudentSupervisionController::class, 'show']);
+
+    Route::prefix('student')->group(function () {
+        Route::patch('/applications/{applicationId}/tasks/{taskId}/status', [StudentTaskController::class, 'updateStatus']);
+        Route::get('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'comments']);
+        Route::post('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'storeComment']);
+
+        Route::get('/notifications', [StudentNotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [StudentNotificationController::class, 'unreadCount']);
+        Route::post('/notifications/read-all', [StudentNotificationController::class, 'markAllRead']);
+        Route::post('/notifications/{id}/read', [StudentNotificationController::class, 'markAsRead']);
+    });
 });
 // ⚙️ Gestion des utilisateurs internes par le Manager
 Route::middleware('auth:sanctum')->group(function () {
@@ -56,6 +75,31 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/assign-encadrant/{id}', [EncadrantController::class, 'assign']);
     Route::get('/encadrants', [UserController::class, 'encadrants']);
     Route::get('/encadrant/students', [EncadrantController::class, 'students']);
+
+    Route::prefix('encadrant')->group(function () {
+        Route::get('/supervision', [EncadrantSupervisionController::class, 'index']);
+        Route::get('/supervision/applications/{applicationId}', [EncadrantSupervisionController::class, 'show']);
+        Route::patch('/supervision/applications/{applicationId}/status', [EncadrantSupervisionController::class, 'updateStatus']);
+
+        Route::get('/applications/{applicationId}/tasks', [EncadrantTaskController::class, 'index']);
+        Route::post('/applications/{applicationId}/tasks', [EncadrantTaskController::class, 'store']);
+        Route::put('/tasks/{taskId}', [EncadrantTaskController::class, 'update']);
+        Route::delete('/tasks/{taskId}', [EncadrantTaskController::class, 'destroy']);
+
+        Route::get('/applications/{applicationId}/comments', [EncadrantCommentController::class, 'index']);
+        Route::post('/applications/{applicationId}/comments', [EncadrantCommentController::class, 'store']);
+        Route::delete('/comments/{commentId}', [EncadrantCommentController::class, 'destroy']);
+
+        Route::get('/applications/{applicationId}/evaluation', [EncadrantEvaluationController::class, 'show']);
+        Route::put('/applications/{applicationId}/evaluation', [EncadrantEvaluationController::class, 'upsert']);
+
+        Route::get('/applications/{applicationId}/interviews', [EncadrantInterviewController::class, 'history']);
+
+        Route::get('/notifications', [EncadrantNotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [EncadrantNotificationController::class, 'unreadCount']);
+        Route::post('/notifications/read-all', [EncadrantNotificationController::class, 'markAllRead']);
+        Route::post('/notifications/{id}/read', [EncadrantNotificationController::class, 'markAsRead']);
+    });
 });
 
 Route::middleware('auth:sanctum')->group(function () {

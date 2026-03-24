@@ -34,6 +34,7 @@ import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
 import { getStudentMenuItems } from "../../config/sidebarConfig";
+import StudentNotificationBell from "../../components/student/StudentNotificationBell";
 
 export function StudentDashboard() {
   const [applications, setApplications] = useState([]);
@@ -212,6 +213,7 @@ export function StudentDashboard() {
       sidebarExtra={sidebarExtra}
       headerActions={
         <>
+          <StudentNotificationBell />
           <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
           <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
         </>

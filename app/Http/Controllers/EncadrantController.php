@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
+use App\Models\User;
+use App\Notifications\Encadrant\NewSupervisedStudentNotification;
 use Illuminate\Http\Request;
 
 class EncadrantController extends Controller
@@ -17,6 +19,9 @@ class EncadrantController extends Controller
 
         $application->encadrant_id = $request->encadrant_id;
         $application->save();
+
+        $encadrant = User::findOrFail($request->encadrant_id);
+        $encadrant->notify(new NewSupervisedStudentNotification($application->fresh(['student', 'offer'])));
 
         return response()->json([
             'message' => 'Encadrant affecté avec succès'

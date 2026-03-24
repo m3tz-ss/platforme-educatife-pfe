@@ -36,9 +36,11 @@ import {
   CalendarIcon,
   MapPinIcon,
   ClockIcon as ClockOutline,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
+import StudentNotificationBell from "../../components/student/StudentNotificationBell";
 
 export default function MyApplications() {
   const [applications, setApplications] = useState([]);
@@ -51,6 +53,8 @@ export default function MyApplications() {
   const [interviews, setInterviews] = useState([]);
   const [loadingInterviews, setLoadingInterviews] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [supervision, setSupervision] = useState(null);
+  const [loadingSupervision, setLoadingSupervision] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -98,6 +102,19 @@ export default function MyApplications() {
       setInterviews([]);
     } finally {
       setLoadingInterviews(false);
+    }
+  };
+
+  const fetchSupervision = async (applicationId) => {
+    try {
+      setLoadingSupervision(true);
+      const res = await api.get(`/student/applications/${applicationId}/supervision`);
+      setSupervision(res.data);
+    } catch (err) {
+      console.error("Erreur chargement encadrement:", err);
+      setSupervision(null);
+    } finally {
+      setLoadingSupervision(false);
     }
   };
 
@@ -189,6 +206,17 @@ export default function MyApplications() {
     }
   };
 
+  const encTaskStatusLabel = (s) =>
+    ({ todo: "À faire", in_progress: "En cours", done: "Terminé" }[s] || s);
+
+  const encDecisionLabel = (d) =>
+    ({
+      pending: "En attente",
+      valide: "Validé",
+      a_ameliorer: "À améliorer",
+      non_conforme: "Non conforme",
+    }[d] || d);
+
   const getStatusMessage = (status) => {
     switch (normalizeStatus(status)) {
       case "accepted":
@@ -235,6 +263,7 @@ export default function MyApplications() {
     { icon: HomeIcon,         label: "Tableau de bord",   path: "/student",              badge: null },
     { icon: BriefcaseIcon,    label: "Offres de stage",   path: "/student/offers",       badge: null },
     { icon: CheckCircleIcon,  label: "Mes candidatures",  path: "/student/applications", badge: applications.length },
+    { icon: ClipboardDocumentListIcon, label: "Mes tâches", path: "/student/tasks",       badge: null },
     { icon: BookmarkIcon,     label: "Offres sauvegardées", path: "/student/saved",      badge: null },
     { icon: ChatBubbleLeftIcon, label: "Messages",        path: "/student/messages",     badge: null },
     { icon: UserCircleIcon,   label: "Mon profil",        path: "/student/profile",      badge: null },
@@ -295,7 +324,8 @@ export default function MyApplications() {
               {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
             </button>
             <Typography variant="h5" className="font-bold text-blue-gray-900">Mes Candidatures</Typography>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              <StudentNotificationBell />
               <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
               <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
             </div>
@@ -376,6 +406,7 @@ export default function MyApplications() {
                             setSelectedApp(app);
                             setOpenModal(true);
                             setActiveTab("info");
+                            setSupervision(null);
                             fetchInterviews(app.id);
                           }}
                         >
@@ -471,6 +502,15 @@ export default function MyApplications() {
             <Tabs value={activeTab} className="w-full">
               <TabsHeader>
                 <Tab value="info" onClick={() => setActiveTab("info")}>💼 Informations</Tab>
+                <Tab
+                  value="encadrement"
+                  onClick={() => {
+                    setActiveTab("encadrement");
+                    if (selectedApp?.id) fetchSupervision(selectedApp.id);
+                  }}
+                >
+                  👨‍🏫 Encadrement
+                </Tab>
                 <Tab value="interviews" onClick={() => setActiveTab("interviews")}>
                   📅 Entretiens {interviews.length > 0 && `(${interviews.length})`}
                 </Tab>
@@ -514,6 +554,19 @@ export default function MyApplications() {
                         <Typography variant="small" className="font-bold text-blue-gray-900">Date de candidature :</Typography>
                         <Typography variant="small" className="text-blue-gray-700">{formatDate(selectedApp.created_at)}</Typography>
                       </div>
+                      {selectedApp.encadrant && (
+                        <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-3 mt-2">
+                          <Typography variant="small" className="font-bold text-indigo-900">Encadrant</Typography>
+                          <Typography variant="small" className="text-indigo-900 font-medium">
+                            {selectedApp.encadrant.name}
+                          </Typography>
+                          {selectedApp.encadrant.email && (
+                            <Typography variant="small" className="text-indigo-700 mt-1">
+                              {selectedApp.encadrant.email}
+                            </Typography>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -528,6 +581,136 @@ export default function MyApplications() {
                       {getStatusMessage(selectedApp.status).message}
                     </Typography>
                   </div>
+                </div>
+              )}
+
+              {activeTab === "encadrement" && (
+                <div className="p-6 space-y-6">
+                  {loadingSupervision ? (
+                    <div className="text-center py-8">
+                      <ClockIcon className="w-8 h-8 mx-auto text-blue-gray-300 mb-2 animate-spin" />
+                      <Typography className="text-blue-gray-500">Chargement de l’encadrement…</Typography>
+                    </div>
+                  ) : !supervision ? (
+                    <Typography className="text-blue-gray-600">
+                      Impossible de charger les données d’encadrement.
+                    </Typography>
+                  ) : (
+                    <>
+                      <div>
+                        <Typography variant="h6" className="font-bold text-blue-gray-900 mb-2">
+                          Votre encadrant
+                        </Typography>
+                        {supervision.encadrant ? (
+                          <Typography className="text-blue-gray-700">
+                            <strong>{supervision.encadrant.name}</strong>
+                            {supervision.encadrant.email && (
+                              <span className="block text-sm text-blue-gray-500 mt-1">{supervision.encadrant.email}</span>
+                            )}
+                          </Typography>
+                        ) : (
+                          <Typography variant="small" className="text-blue-gray-500">
+                            Aucun encadrant n’a encore été assigné sur cette candidature. Les tâches et commentaires
+                            apparaîtront ici une fois qu’une entreprise vous aura affecté un encadrant (même compte
+                            utilisateur : la candidature lie <strong>vous</strong>, <strong>l’offre</strong> et{" "}
+                            <strong>l’encadrant</strong> via le champ <code className="text-xs bg-blue-gray-100 px-1 rounded">encadrant_id</code>).
+                          </Typography>
+                        )}
+                      </div>
+
+                      <div className="border-t border-blue-gray-100 pt-4">
+                        <Typography variant="h6" className="font-bold text-blue-gray-900 mb-3">
+                          Tâches définies par l’encadrant
+                        </Typography>
+                        {!supervision.tasks?.length ? (
+                          <Typography variant="small" className="text-blue-gray-500">
+                            Aucune tâche pour l’instant.
+                          </Typography>
+                        ) : (
+                          <div className="space-y-3">
+                            {supervision.tasks.map((t) => (
+                              <Card key={t.id} className="border border-blue-gray-100">
+                                <CardBody className="py-3">
+                                  <div className="flex justify-between items-start gap-2">
+                                    <Typography className="font-bold text-blue-gray-900">{t.title}</Typography>
+                                    <Chip value={encTaskStatusLabel(t.status)} size="sm" color="blue" />
+                                  </div>
+                                  {t.description && (
+                                    <Typography variant="small" className="text-blue-gray-600 mt-2 whitespace-pre-wrap">
+                                      {t.description}
+                                    </Typography>
+                                  )}
+                                  {t.due_date && (
+                                    <Typography variant="small" className="text-blue-gray-500 mt-2">
+                                      Échéance : {formatDate(t.due_date)}
+                                    </Typography>
+                                  )}
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t border-blue-gray-100 pt-4">
+                        <Typography variant="h6" className="font-bold text-blue-gray-900 mb-3">
+                          Commentaires de l’encadrant
+                        </Typography>
+                        {!supervision.comments?.length ? (
+                          <Typography variant="small" className="text-blue-gray-500">
+                            Aucun commentaire pour l’instant.
+                          </Typography>
+                        ) : (
+                          <div className="space-y-3">
+                            {supervision.comments.map((c) => (
+                              <Card key={c.id} className="border border-blue-gray-100">
+                                <CardBody className="py-3">
+                                  <Typography variant="small" className="text-blue-gray-500">
+                                    {c.encadrant?.name || "Encadrant"} ·{" "}
+                                    {c.created_at ? new Date(c.created_at).toLocaleString("fr-FR") : ""}
+                                  </Typography>
+                                  <Typography variant="small" className="text-blue-gray-800 mt-2 whitespace-pre-wrap">
+                                    {c.body}
+                                  </Typography>
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t border-blue-gray-100 pt-4">
+                        <Typography variant="h6" className="font-bold text-blue-gray-900 mb-3">
+                          Évaluation
+                        </Typography>
+                        {!supervision.evaluation ? (
+                          <Typography variant="small" className="text-blue-gray-500">
+                            Pas encore d’évaluation publiée.
+                          </Typography>
+                        ) : (
+                          <Card className="border border-green-100 bg-green-50/30">
+                            <CardBody>
+                              <Typography className="text-blue-gray-800">
+                                <strong>Note :</strong>{" "}
+                                {supervision.evaluation.score != null
+                                  ? `${supervision.evaluation.score}/20`
+                                  : "—"}
+                              </Typography>
+                              <Typography className="text-blue-gray-800 mt-2">
+                                <strong>Décision :</strong>{" "}
+                                {encDecisionLabel(supervision.evaluation.final_decision)}
+                              </Typography>
+                              {supervision.evaluation.notes && (
+                                <Typography variant="small" className="text-blue-gray-700 mt-3 whitespace-pre-wrap">
+                                  {supervision.evaluation.notes}
+                                </Typography>
+                              )}
+                            </CardBody>
+                          </Card>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

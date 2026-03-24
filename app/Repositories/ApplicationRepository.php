@@ -21,7 +21,7 @@ class ApplicationRepository
 
     public function getByStudent(int $studentId, ?int $perPage = null)
     {
-        $query = Application::with(['offer.user'])
+        $query = Application::with(['offer.user', 'encadrant:id,name,email'])
             ->where('student_id', $studentId)
             ->orderBy('created_at', 'desc');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Interview;  // ← IMPORTANT
 use App\Models\Application;
+use App\Notifications\Encadrant\InterviewScheduledForEncadrantNotification;
 
 class InterviewController extends Controller
 {
@@ -30,6 +31,11 @@ class InterviewController extends Controller
     $interview->application->update([
         'status' => 'entretien'
     ]);
+
+    $interview->loadMissing('application.encadrant');
+    $interview->application->encadrant?->notify(
+        new InterviewScheduledForEncadrantNotification($interview)
+    );
 
     return response()->json($interview, 201);
 }

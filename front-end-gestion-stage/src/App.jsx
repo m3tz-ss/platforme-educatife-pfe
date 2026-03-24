@@ -14,6 +14,7 @@ const OffersCatalog = lazy(() => import("./pages/student/OffersCatalog"));
 const OfferDetails = lazy(() => import("./pages/student/OfferDetails"));
 const PublishOffer = lazy(() => import("./pages/entreprise/PublishOffer"));
 const MyApplications = lazy(() => import("./pages/student/MyApplications"));
+const StudentTasksPage = lazy(() => import("./pages/student/StudentTasksPage"));
 const Offertable = lazy(() => import("./pages/entreprise/offerstable"));
 const ReceivedApplications = lazy(() => import("./pages/entreprise/ReceivedApplications"));
 const InterviewsHistoryPage = lazy(() => import("./pages/entreprise/InterviewsHistoryPage"));
@@ -22,6 +23,7 @@ const ManagerDashboard = lazy(() => import("./pages/entreprise/ManagerDashboard"
 const AdminDashboard = lazy(() => import("./pages/Admindashboard"));
 const Manager = lazy(() => import("./pages/entreprise/CreateManager"));
 const EncadrantDashboard = lazy(() => import("./pages/entreprise/Encadrantdashboard"));
+const EncadrantStudentDetail = lazy(() => import("./pages/entreprise/EncadrantStudentDetail"));
 const StudentProfile = lazy(() => import("./pages/student/Studentprofile"));
 const EnterpriseProfile = lazy(() => import("./pages/entreprise/Enterpriseprofile"));
 const EnterpriseLogin = lazy(() => import("./pages/entreprise/EnterpriseLogin"));
@@ -54,6 +56,7 @@ function App() {
       <Route path="/student" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
       <Route path="/student/offers" element={<ProtectedRoute allowedRoles={["student"]}><OffersCatalog /></ProtectedRoute>} />
       <Route path="/student/applications" element={<ProtectedRoute allowedRoles={["student"]}><MyApplications /></ProtectedRoute>} />
+      <Route path="/student/tasks" element={<ProtectedRoute allowedRoles={["student"]}><StudentTasksPage /></ProtectedRoute>} />
       <Route path="/student/offersdetails" element={<ProtectedRoute allowedRoles={["student"]}><OfferDetails /></ProtectedRoute>} />
       <Route path="/student/profile" element={<ProtectedRoute allowedRoles={["student"]}><StudentProfile /></ProtectedRoute>} />
 
@@ -76,6 +79,7 @@ function App() {
 
       {/* Encadrant uniquement */}
       <Route path="/enterprise/encadrant" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantDashboard /></ProtectedRoute>} />
+      <Route path="/enterprise/encadrant/student/:applicationId" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantStudentDetail /></ProtectedRoute>} />
 
       {/* Admin uniquement */}
       <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />

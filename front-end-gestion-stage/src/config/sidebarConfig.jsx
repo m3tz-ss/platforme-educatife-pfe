@@ -7,6 +7,7 @@ import {
   PlusIcon,
   CheckCircleIcon,
   UsersIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 
 /**
@@ -17,6 +18,7 @@ export function getStudentMenuItems(counts = {}) {
     { icon: HomeIcon, label: "Tableau de bord", path: "/student", badge: null },
     { icon: BriefcaseIcon, label: "Offres de stage", path: "/student/offers", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "Mes candidatures", path: "/student/applications", badge: counts.applications ?? null },
+    { icon: ClipboardDocumentListIcon, label: "Mes tâches", path: "/student/tasks", badge: null },
     { icon: BookmarkIcon, label: "Offres sauvegardées", path: "/student/saved", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Messages", path: "/student/messages", badge: null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/student/profile", badge: null },
