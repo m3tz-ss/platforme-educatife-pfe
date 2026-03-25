@@ -1,8 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
-import LandingPage from "./pages/LandingPage";
-import { SignIn, SignUp } from "./pages/auth";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import AccessDenied from "./pages/AccessDenied";
 
@@ -27,6 +25,10 @@ const EncadrantStudentDetail = lazy(() => import("./pages/entreprise/EncadrantSt
 const StudentProfile = lazy(() => import("./pages/student/Studentprofile"));
 const EnterpriseProfile = lazy(() => import("./pages/entreprise/Enterpriseprofile"));
 const EnterpriseLogin = lazy(() => import("./pages/entreprise/EnterpriseLogin"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const SignIn = lazy(() => import("./pages/auth/sign-in"));
+const SignUp = lazy(() => import("./pages/auth/sign-up"));
+
 
 
 
@@ -84,8 +86,7 @@ function App() {
       {/* Admin uniquement */}
       <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />
 
-      {/* Auth routes */}
-      <Route path="/auth/*" element={<Auth />} />
+        {/* Auth routes */}
       <Route path="/auth/sign-in" element={<SignIn />} />
       <Route path="/auth/sign-up" element={<SignUp />} />
 
