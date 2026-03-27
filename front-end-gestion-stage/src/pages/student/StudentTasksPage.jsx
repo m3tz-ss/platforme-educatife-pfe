@@ -1,173 +1,336 @@
-import { useEffect, useState, useMemo } from "react";
-import { Typography, Card, CardBody, Select, Option } from "@material-tailwind/react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Typography, Select, Option } from "@material-tailwind/react";
 import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
 import { getStudentMenuItems } from "../../config/sidebarConfig";
 import StudentNotificationBell from "../../components/student/StudentNotificationBell";
 
-const STATUS_OPTS = [
-  { value: "todo", label: "À faire" },
-  { value: "in_progress", label: "En cours" },
-  { value: "done", label: "Terminé" },
+// ── Column definitions ────────────────────────────────────────────────────────
+const TASK_COLUMNS = [
+  {
+    key: "todo", label: "À faire",
+    headerGrad: "linear-gradient(135deg,#64748b,#475569)",
+    border: "border-slate-200", bg: "bg-slate-50/60",
+    dot: "bg-slate-400",
+    dropRing: "ring-slate-400",
+    emptyIcon: "📋",
+    iconBg: "bg-slate-100", iconColor: "text-slate-600",
+  },
+  {
+    key: "in_progress", label: "En cours",
+    headerGrad: "linear-gradient(135deg,#f59e0b,#ea580c)",
+    border: "border-amber-200", bg: "bg-amber-50/30",
+    dot: "bg-amber-400",
+    dropRing: "ring-amber-400",
+    emptyIcon: "⚡",
+    iconBg: "bg-amber-100", iconColor: "text-amber-600",
+  },
+  {
+    key: "done", label: "Terminé",
+    headerGrad: "linear-gradient(135deg,#10b981,#0d9488)",
+    border: "border-emerald-200", bg: "bg-emerald-50/20",
+    dot: "bg-emerald-500",
+    dropRing: "ring-emerald-400",
+    emptyIcon: "✅",
+    iconBg: "bg-emerald-100", iconColor: "text-emerald-600",
+  },
 ];
 
-const STATUS_STYLES = {
-  todo: {
-    chip: "bg-slate-100 text-slate-600 border border-slate-200",
-    dot: "bg-slate-400",
-    row: "",
-  },
-  in_progress: {
-    chip: "bg-amber-50 text-amber-700 border border-amber-200",
-    dot: "bg-amber-400 animate-pulse",
-    row: "bg-amber-50/30",
-  },
-  done: {
-    chip: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    dot: "bg-emerald-500",
-    row: "bg-emerald-50/20",
-  },
-};
+const STATUS_OPTS = [
+  { value: "todo",        label: "À faire"  },
+  { value: "in_progress", label: "En cours" },
+  { value: "done",        label: "Terminé"  },
+];
 
-function StatusBadge({ status }) {
-  const s = STATUS_STYLES[status] || STATUS_STYLES.todo;
-  const label = STATUS_OPTS.find((o) => o.value === status)?.label || status;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${s.chip}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {label}
-    </span>
-  );
-}
+// ── TaskCard (Etudiant) ───────────────────────────────────────────────────────
+function StudentTaskCard({
+  task, col, encadrantId,
+  busy, applicationId,
+  commentDrafts, setCommentDrafts,
+  sendComment,
+  onDragStart, onDragEnd,
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-function CommentPanel({ task, commentDrafts, setCommentDrafts, sendComment, busy }) {
-  const [open, setOpen] = useState(false);
+  const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
+  const taskComments = task.comments || task.taskComments || [];
 
-  // ✅ FIX : essayer toutes les variantes de clés possibles renvoyées par l'API
-  const tc =
-    task.comments ||
-    task.task_comments ||
-    task.taskComments ||
-    task.feedback ||
-    task.feedbacks ||
-    [];
-
-  const count = Array.isArray(tc) ? tc.length : 0;
+  // Separate encadrant vs student comments
+  const encComments  = taskComments.filter(c => encadrantId && c.user?.id === encadrantId);
+  const myComments   = taskComments.filter(c => encadrantId ? c.user?.id !== encadrantId : true);
+  const totalCount   = taskComments.length;
 
   return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-          />
-        </svg>
-        {count} commentaire{count !== 1 ? "s" : ""}
-        <svg
-          className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+    <div
+      draggable
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; onDragStart(task.id); setIsDragging(true); }}
+      onDragEnd={() => { onDragEnd(); setIsDragging(false); }}
+      className={`group bg-white rounded-xl border ${col.border} shadow-sm
+        hover:shadow-lg transition-all duration-200 select-none
+        ${isDragging ? "opacity-40 scale-95 rotate-1 shadow-none" : "cursor-grab active:cursor-grabbing"}`}
+    >
+      <div className="h-0.5 rounded-t-xl" style={{ background: col.headerGrad }} />
 
-      {open && (
-        <div className="mt-3 bg-slate-50 rounded-xl border border-slate-100 p-3 space-y-3">
-          {/* Liste des commentaires */}
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {count === 0 ? (
-              <p className="text-xs text-slate-400 italic">Aucun commentaire pour l'instant.</p>
-            ) : (
-              tc.map((c, idx) => {
-                // ✅ FIX : supporter différentes structures de commentaire
-                const authorName =
-                  c.user?.name ||
-                  c.author?.name ||
-                  c.author_name ||
-                  c.userName ||
-                  "Utilisateur";
-                const body = c.body || c.content || c.message || c.text || "";
-                const createdAt = c.created_at || c.createdAt || c.date || null;
-                const commentId = c.id ?? idx;
-
-                return (
-                  <div key={commentId} className="rounded-lg bg-white border border-slate-100 px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
-                        {(authorName)[0].toUpperCase()}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-700">{authorName}</span>
-                      <span className="text-xs text-slate-400 ml-auto">
-                        {createdAt
-                          ? new Date(createdAt).toLocaleDateString("fr-FR", {
-                              day: "2-digit",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : ""}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-wrap leading-relaxed">
-                      {body}
-                    </p>
-                  </div>
-                );
-              })
-            )}
+      <div className="p-3.5 space-y-2">
+        {/* Title row */}
+        <div className="flex items-start gap-2">
+          <div className="flex-shrink-0 text-slate-300 mt-0.5 cursor-grab">
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+              <circle cx="2.5" cy="2.5"  r="1.5"/> <circle cx="7.5" cy="2.5"  r="1.5"/>
+              <circle cx="2.5" cy="8"    r="1.5"/> <circle cx="7.5" cy="8"    r="1.5"/>
+              <circle cx="2.5" cy="13.5" r="1.5"/> <circle cx="7.5" cy="13.5" r="1.5"/>
+            </svg>
           </div>
-
-          {/* Formulaire d'ajout de commentaire */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Ajouter un commentaire…"
-              value={commentDrafts[task.id] || ""}
-              onChange={(e) =>
-                setCommentDrafts((d) => ({ ...d, [task.id]: e.target.value }))
-              }
-              onKeyDown={(e) => e.key === "Enter" && sendComment(task.id)}
-              className="flex-1 text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
-            />
-            <button
-              disabled={busy || !(commentDrafts[task.id] || "").trim()}
-              onClick={() => sendComment(task.id)}
-              className="px-3 py-2 bg-blue-600 text-white text-xs rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              Envoyer
-            </button>
-          </div>
+          <p className="flex-1 font-semibold text-sm text-slate-900 leading-snug">{task.title}</p>
+          {/* Encadrant feedback badge */}
+          {encComments.length > 0 && (
+            <span className="flex-shrink-0 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full border border-indigo-200"
+              title="Feedback de l'encadrant">
+              💬 {encComments.length}
+            </span>
+          )}
         </div>
-      )}
+
+        {/* Metadata */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {task.due_date && (
+            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border
+              ${isOverdue
+                ? "bg-rose-50 text-rose-600 border-rose-200"
+                : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+              {isOverdue && <span>⚠</span>}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+            </span>
+          )}
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border transition-colors
+              ${totalCount > 0
+                ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"}`}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            {totalCount}
+            <svg className={`w-2.5 h-2.5 transition-transform ${expanded ? "rotate-180" : ""}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Expanded accordion */}
+        {expanded && (
+          <div className="border-t border-slate-100 pt-3 space-y-3">
+
+            {/* Description */}
+            {task.description && (
+              <div className="bg-slate-50 rounded-xl border border-slate-100 px-3.5 py-2.5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{task.description}</p>
+              </div>
+            )}
+
+            {/* Encadrant feedback (read-only) */}
+            {encComments.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wide flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                  Feedback de l&apos;encadrant
+                </p>
+                <div className="space-y-2">
+                  {encComments.map((c, idx) => {
+                    const name = c.user?.name || "Encadrant";
+                    const date = c.created_at
+                      ? new Date(c.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    return (
+                      <div key={c.id ?? idx}
+                        className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 px-3.5 py-2.5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                            {name[0]?.toUpperCase()}
+                          </div>
+                          <span className="text-xs font-bold text-indigo-900">{name}</span>
+                          <span className="text-xs text-indigo-400 ml-auto">{date}</span>
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{c.body || c.content}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Student comments */}
+            {myComments.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">Mes commentaires</p>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {myComments.map((c, idx) => {
+                    const name = c.user?.name || "Moi";
+                    const date = c.created_at
+                      ? new Date(c.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    return (
+                      <div key={c.id ?? idx} className="rounded-xl bg-blue-50 border border-blue-100 px-3 py-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                            {name[0]?.toUpperCase()}
+                          </div>
+                          <span className="text-xs font-semibold text-blue-900">{name}</span>
+                          <span className="text-xs text-blue-400 ml-auto">{date}</span>
+                        </div>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap">{c.body || c.content}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Add comment form */}
+            <div className="flex gap-2 pt-1">
+              <input
+                type="text"
+                placeholder="Ajouter un commentaire…"
+                value={commentDrafts[task.id] || ""}
+                onChange={(e) => setCommentDrafts(d => ({ ...d, [task.id]: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && sendComment(task.id)}
+                className="flex-1 text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition placeholder-slate-300"
+              />
+              <button
+                onClick={() => sendComment(task.id)}
+                disabled={busy || !(commentDrafts[task.id] || "").trim()}
+                className="px-3.5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex-shrink-0"
+              >
+                Envoyer
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-export default function StudentTasksPage() {
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState(null);
-  const [supervision, setSupervision] = useState(null);
-  const [loadingSup, setLoadingSup] = useState(false);
-  const [commentDrafts, setCommentDrafts] = useState({});
-  const [busy, setBusy] = useState(false);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("due_date");
+// ── KanbanBoard (Etudiant) ────────────────────────────────────────────────────
+function StudentKanbanBoard({
+  tasks, encadrantId, busy,
+  applicationId, commentDrafts,
+  setCommentDrafts, sendComment,
+  onPatchStatus,
+}) {
+  const [draggingId, setDraggingId]   = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
 
-  // Chargement des candidatures
+  const grouped = TASK_COLUMNS.reduce((acc, col) => {
+    acc[col.key] = tasks
+      .filter(t => t.status === col.key)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    return acc;
+  }, {});
+
+  const handleDrop = async (e, toStatus) => {
+    e.preventDefault();
+    if (!draggingId) return;
+    const task = tasks.find(t => t.id === draggingId);
+    if (task && task.status !== toStatus) {
+      await onPatchStatus(task.id, toStatus);
+    }
+    setDraggingId(null);
+    setDragOverCol(null);
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {TASK_COLUMNS.map(col => {
+        const colTasks = grouped[col.key] || [];
+        const isOver   = dragOverCol === col.key;
+
+        return (
+          <div
+            key={col.key}
+            onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverCol(null); }}
+            onDrop={(e) => handleDrop(e, col.key)}
+            className={`rounded-2xl border transition-all duration-200 ${col.border} ${col.bg}
+              ${isOver ? `ring-2 ${col.dropRing} ring-offset-2 shadow-lg` : "shadow-sm"}`}
+          >
+            {/* Column header */}
+            <div className="rounded-t-2xl px-4 py-3 flex items-center justify-between"
+              style={{ background: col.headerGrad }}>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${col.dot}`}/>
+                <span className="text-white font-bold text-sm tracking-wide">{col.label}</span>
+              </div>
+              <span className="bg-white/25 text-white text-xs font-black px-2.5 py-0.5 rounded-full">
+                {colTasks.length}
+              </span>
+            </div>
+
+            {/* Drop indicator */}
+            {isOver && (
+              <div className="mx-3 mt-3 h-1.5 rounded-full opacity-60 animate-pulse"
+                style={{ background: col.headerGrad }} />
+            )}
+
+            {/* Cards */}
+            <div className="p-3 space-y-2.5 min-h-[180px]">
+              {colTasks.length === 0 && !isOver && (
+                <div className="flex flex-col items-center justify-center h-20 text-xs text-slate-400 italic gap-1.5">
+                  <span className="text-xl">{col.emptyIcon}</span>
+                  <span>Aucune tâche</span>
+                </div>
+              )}
+              {colTasks.map(task => (
+                <StudentTaskCard
+                  key={task.id}
+                  task={task}
+                  col={col}
+                  encadrantId={encadrantId}
+                  busy={busy}
+                  applicationId={applicationId}
+                  commentDrafts={commentDrafts}
+                  setCommentDrafts={setCommentDrafts}
+                  sendComment={sendComment}
+                  onDragStart={(id) => setDraggingId(id)}
+                  onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── MAIN PAGE ─────────────────────────────────────────────────────────────────
+export default function StudentTasksPage() {
+  const [applications,  setApplications]  = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [selectedId,    setSelectedId]    = useState(null);
+  const [supervision,   setSupervision]   = useState(null);
+  const [loadingSup,    setLoadingSup]    = useState(false);
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [busy,          setBusy]          = useState(false);
+
+  // Load candidatures
   useEffect(() => {
-    api
-      .get("/my-applications")
-      .then((res) => {
+    api.get("/my-applications")
+      .then(res => {
         const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setApplications(raw);
       })
@@ -175,37 +338,31 @@ export default function StudentTasksPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sélection automatique de la première candidature avec encadrant
+  // Auto-select first app with encadrant
   useEffect(() => {
-    const withEnc = applications.filter((a) => a.encadrant_id || a.encadrant);
+    const withEnc = applications.filter(a => a.encadrant_id || a.encadrant);
     if (withEnc.length && selectedId == null) setSelectedId(withEnc[0].id);
   }, [applications, selectedId]);
 
-  // Chargement de la supervision à chaque changement de candidature sélectionnée
-  useEffect(() => {
+  const loadSupervision = useCallback(() => {
     if (!selectedId) return;
     setLoadingSup(true);
-    api
-      .get(`/student/applications/${selectedId}/supervision`)
-      .then((res) => setSupervision(res.data))
+    api.get(`/student/applications/${selectedId}/supervision`)
+      .then(res => {
+        const data = res.data;
+        if (data?.tasks) {
+          data.tasks = data.tasks.map(t => ({
+            ...t,
+            comments: t.taskComments || t.comments || t.task_comments || [],
+          }));
+        }
+        setSupervision(data);
+      })
       .catch(() => setSupervision(null))
       .finally(() => setLoadingSup(false));
   }, [selectedId]);
 
-  const appsWithEncadrant = useMemo(
-    () => applications.filter((a) => a.encadrant_id || a.encadrant),
-    [applications]
-  );
-
-  const loadSupervision = () => {
-    if (!selectedId) return;
-    setLoadingSup(true);
-    api
-      .get(`/student/applications/${selectedId}/supervision`)
-      .then((res) => setSupervision(res.data))
-      .catch(() => setSupervision(null))
-      .finally(() => setLoadingSup(false));
-  };
+  useEffect(() => { loadSupervision(); }, [loadSupervision]);
 
   const patchStatus = async (taskId, status) => {
     if (!selectedId) return;
@@ -216,11 +373,8 @@ export default function StudentTasksPage() {
         { status }
       );
       loadSupervision();
-    } catch (e) {
-      console.error("Erreur mise à jour statut :", e);
-    } finally {
-      setBusy(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setBusy(false); }
   };
 
   const sendComment = async (taskId) => {
@@ -232,64 +386,40 @@ export default function StudentTasksPage() {
         `/student/applications/${selectedId}/tasks/${taskId}/comments`,
         { body }
       );
-      setCommentDrafts((d) => ({ ...d, [taskId]: "" }));
+      setCommentDrafts(d => ({ ...d, [taskId]: "" }));
       loadSupervision();
-    } catch (e) {
-      console.error("Erreur envoi commentaire :", e);
-    } finally {
-      setBusy(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setBusy(false); }
   };
 
-  // ✅ FIX : normaliser les tâches pour toujours avoir une clé "comments"
-  const rawTasks = supervision?.tasks || [];
-  const tasks = useMemo(
-    () =>
-      rawTasks.map((task) => ({
-        ...task,
-        // Normalisation : on force une seule clé "comments"
-        comments:
-          task.comments ||
-          task.task_comments ||
-          task.taskComments ||
-          task.feedback ||
-          task.feedbacks ||
-          [],
-      })),
-    [rawTasks]
+  const appsWithEncadrant = useMemo(
+    () => applications.filter(a => a.encadrant_id || a.encadrant),
+    [applications]
   );
 
-  const filteredTasks = useMemo(() => {
-    let t = filterStatus === "all" ? tasks : tasks.filter((tk) => tk.status === filterStatus);
-    if (sortBy === "due_date")
-      t = [...t].sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
-    if (sortBy === "title")
-      t = [...t].sort((a, b) => a.title.localeCompare(b.title));
-    if (sortBy === "status")
-      t = [...t].sort((a, b) => a.status.localeCompare(b.status));
-    return t;
-  }, [tasks, filterStatus, sortBy]);
+  const rawTasks   = supervision?.tasks || [];
+  const tasks      = rawTasks;
+  const encadrantId = supervision?.encadrant?.id ?? null;
 
-  const stats = useMemo(
-    () => ({
-      total: tasks.length,
-      todo: tasks.filter((t) => t.status === "todo").length,
-      in_progress: tasks.filter((t) => t.status === "in_progress").length,
-      done: tasks.filter((t) => t.status === "done").length,
-    }),
-    [tasks]
-  );
+  const stats = useMemo(() => ({
+    total:       tasks.length,
+    todo:        tasks.filter(t => t.status === "todo").length,
+    in_progress: tasks.filter(t => t.status === "in_progress").length,
+    done:        tasks.filter(t => t.status === "done").length,
+  }), [tasks]);
 
-  const encName = supervision?.encadrant?.name || "—";
-  const encEmail = supervision?.encadrant?.email;
+  const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+
+  const encName  = supervision?.encadrant?.name  || "—";
+  const encEmail = supervision?.encadrant?.email || null;
 
   const sidebarExtra = (
-    <div className="bg-blue-50 rounded-lg p-4">
-      <Typography variant="small" className="text-blue-gray-600 mb-1">
-        Espace étudiant
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+      <Typography variant="small" className="font-bold text-blue-800 mb-1">
+        🎯 Espace étudiant
       </Typography>
-      <Typography variant="small" className="text-blue-gray-700">
-        Mettez à jour vos tâches et échangez avec votre encadrant.
+      <Typography variant="small" className="text-blue-600 text-xs leading-relaxed">
+        Glissez les cartes pour changer le statut d&apos;une tâche.
       </Typography>
     </div>
   );
@@ -303,58 +433,50 @@ export default function StudentTasksPage() {
       sidebarExtra={sidebarExtra}
       headerActions={<StudentNotificationBell />}
     >
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
-        {/* État chargement initial */}
+      <div className="p-6 max-w-6xl mx-auto space-y-7">
+
+        {/* Loading initial */}
         {loading ? (
           <div className="flex items-center gap-3 text-slate-500">
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
             Chargement…
           </div>
         ) : appsWithEncadrant.length === 0 ? (
-          /* Aucune candidature avec encadrant */
-          <Card className="border border-blue-gray-100">
-            <CardBody>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </svg>
-                </div>
-                <Typography className="text-blue-gray-700">
-                  Aucune candidature avec un encadrant assigné pour l'instant.
-                </Typography>
-              </div>
-            </CardBody>
-          </Card>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+            </div>
+            <p className="font-semibold text-slate-700 mb-1">Aucune candidature avec encadrant</p>
+            <p className="text-sm text-slate-500">Vos tâches apparaîtront ici une fois qu&apos;un encadrant vous sera assigné.</p>
+          </div>
         ) : (
           <>
-            {/* En-tête : encadrant + sélecteur de candidature */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            {/* ── Header : encadrant + sélecteur ── */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between
+              bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-md">
                   {encName[0]?.toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Encadrant</p>
-                  <p className="font-bold text-slate-900 leading-tight">{encName}</p>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Votre encadrant</p>
+                  <p className="font-black text-slate-900">{encName}</p>
                   {encEmail && <p className="text-xs text-slate-500">{encEmail}</p>}
                 </div>
               </div>
               <div className="w-full sm:w-72">
                 <Select
-                  label="Candidature / offre"
+                  label="Offre de stage"
                   value={selectedId ? String(selectedId) : ""}
                   onChange={(v) => setSelectedId(Number(v))}
                 >
-                  {appsWithEncadrant.map((a) => (
+                  {appsWithEncadrant.map(a => (
                     <Option key={a.id} value={String(a.id)}>
                       {a.offer?.title || `Candidature #${a.id}`}
                     </Option>
@@ -363,213 +485,81 @@ export default function StudentTasksPage() {
               </div>
             </div>
 
-            {/* Statistiques */}
+            {/* ── Stats ── */}
             {!loadingSup && supervision && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Total", value: stats.total, color: "text-slate-700", bg: "bg-slate-50 border-slate-200" },
-                  { label: "À faire", value: stats.todo, color: "text-slate-600", bg: "bg-slate-50 border-slate-200" },
-                  { label: "En cours", value: stats.in_progress, color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
-                  { label: "Terminé", value: stats.done, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
-                ].map((s) => (
-                  <div key={s.label} className={`rounded-xl border px-4 py-3 ${s.bg}`}>
-                    <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">{s.label}</p>
+                  { label: "Total",    value: stats.total,       cls: "bg-white border-slate-200 text-slate-700" },
+                  { label: "À faire",  value: stats.todo,        cls: "bg-slate-50 border-slate-200 text-slate-600" },
+                  { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
+                  { label: "Terminé",  value: stats.done,        cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-2xl border px-4 py-3 shadow-sm ${s.cls}`}>
+                    <p className="text-2xl font-black">{s.value}</p>
+                    <p className="text-xs font-semibold opacity-70 mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Chargement supervision */}
+            {/* ── Progress bar ── */}
+            {!loadingSup && supervision && stats.total > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-4">
+                <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%`, background: "linear-gradient(90deg,#10b981,#0d9488)" }}
+                  />
+                </div>
+                <span className="text-sm font-black text-slate-700 min-w-[3rem] text-right">{pct}%</span>
+                <span className="text-xs text-slate-500 font-semibold">complété</span>
+              </div>
+            )}
+
+            {/* ── Loading supervision ── */}
             {loadingSup ? (
-              <div className="flex items-center gap-3 text-slate-500 text-sm">
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <div className="flex items-center gap-3 text-slate-500 py-8 justify-center">
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
                 Chargement des tâches…
               </div>
             ) : supervision ? (
               <>
-                {/* Filtres + tri */}
-                <div className="flex flex-wrap gap-3 items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-1">
-                      Statut :
-                    </span>
-                    {[{ value: "all", label: "Tous" }, ...STATUS_OPTS].map((o) => (
-                      <button
-                        key={o.value}
-                        onClick={() => setFilterStatus(o.value)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                          filterStatus === o.value
-                            ? "bg-blue-600 text-white shadow"
-                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Trier :
-                    </span>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 text-slate-700"
-                    >
-                      <option value="due_date">Échéance</option>
-                      <option value="title">Titre</option>
-                      <option value="status">Statut</option>
-                    </select>
-                  </div>
+                {/* Hint glisser */}
+                <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                  <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                  <span>Glissez une carte vers une autre colonne pour changer son statut. Cliquez sur le badge commentaire pour voir le feedback de votre encadrant.</span>
                 </div>
 
-                {/* Tableau des tâches */}
-                {filteredTasks.length === 0 ? (
+                {/* ── KANBAN ── */}
+                {tasks.length === 0 ? (
                   <div className="text-center py-16 text-slate-400">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-3 opacity-30"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                      />
-                    </svg>
-                    <p className="text-sm font-medium">Aucune tâche trouvée</p>
+                    <div className="text-4xl mb-3">📋</div>
+                    <p className="font-medium text-slate-500">Aucune tâche assignée pour l&apos;instant.</p>
+                    <p className="text-xs mt-1">Votre encadrant vous assignera des tâches prochainement.</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white">
-                    {/* En-tête du tableau */}
-                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] bg-slate-50 border-b border-slate-200 px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide gap-4">
-                      <span>Tâche</span>
-                      <span>Échéance</span>
-                      <span>Statut</span>
-                      <span>Commentaires</span>
-                      <span>Changer le statut</span>
-                    </div>
-
-                    {/* Lignes du tableau */}
-                    <div className="divide-y divide-slate-100">
-                      {filteredTasks.map((task) => {
-                        const rowStyle = STATUS_STYLES[task.status]?.row || "";
-                        const isOverdue =
-                          task.due_date &&
-                          task.status !== "done" &&
-                          new Date(task.due_date) < new Date();
-
-                        return (
-                          <div
-                            key={task.id}
-                            className={`grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] px-4 py-4 gap-4 items-start hover:bg-slate-50/80 transition-colors ${rowStyle}`}
-                          >
-                            {/* Titre + description */}
-                            <div>
-                              <p className="font-semibold text-sm text-slate-900 leading-snug">
-                                {task.title}
-                              </p>
-                              {task.description && (
-                                <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                                  {task.description}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Échéance */}
-                            <div className="pt-0.5">
-                              {task.due_date ? (
-                                <span
-                                  className={`inline-flex items-center gap-1 text-xs font-medium ${
-                                    isOverdue ? "text-red-600" : "text-slate-600"
-                                  }`}
-                                >
-                                  {isOverdue && (
-                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                  )}
-                                  {new Date(task.due_date).toLocaleDateString("fr-FR", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400">—</span>
-                              )}
-                            </div>
-
-                            {/* Badge de statut */}
-                            <div className="pt-0.5">
-                              <StatusBadge status={task.status} />
-                            </div>
-
-                            {/* Commentaires */}
-                            <div>
-                              <CommentPanel
-                                task={task}
-                                commentDrafts={commentDrafts}
-                                setCommentDrafts={setCommentDrafts}
-                                sendComment={sendComment}
-                                busy={busy}
-                              />
-                            </div>
-
-                            {/* Sélecteur de statut */}
-                            <div>
-                              <select
-                                value={task.status}
-                                disabled={busy}
-                                onChange={(e) => patchStatus(task.id, e.target.value)}
-                                className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-slate-700 font-medium disabled:opacity-50 cursor-pointer transition"
-                              >
-                                {STATUS_OPTS.map((o) => (
-                                  <option key={o.value} value={o.value}>
-                                    {o.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Pied du tableau : compteur + barre de progression */}
-                    <div className="bg-slate-50 border-t border-slate-200 px-4 py-2.5 flex items-center justify-between">
-                      <p className="text-xs text-slate-500">
-                        {filteredTasks.length} tâche{filteredTasks.length !== 1 ? "s" : ""}
-                        {filterStatus !== "all" ? " (filtrées)" : ""}
-                      </p>
-                      {stats.total > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-emerald-500 rounded-full transition-all"
-                              style={{
-                                width: `${Math.round((stats.done / stats.total) * 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-slate-500 font-medium">
-                            {Math.round((stats.done / stats.total) * 100)}% complété
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <StudentKanbanBoard
+                    tasks={tasks}
+                    encadrantId={encadrantId}
+                    busy={busy}
+                    applicationId={selectedId}
+                    commentDrafts={commentDrafts}
+                    setCommentDrafts={setCommentDrafts}
+                    sendComment={sendComment}
+                    onPatchStatus={patchStatus}
+                  />
                 )}
+
+                {/* Footer count */}
+                <div className="text-center text-xs text-slate-400 pb-2">
+                  {tasks.length} tâche{tasks.length !== 1 ? "s" : ""} au total
+                </div>
               </>
             ) : null}
           </>

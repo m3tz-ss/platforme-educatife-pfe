@@ -13,6 +13,7 @@ use App\Http\Controllers\Encadrant\EncadrantSupervisionController;
 use App\Http\Controllers\Encadrant\EncadrantTaskController;
 use App\Http\Controllers\Encadrant\EncadrantCommentController;
 use App\Http\Controllers\Encadrant\EncadrantEvaluationController;
+use App\Http\Controllers\Encadrant\EncadrantTaskCommentController;
 use App\Http\Controllers\Encadrant\EncadrantInterviewController;
 use App\Http\Controllers\Encadrant\EncadrantNotificationController;
 use App\Http\Controllers\ProfileController;
@@ -85,6 +86,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/applications/{applicationId}/tasks', [EncadrantTaskController::class, 'store']);
         Route::put('/tasks/{taskId}', [EncadrantTaskController::class, 'update']);
         Route::delete('/tasks/{taskId}', [EncadrantTaskController::class, 'destroy']);
+
+        // Commentaires sur une tâche spécifique (encadrant)
+        Route::get('/tasks/{taskId}/comments', [EncadrantTaskCommentController::class, 'index']);
+        Route::post('/tasks/{taskId}/comments', [EncadrantTaskCommentController::class, 'store']);
+        Route::delete('/tasks/{taskId}/comments/{commentId}', [EncadrantTaskCommentController::class, 'destroy']);
 
         Route::get('/applications/{applicationId}/comments', [EncadrantCommentController::class, 'index']);
         Route::post('/applications/{applicationId}/comments', [EncadrantCommentController::class, 'store']);

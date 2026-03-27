@@ -67,228 +67,300 @@ function TaskStatusBadge({ status }) {
   );
 }
 
-// ─── Panel commentaires par tâche ─────────────────────────────────────────────
-function TaskCommentPanel({ task }) {
-  const [open, setOpen] = useState(false);
-  const comments =
-    task.comments ||
-    task.task_comments ||
-    task.taskComments ||
-    task.feedback ||
-    task.feedbacks ||
-    [];
-  const count = Array.isArray(comments) ? comments.length : 0;
+// ─── Kanban columns config (modal compact) ──────────────────────────────────
+const MODAL_COLUMNS = [
+  {
+    key: "todo", label: "À faire",
+    headerGrad: "linear-gradient(135deg,#64748b,#475569)",
+    border: "border-slate-200", bg: "bg-slate-50/50",
+    dot: "bg-slate-400", dropRing: "ring-slate-400",
+  },
+  {
+    key: "in_progress", label: "En cours",
+    headerGrad: "linear-gradient(135deg,#f59e0b,#ea580c)",
+    border: "border-amber-200", bg: "bg-amber-50/20",
+    dot: "bg-amber-400", dropRing: "ring-amber-400",
+  },
+  {
+    key: "done", label: "Terminé",
+    headerGrad: "linear-gradient(135deg,#10b981,#0d9488)",
+    border: "border-emerald-200", bg: "bg-emerald-50/10",
+    dot: "bg-emerald-500", dropRing: "ring-emerald-400",
+  },
+];
+
+// ─── MiniTaskCard (inside modal Kanban) ───────────────────────────────────────
+function MiniTaskCard({ task, col, encadrantId, applicationId, busy, onDragStart, onDragEnd, onAddComment }) {
+  const [expanded, setExpanded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const allComments  = task.comments || task.taskComments || [];
+  const encComments  = allComments.filter(c => encadrantId && c.user?.id === encadrantId);
+  const myComments   = allComments.filter(c => encadrantId ? c.user?.id !== encadrantId : true);
+  const isOverdue    = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
+
+  const sendComment = async () => {
+    if (!draft.trim() || sending || !applicationId) return;
+    setSending(true);
+    try {
+      await onAddComment(task.id, draft.trim());
+      setDraft("");
+    } finally { setSending(false); }
+  };
 
   return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        {count} commentaire{count !== 1 ? "s" : ""}
-        <svg className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="mt-2 bg-slate-50 rounded-xl border border-slate-100 p-3 space-y-2">
-          {count === 0 ? (
-            <p className="text-xs text-slate-400 italic">Aucun commentaire pour l'instant.</p>
-          ) : (
-            <div className="space-y-2 max-h-36 overflow-y-auto">
-              {comments.map((c, idx) => {
-                const authorName = c.user?.name || c.author?.name || c.author_name || c.userName || "Utilisateur";
-                const body       = c.body || c.content || c.message || c.text || "";
-                const createdAt  = c.created_at || c.createdAt || c.date || null;
-                return (
-                  <div key={c.id ?? idx} className="rounded-lg bg-white border border-slate-100 px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
-                        {authorName[0]?.toUpperCase()}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-700">{authorName}</span>
-                      <span className="text-xs text-slate-400 ml-auto">
-                        {createdAt ? new Date(createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-wrap leading-relaxed">{body}</p>
-                  </div>
-                );
-              })}
-            </div>
+    <div
+      draggable
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; onDragStart(task.id); setIsDragging(true); }}
+      onDragEnd={() => { onDragEnd(); setIsDragging(false); }}
+      className={`group bg-white rounded-xl border ${col.border} shadow-sm hover:shadow-md transition-all duration-200 select-none text-left
+        ${isDragging ? "opacity-30 scale-95" : "cursor-grab active:cursor-grabbing"}`}
+    >
+      <div className="h-0.5 rounded-t-xl" style={{ background: col.headerGrad }} />
+      <div className="p-2.5 space-y-2">
+        {/* Title + indicators */}
+        <div className="flex items-start gap-1.5">
+          <div className="flex-shrink-0 text-slate-200 mt-0.5">
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+              <circle cx="2" cy="2" r="1.2"/> <circle cx="6" cy="2" r="1.2"/>
+              <circle cx="2" cy="6" r="1.2"/> <circle cx="6" cy="6" r="1.2"/>
+              <circle cx="2" cy="10" r="1.2"/> <circle cx="6" cy="10" r="1.2"/>
+            </svg>
+          </div>
+          <p className="flex-1 font-semibold text-xs text-slate-900 leading-snug">{task.title}</p>
+          {encComments.length > 0 && (
+            <span className="flex-shrink-0 bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded-full"
+              title="Feedback encadrant">
+              💬{encComments.length}
+            </span>
           )}
         </div>
-      )}
+
+        {/* Chips */}
+        <div className="flex flex-wrap items-center gap-1">
+          {task.due_date && (
+            <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium
+              ${isOverdue ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+              📅 {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+            </span>
+          )}
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className={`inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border transition-colors
+              ${allComments.length > 0 ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-slate-50 text-slate-400 border-slate-200"}`}
+          >
+            💬 {allComments.length}
+            <svg className={`w-2 h-2 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Accordion */}
+        {expanded && (
+          <div className="border-t border-slate-100 pt-2 space-y-2">
+            {task.description && (
+              <p className="text-xs text-slate-600 bg-slate-50 rounded-lg px-2.5 py-1.5 leading-relaxed">{task.description}</p>
+            )}
+
+            {/* Encadrant feedback */}
+            {encComments.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-indigo-600">💜 Feedback encadrant</p>
+                {encComments.map((c, i) => (
+                  <div key={c.id ?? i} className="rounded-lg bg-indigo-50 border border-indigo-100 px-2.5 py-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                        {(c.user?.name || "E")[0].toUpperCase()}
+                      </div>
+                      <span className="text-xs font-semibold text-indigo-900">{c.user?.name || "Encadrant"}</span>
+                      <span className="text-xs text-slate-400 ml-auto">
+                        {c.created_at ? new Date(c.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{c.body || c.content || ""}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Student comments */}
+            {myComments.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-blue-600">💬 Mes commentaires</p>
+                {myComments.map((c, i) => (
+                  <div key={c.id ?? i} className="rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                        {(c.user?.name || "M")[0].toUpperCase()}
+                      </div>
+                      <span className="text-xs font-semibold text-blue-900">{c.user?.name || "Moi"}</span>
+                    </div>
+                    <p className="text-xs text-slate-700 whitespace-pre-wrap">{c.body || c.content || ""}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add comment */}
+            {applicationId && (
+              <div className="flex gap-1.5 pt-0.5">
+                <input
+                  type="text"
+                  placeholder="Commenter cette tâche…"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendComment()}
+                  className="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+                />
+                <button
+                  onClick={sendComment}
+                  disabled={sending || !draft.trim() || busy}
+                  className="px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 disabled:opacity-40 transition flex-shrink-0"
+                >
+                  {sending ? "…" : "OK"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-// ─── Tableau des tâches (vue lecture seule pour étudiant dans la modale) ──────
-function SupervisionTaskTable({ tasks = [] }) {
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy]             = useState("due_date");
+// ─── SupervisionTaskTable → mini Kanban in modal ──────────────────────────────
+function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = null, onRefresh = null }) {
+  const [draggingId,    setDraggingId]    = useState(null);
+  const [dragOverCol,   setDragOverCol]   = useState(null);
+  const [busyLocal,     setBusyLocal]     = useState(false);
 
-  const normalized = tasks.map((t) => ({
-    ...t,
-    comments:
-      t.comments || t.task_comments || t.taskComments || t.feedback || t.feedbacks || [],
-  }));
-
-  const filtered = normalized
-    .filter((t) => filterStatus === "all" || t.status === filterStatus)
-    .sort((a, b) => {
-      if (sortBy === "due_date") return (a.due_date || "").localeCompare(b.due_date || "");
-      if (sortBy === "title")    return a.title.localeCompare(b.title);
-      if (sortBy === "status")   return a.status.localeCompare(b.status);
-      return 0;
-    });
+  const grouped = MODAL_COLUMNS.reduce((acc, col) => {
+    acc[col.key] = tasks
+      .filter(t => t.status === col.key)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    return acc;
+  }, {});
 
   const stats = {
     total:       tasks.length,
-    todo:        tasks.filter((t) => t.status === "todo").length,
-    in_progress: tasks.filter((t) => t.status === "in_progress").length,
-    done:        tasks.filter((t) => t.status === "done").length,
+    todo:        grouped.todo?.length ?? 0,
+    in_progress: grouped.in_progress?.length ?? 0,
+    done:        grouped.done?.length ?? 0,
   };
   const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
+  const handleDrop = async (e, toStatus) => {
+    e.preventDefault();
+    if (!draggingId || !applicationId) return;
+    const task = tasks.find(t => t.id === draggingId);
+    if (task && task.status !== toStatus) {
+      setBusyLocal(true);
+      try {
+        await api.patch(`/student/applications/${applicationId}/tasks/${draggingId}/status`, { status: toStatus });
+        onRefresh?.();
+      } catch {}
+      finally { setBusyLocal(false); }
+    }
+    setDraggingId(null);
+    setDragOverCol(null);
+  };
+
+  const addComment = async (taskId, body) => {
+    if (!applicationId) return;
+    await api.post(`/student/applications/${applicationId}/tasks/${taskId}/comments`, { body });
+    onRefresh?.();
+  };
+
+  if (tasks.length === 0) return (
+    <div className="text-center py-8 text-slate-400">
+      <div className="text-3xl mb-2">📋</div>
+      <p className="text-sm font-medium">Aucune tâche définie pour l&apos;instant.</p>
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-2">
+    <div className="space-y-3">
+      {/* Stats + Progress */}
+      <div className="flex items-center gap-3 flex-wrap">
         {[
-          { label: "Total",    value: stats.total,       color: "text-slate-700",   bg: "bg-slate-50  border-slate-200"   },
-          { label: "À faire",  value: stats.todo,        color: "text-slate-600",   bg: "bg-slate-50  border-slate-200"   },
-          { label: "En cours", value: stats.in_progress, color: "text-amber-700",   bg: "bg-amber-50  border-amber-200"   },
-          { label: "Terminé",  value: stats.done,        color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
-        ].map((s) => (
-          <div key={s.label} className={`rounded-xl border px-3 py-2 ${s.bg}`}>
-            <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-slate-500 font-medium">{s.label}</p>
+          { label: "Total",    v: stats.total,       c: "text-slate-700" },
+          { label: "À faire",  v: stats.todo,        c: "text-slate-500" },
+          { label: "En cours", v: stats.in_progress, c: "text-amber-700" },
+          { label: "Terminé",  v: stats.done,        c: "text-emerald-700" },
+        ].map(s => (
+          <div key={s.label} className="text-center">
+            <p className={`text-lg font-black ${s.c}`}>{s.v}</p>
+            <p className="text-xs text-slate-400 font-medium">{s.label}</p>
           </div>
         ))}
-      </div>
-
-      {/* Filtres + tri */}
-      <div className="flex flex-wrap gap-2 items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Filtre :</span>
-          {[{ value: "all", label: "Tous" }, ...TASK_STATUS_OPTS].map((o) => (
-            <button
-              key={o.value}
-              onClick={() => setFilterStatus(o.value)}
-              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all ${
-                filterStatus === o.value
-                  ? "bg-blue-600 text-white shadow"
-                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Trier :</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-200 text-slate-700"
-          >
-            <option value="due_date">Échéance</option>
-            <option value="title">Titre</option>
-            <option value="status">Statut</option>
-          </select>
+        <div className="flex-1 ml-2">
+          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${pct}%`, background: "linear-gradient(90deg,#10b981,#0d9488)" }} />
+          </div>
+          <p className="text-xs text-slate-400 mt-0.5 text-right">{pct}%</p>
         </div>
       </div>
 
-      {/* Tableau */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-10 text-slate-400">
-          <svg className="w-10 h-10 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <p className="text-sm">Aucune tâche{filterStatus !== "all" ? " pour ce filtre" : ""}.</p>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white">
-          {/* En-tête colonnes */}
-          <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr] bg-slate-50 border-b border-slate-200 px-3 py-2 gap-3">
-            {["Tâche", "Échéance", "Statut", "Commentaires"].map((h) => (
-              <span key={h} className="text-xs font-bold text-slate-400 uppercase tracking-wide">{h}</span>
-            ))}
-          </div>
-
-          {/* Lignes */}
-          <div className="divide-y divide-slate-100">
-            {filtered.map((task) => {
-              const rowStyle  = TASK_STATUS_STYLES[task.status]?.row || "";
-              const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
-              return (
-                <div
-                  key={task.id}
-                  className={`grid grid-cols-[2fr_1fr_1fr_1.5fr] px-3 py-3 gap-3 items-start hover:bg-slate-50/80 transition-colors ${rowStyle}`}
-                >
-                  {/* Titre + description */}
-                  <div>
-                    <p className="font-semibold text-sm text-slate-900 leading-snug">{task.title}</p>
-                    {task.description && (
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{task.description}</p>
-                    )}
-                  </div>
-
-                  {/* Échéance */}
-                  <div className="pt-0.5">
-                    {task.due_date ? (
-                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${isOverdue ? "text-red-600" : "text-slate-600"}`}>
-                        {isOverdue && (
-                          <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400">—</span>
-                    )}
-                  </div>
-
-                  {/* Badge statut */}
-                  <div className="pt-0.5">
-                    <TaskStatusBadge status={task.status} />
-                  </div>
-
-                  {/* Commentaires */}
-                  <div>
-                    <TaskCommentPanel task={task} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Footer barre de progression */}
-          <div className="bg-slate-50 border-t border-slate-200 px-3 py-2 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              {filtered.length} tâche{filtered.length !== 1 ? "s" : ""}
-              {filterStatus !== "all" ? " (filtrées)" : ""}
-            </p>
-            {stats.total > 0 && (
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="text-xs text-slate-500 font-medium">{pct}% complété</span>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Hint */}
+      {applicationId && (
+        <p className="text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+          <span>↔</span> Glissez les cartes pour changer leur statut
+        </p>
       )}
+
+      {/* Kanban mini */}
+      <div className="grid grid-cols-3 gap-2">
+        {MODAL_COLUMNS.map(col => {
+          const colTasks = grouped[col.key] || [];
+          const isOver   = dragOverCol === col.key;
+          return (
+            <div
+              key={col.key}
+              onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
+              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverCol(null); }}
+              onDrop={(e) => handleDrop(e, col.key)}
+              className={`rounded-xl border transition-all ${col.border} ${col.bg}
+                ${isOver ? `ring-2 ${col.dropRing} ring-offset-1` : ""}`}
+            >
+              {/* Column header */}
+              <div className="rounded-t-xl px-3 py-2 flex items-center justify-between"
+                style={{ background: col.headerGrad }}>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`}/>
+                  <span className="text-white font-bold text-xs">{col.label}</span>
+                </div>
+                <span className="bg-white/25 text-white text-xs font-black px-1.5 rounded-full">
+                  {colTasks.length}
+                </span>
+              </div>
+
+              {/* Cards */}
+              <div className="p-2 space-y-2 min-h-[100px]">
+                {colTasks.length === 0 && !isOver && (
+                  <p className="text-xs text-center text-slate-400 italic py-3">Vide</p>
+                )}
+                {colTasks.map(task => (
+                  <MiniTaskCard
+                    key={task.id}
+                    task={task}
+                    col={col}
+                    encadrantId={encadrantId}
+                    applicationId={applicationId}
+                    busy={busyLocal}
+                    onDragStart={(id) => setDraggingId(id)}
+                    onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
+                    onAddComment={addComment}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -617,11 +689,12 @@ export default function MyApplications() {
               {tasks.length} tâche{tasks.length !== 1 ? "s" : ""}
             </span>
           </h3>
-          {tasks.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">Aucune tâche définie pour l'instant.</p>
-          ) : (
-            <SupervisionTaskTable tasks={tasks} />
-          )}
+          <SupervisionTaskTable
+            tasks={tasks}
+            applicationId={selectedApp?.id ?? null}
+            encadrantId={supervision?.encadrant?.id ?? null}
+            onRefresh={() => selectedApp?.id && fetchSupervision(selectedApp.id)}
+          />
         </div>
 
         {/* ── Commentaires globaux de l'encadrant ── */}
