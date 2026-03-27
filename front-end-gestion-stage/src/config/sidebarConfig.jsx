@@ -30,7 +30,7 @@ export function getStudentMenuItems(counts = {}) {
  */
 export function getEnterpriseMenuItems(counts = {}, role = "rh") {
   const base = [
-    { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise", badge: null },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/offers", badge: null },
     { icon: PlusIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: counts.applications ?? null },

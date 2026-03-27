@@ -36,6 +36,7 @@ class EncadrantCommentService
             'body'           => $body,
         ]);
 
+
         $application = Application::with('student')->find($applicationId);
         $application?->student?->notify(new NewEncadrantFeedbackNotification($comment, $application));
 

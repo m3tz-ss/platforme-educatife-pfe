@@ -5,7 +5,7 @@ import { Bars3Icon, XMarkIcon, ArrowRightOnRectangleIcon } from "@heroicons/reac
 import AppFooter from "./AppFooter";
 
 /**
- * Layout de base type Django base.html
+ 
  * Contient : Sidebar + Header + Main + Footer
  * @param {Object} props
  * @param {string} props.title - Titre de la page (header)
