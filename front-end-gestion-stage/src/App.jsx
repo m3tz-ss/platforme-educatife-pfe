@@ -44,55 +44,55 @@ function PageLoader() {
 function App() {
   return (
     <Suspense fallback={<PageLoader />}>
-    <Routes>
-      {/* Landing Page - public */}
-      <Route path="/" element={<LandingPage />} />
+      <Routes>
+        {/* Landing Page - public */}
+        <Route path="/" element={<LandingPage />} />
 
-      {/* Accès refusé */}
-      <Route path="/access-denied" element={<AccessDenied />} />
+        {/* Accès refusé */}
+        <Route path="/access-denied" element={<AccessDenied />} />
 
-      {/* Dashboard routes */}
-      <Route path="/dashboard/*" element={<Dashboard />} />
+        {/* Dashboard routes */}
+        <Route path="/dashboard/*" element={<Dashboard />} />
 
-      {/* Routes Étudiant - rôle student uniquement */}
-      <Route path="/student" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
-      <Route path="/student/offers" element={<ProtectedRoute allowedRoles={["student"]}><OffersCatalog /></ProtectedRoute>} />
-      <Route path="/student/applications" element={<ProtectedRoute allowedRoles={["student"]}><MyApplications /></ProtectedRoute>} />
-      <Route path="/student/tasks" element={<ProtectedRoute allowedRoles={["student"]}><StudentTasksPage /></ProtectedRoute>} />
-      <Route path="/student/offersdetails" element={<ProtectedRoute allowedRoles={["student"]}><OfferDetails /></ProtectedRoute>} />
-      <Route path="/student/profile" element={<ProtectedRoute allowedRoles={["student"]}><StudentProfile /></ProtectedRoute>} />
+        {/* Routes Étudiant - rôle student uniquement */}
+        <Route path="/student" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/student/offers" element={<ProtectedRoute allowedRoles={["student"]}><OffersCatalog /></ProtectedRoute>} />
+        <Route path="/student/applications" element={<ProtectedRoute allowedRoles={["student"]}><MyApplications /></ProtectedRoute>} />
+        <Route path="/student/tasks" element={<ProtectedRoute allowedRoles={["student"]}><StudentTasksPage /></ProtectedRoute>} />
+        <Route path="/student/offersdetails" element={<ProtectedRoute allowedRoles={["student"]}><OfferDetails /></ProtectedRoute>} />
+        <Route path="/student/profile" element={<ProtectedRoute allowedRoles={["student"]}><StudentProfile /></ProtectedRoute>} />
 
-      {/* Connexion entreprise - public */}
-      <Route path="/enterprise/login" element={<EspaceEntreprise/>} />
-      <Route path="/enterpris/login" element={<EnterpriseLogin/>} />
+        {/* Connexion entreprise - public */}
+        <Route path="/enterprise/login" element={<EspaceEntreprise />} />
+        <Route path="/enterpris/login" element={<EnterpriseLogin />} />
 
-      {/* Routes Entreprise - manager, rh, encadrant */}
-      <Route path="/enterprise" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><EnterpriseDashboard /></ProtectedRoute>} />
-      <Route path="/enterprise/offers" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><OffersList /></ProtectedRoute>} />
-      <Route path="/enterprise/publish" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><PublishOffer /></ProtectedRoute>} />
-      <Route path="/enterprise/offersliste" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><Offertable/></ProtectedRoute>} />
-      <Route path="/enterprise/condidateurliste" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><ReceivedApplications/></ProtectedRoute>} />
-      <Route path="/enterprise/enterview" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><InterviewsHistoryPage/></ProtectedRoute>} />
-      <Route path="/enterprise/profile" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><EnterpriseProfile/></ProtectedRoute>} />
+        {/* Routes Entreprise - manager, rh, encadrant */}
+        <Route path="/enterprise" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><EnterpriseDashboard /></ProtectedRoute>} />
+        <Route path="/enterprise/offers" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><OffersList /></ProtectedRoute>} />
+        <Route path="/enterprise/publish" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><PublishOffer /></ProtectedRoute>} />
+        <Route path="/enterprise/offersliste" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><Offertable /></ProtectedRoute>} />
+        <Route path="/enterprise/condidateurliste" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><ReceivedApplications /></ProtectedRoute>} />
+        <Route path="/enterprise/enterview" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><InterviewsHistoryPage /></ProtectedRoute>} />
+        <Route path="/enterprise/profile" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><EnterpriseProfile /></ProtectedRoute>} />
 
-      {/* Manager uniquement - gestion des utilisateurs internes */}
-      <Route path="/enterprise/manager" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerDashboard /></ProtectedRoute>} />
-      <Route path="/enterprise/addmanager" element={<ProtectedRoute allowedRoles={["manager"]}><Manager /></ProtectedRoute>} />
+        {/* Manager uniquement - gestion des utilisateurs internes */}
+        <Route path="/enterprise/manager" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerDashboard /></ProtectedRoute>} />
+        <Route path="/enterprise/addmanager" element={<ProtectedRoute allowedRoles={["manager"]}><Manager /></ProtectedRoute>} />
 
-      {/* Encadrant uniquement */}
-      <Route path="/enterprise/encadrant" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantDashboard /></ProtectedRoute>} />
-      <Route path="/enterprise/encadrant/student/:applicationId" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantStudentDetail /></ProtectedRoute>} />
+        {/* Encadrant uniquement */}
+        <Route path="/enterprise/encadrant" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantDashboard /></ProtectedRoute>} />
+        <Route path="/enterprise/encadrant/student/:applicationId" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantStudentDetail /></ProtectedRoute>} />
 
-      {/* Admin uniquement */}
-      <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />
+        {/* Admin uniquement */}
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
 
         {/* Auth routes */}
-      <Route path="/auth/sign-in" element={<SignIn />} />
-      <Route path="/auth/sign-up" element={<SignUp />} />
+        <Route path="/auth/sign-in" element={<SignIn />} />
+        <Route path="/auth/sign-up" element={<SignUp />} />
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Suspense>
   );
 }
