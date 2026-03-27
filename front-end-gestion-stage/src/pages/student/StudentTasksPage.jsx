@@ -560,6 +560,147 @@ export default function StudentTasksPage() {
                 <div className="text-center text-xs text-slate-400 pb-2">
                   {tasks.length} tâche{tasks.length !== 1 ? "s" : ""} au total
                 </div>
+
+                {/* ── Feedback général de l'encadrant ── */}
+                {(supervision.comments || []).length > 0 && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/40 shadow-sm overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center gap-2.5 px-5 py-4 border-b border-amber-200"
+                      style={{ background: "linear-gradient(135deg,#fef3c7,#fde68a)" }}>
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shadow-sm">
+                        <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-bold text-amber-900 text-sm">Feedback général de votre encadrant</p>
+                        <p className="text-xs text-amber-700">
+                          {(supervision.comments || []).length} message{(supervision.comments || []).length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      {(supervision.comments || []).map((c, idx) => {
+                        const name = c.encadrant?.name || c.user?.name || "Encadrant";
+                        const date = c.created_at
+                          ? new Date(c.created_at).toLocaleString("fr-FR", {
+                              day: "2-digit", month: "long",
+                              hour: "2-digit", minute: "2-digit",
+                            })
+                          : "";
+                        return (
+                          <div key={c.id ?? idx}
+                            className="rounded-xl bg-white border border-amber-100 px-4 py-3.5 shadow-sm">
+                            <div className="flex items-center gap-2.5 mb-2">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500
+                                flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
+                                {name[0]?.toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-800">{name}</p>
+                                <p className="text-xs text-slate-400">{date}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap ml-10">
+                              {c.body || c.content || ""}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Évaluation finale ── */}
+                {supervision.evaluation && (() => {
+                  const ev = supervision.evaluation;
+                  const score = ev.score ?? ev.note ?? null;
+                  const decision = ev.final_decision || "pending";
+                  const decisionMap = {
+                    pending:      { label: "En attente",   cls: "bg-slate-100 text-slate-600 border-slate-300" },
+                    valide:       { label: "Validé ✓",     cls: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+                    a_ameliorer:  { label: "À améliorer",  cls: "bg-amber-100 text-amber-700 border-amber-300" },
+                    non_conforme: { label: "Non conforme", cls: "bg-rose-100 text-rose-700 border-rose-300" },
+                  };
+                  const dec = decisionMap[decision] || decisionMap.pending;
+                  const pctScore = score != null ? Math.min((score / 20) * 100, 100) : 0;
+                  const scoreColor = score >= 16 ? "#10b981" : score >= 12 ? "#f59e0b" : score >= 8 ? "#f97316" : "#ef4444";
+
+                  return (
+                    <div className="rounded-2xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-100"
+                        style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)" }}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shadow-sm">
+                            <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-bold text-emerald-900 text-sm">Évaluation finale de stage</p>
+                            <p className="text-xs text-emerald-700">Résultat de votre encadrant</p>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${dec.cls}`}>
+                          {dec.label}
+                        </span>
+                      </div>
+
+                      <div className="px-5 py-5 space-y-4">
+                        {/* Score */}
+                        {score != null && (
+                          <div className="flex items-center gap-5">
+                            {/* Circle progress */}
+                            <div className="relative w-20 h-20 flex-shrink-0">
+                              <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="2.5"/>
+                                <circle
+                                  cx="18" cy="18" r="15.9" fill="none"
+                                  stroke={scoreColor} strokeWidth="2.5"
+                                  strokeDasharray={`${pctScore} 100`}
+                                  strokeLinecap="round"
+                                  style={{ transition: "stroke-dasharray 1s ease" }}
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-base font-black text-slate-800">{score}</span>
+                              </div>
+                            </div>
+                            {/* Score details */}
+                            <div>
+                              <p className="text-3xl font-black text-slate-900">
+                                {score}
+                                <span className="text-base font-semibold text-slate-400">/20</span>
+                              </p>
+                              <p className="text-xs text-slate-500 font-semibold mt-0.5">Note finale</p>
+                              {/* Score bar */}
+                              <div className="mt-2 w-40 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-1000"
+                                  style={{ width: `${pctScore}%`, background: scoreColor }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Appreciation */}
+                        {ev.notes && (
+                          <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                              Appréciation de l&apos;encadrant
+                            </p>
+                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{ev.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </>
             ) : null}
           </>
