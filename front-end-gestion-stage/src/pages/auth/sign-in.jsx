@@ -16,7 +16,7 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
-import { Navbar } from "../../components/interviews/Navbar";
+import LandingNavbar from "../Landingnavbar";
 
 export function SignIn() {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ export function SignIn() {
 
   return (
     <>
-      <Navbar />
+      <LandingNavbar />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>

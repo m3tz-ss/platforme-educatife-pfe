@@ -100,21 +100,21 @@ export function StudentDashboard() {
 
   const statusColor = (status) => {
     switch (normalizeStatus(status)) {
-      case "accepted":  return "green";
-      case "rejected":  return "red";
+      case "accepted": return "green";
+      case "rejected": return "red";
       case "interview": return "purple";
       case "reviewing": return "amber";
-      default:          return "orange";
+      default: return "orange";
     }
   };
 
   const statusLabel = (status) => {
     switch (normalizeStatus(status)) {
-      case "accepted":  return "✅ Acceptée";
-      case "rejected":  return "❌ Refusée";
+      case "accepted": return "✅ Acceptée";
+      case "rejected": return "❌ Refusée";
       case "interview": return "📞 Entretien";
       case "reviewing": return "👀 Présélectionnée";
-      default:          return "⏳ En attente";
+      default: return "⏳ En attente";
     }
   };
 
@@ -191,7 +191,7 @@ export function StudentDashboard() {
   };
 
   // ✅ Compteurs
-  const acceptedCount  = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
+  const acceptedCount = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
   const interviewCount = applications.filter((a) => normalizeStatus(a.status) === "interview").length;
 
   const sidebarExtra = (
@@ -220,158 +220,158 @@ export function StudentDashboard() {
       }
     >
       {/* ✅ Salut personnalisé depuis localStorage */}
-            <div className="mb-8">
-              <Typography variant="h4" className="font-bold text-blue-gray-900">
-                Bonjour, {userName} 👋
+      <div className="mb-8">
+        <Typography variant="h4" className="font-bold text-blue-gray-900">
+          Bonjour, {userName} 👋
+        </Typography>
+        <Typography variant="small" className="text-blue-gray-500">
+          Voici un aperçu de votre activité
+        </Typography>
+      </div>
+
+      {/* ✅ Statistiques */}
+      <div className="mb-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Candidatures envoyées", value: applications.length, icon: BriefcaseIcon, bg: "bg-blue-100", iconColor: "text-blue-500" },
+          { label: "Offres disponibles", value: offers.length, icon: MagnifyingGlassIcon, bg: "bg-purple-100", iconColor: "text-purple-500" },
+          { label: "Entretiens planifiés", value: interviewCount, icon: CalendarIcon, bg: "bg-green-100", iconColor: "text-green-500" },
+          { label: "Candidatures acceptées", value: acceptedCount, icon: CheckCircleIcon, bg: "bg-orange-100", iconColor: "text-orange-500" },
+        ].map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label} className="p-6 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
+              <div className="flex items-start justify-between">
+                <div>
+                  <Typography className="text-blue-gray-500 text-sm mb-2">{stat.label}</Typography>
+                  <Typography className="text-3xl font-bold text-blue-gray-900">{stat.value}</Typography>
+                </div>
+                <div className={`p-3 ${stat.bg} rounded-lg`}>
+                  <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Barre de recherche */}
+      <div className="mb-6">
+        <Input
+          placeholder="Rechercher une offre..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          icon={<MagnifyingGlassIcon className="h-5 w-5" />}
+          className="!border-blue-gray-200"
+        />
+      </div>
+
+      {/* ✅ Grille 2 colonnes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Offres récentes */}
+        <Card className="border border-blue-gray-100 shadow-sm">
+          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
+            <Typography variant="h6" color="blue-gray" className="font-bold">Offres récentes</Typography>
+            <Link to="/student/offers">
+              <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
+                Voir tout
               </Typography>
-              <Typography variant="small" className="text-blue-gray-500">
-                Voici un aperçu de votre activité
+            </Link>
+          </CardHeader>
+
+          <CardBody className="p-6 space-y-4">
+            {filteredOffers.slice(0, 4).length === 0 ? (
+              <Typography className="text-center text-blue-gray-500 py-4">Aucune offre disponible</Typography>
+            ) : (
+              filteredOffers.slice(0, 4).map((offer) => (
+                <div key={offer.id} className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
+                  <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
+                    {offer.title}
+                  </Typography>
+                  <Typography className="text-sm text-blue-500 font-medium mb-2">
+                    {offer.enterprise?.name || "Entreprise"}
+                  </Typography>
+
+                  {/* ✅ snake_case */}
+                  <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
+                    <span className="flex items-center gap-1">
+                      <MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      📅 {formatDate(offer.start_date)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}
+                    </span>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    color={hasApplied(offer.id) ? "green" : "blue"}
+                    variant="outlined"
+                    className="text-xs"
+                    onClick={() => handleOpenDetails(offer)}
+                    disabled={hasApplied(offer.id)}
+                  >
+                    {hasApplied(offer.id) ? "✓ Déjà postulé" : "Postuler"}
+                  </Button>
+                </div>
+              ))
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Mes candidatures */}
+        <Card className="border border-blue-gray-100 shadow-sm">
+          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
+            <Typography variant="h6" color="blue-gray" className="font-bold">Mes candidatures</Typography>
+            <Link to="/student/applications">
+              <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
+                Voir tout
               </Typography>
-            </div>
+            </Link>
+          </CardHeader>
 
-            {/* ✅ Statistiques */}
-            <div className="mb-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Candidatures envoyées", value: applications.length, icon: BriefcaseIcon,      bg: "bg-blue-100",   iconColor: "text-blue-500" },
-                { label: "Offres disponibles",    value: offers.length,       icon: MagnifyingGlassIcon, bg: "bg-purple-100", iconColor: "text-purple-500" },
-                { label: "Entretiens planifiés",  value: interviewCount,      icon: CalendarIcon,        bg: "bg-green-100",  iconColor: "text-green-500" },
-                { label: "Candidatures acceptées",value: acceptedCount,       icon: CheckCircleIcon,     bg: "bg-orange-100", iconColor: "text-orange-500" },
-              ].map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <Card key={stat.label} className="p-6 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <Typography className="text-blue-gray-500 text-sm mb-2">{stat.label}</Typography>
-                        <Typography className="text-3xl font-bold text-blue-gray-900">{stat.value}</Typography>
-                      </div>
-                      <div className={`p-3 ${stat.bg} rounded-lg`}>
-                        <Icon className={`w-6 h-6 ${stat.iconColor}`} />
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+          <CardBody className="p-6 space-y-4">
+            {applications.slice(0, 4).length === 0 ? (
+              <Typography className="text-center text-blue-gray-500 py-4">Aucune candidature encore</Typography>
+            ) : (
+              applications.slice(0, 4).map((app) => (
+                <div key={app.id} className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
+                  <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
+                    {app.offer?.title || "Offre inconnue"}
+                  </Typography>
+                  <Typography className="text-sm text-blue-500 font-medium mb-1">
+                    {app.offer?.enterprise?.name || "Entreprise"}
+                  </Typography>
 
-            {/* Barre de recherche */}
-            <div className="mb-6">
-              <Input
-                placeholder="Rechercher une offre..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                icon={<MagnifyingGlassIcon className="h-5 w-5" />}
-                className="!border-blue-gray-200"
-              />
-            </div>
+                  {/* ✅ snake_case */}
+                  <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
+                    <span>📍 {app.offer?.location || "N/A"}</span>
+                    <span>⏱️ {app.offer?.duration || "N/A"}</span>
+                    <span>📅 Début : {formatDate(app.offer?.start_date)}</span>
+                  </div>
 
-            {/* ✅ Grille 2 colonnes */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-              {/* Offres récentes */}
-              <Card className="border border-blue-gray-100 shadow-sm">
-                <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
-                  <Typography variant="h6" color="blue-gray" className="font-bold">Offres récentes</Typography>
-                  <Link to="/student/offers">
-                    <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
-                      Voir tout
+                  <div className="flex items-center justify-between">
+                    <Typography className="text-xs text-blue-gray-500">
+                      Postulé le {formatDate(app.created_at)}
                     </Typography>
-                  </Link>
-                </CardHeader>
-
-                <CardBody className="p-6 space-y-4">
-                  {filteredOffers.slice(0, 4).length === 0 ? (
-                    <Typography className="text-center text-blue-gray-500 py-4">Aucune offre disponible</Typography>
-                  ) : (
-                    filteredOffers.slice(0, 4).map((offer) => (
-                      <div key={offer.id} className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-                        <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
-                          {offer.title}
-                        </Typography>
-                        <Typography className="text-sm text-blue-500 font-medium mb-2">
-                          {offer.enterprise?.name || "Entreprise"}
-                        </Typography>
-
-                        {/* ✅ snake_case */}
-                        <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
-                          <span className="flex items-center gap-1">
-                            <MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            📅 {formatDate(offer.start_date)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}
-                          </span>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          color={hasApplied(offer.id) ? "green" : "blue"}
-                          variant="outlined"
-                          className="text-xs"
-                          onClick={() => handleOpenDetails(offer)}
-                          disabled={hasApplied(offer.id)}
-                        >
-                          {hasApplied(offer.id) ? "✓ Déjà postulé" : "Postuler"}
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </CardBody>
-              </Card>
-
-              {/* Mes candidatures */}
-              <Card className="border border-blue-gray-100 shadow-sm">
-                <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
-                  <Typography variant="h6" color="blue-gray" className="font-bold">Mes candidatures</Typography>
-                  <Link to="/student/applications">
-                    <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
-                      Voir tout
-                    </Typography>
-                  </Link>
-                </CardHeader>
-
-                <CardBody className="p-6 space-y-4">
-                  {applications.slice(0, 4).length === 0 ? (
-                    <Typography className="text-center text-blue-gray-500 py-4">Aucune candidature encore</Typography>
-                  ) : (
-                    applications.slice(0, 4).map((app) => (
-                      <div key={app.id} className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-                        <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
-                          {app.offer?.title || "Offre inconnue"}
-                        </Typography>
-                        <Typography className="text-sm text-blue-500 font-medium mb-1">
-                          {app.offer?.enterprise?.name || "Entreprise"}
-                        </Typography>
-
-                        {/* ✅ snake_case */}
-                        <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
-                          <span>📍 {app.offer?.location || "N/A"}</span>
-                          <span>⏱️ {app.offer?.duration || "N/A"}</span>
-                          <span>📅 Début : {formatDate(app.offer?.start_date)}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <Typography className="text-xs text-blue-gray-500">
-                            Postulé le {formatDate(app.created_at)}
-                          </Typography>
-                          <Chip
-                            value={statusLabel(app.status)}
-                            color={statusColor(app.status)}
-                            size="sm"
-                            variant="ghost"
-                          />
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardBody>
-              </Card>
-            </div>
+                    <Chip
+                      value={statusLabel(app.status)}
+                      color={statusColor(app.status)}
+                      size="sm"
+                      variant="ghost"
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Modal Détails Offre */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
@@ -412,8 +412,8 @@ export function StudentDashboard() {
                 <TabsHeader>
                   <Tab value="description" onClick={() => setActiveTab("description")} className="cursor-pointer">Description</Tab>
                   <Tab value="requirements" onClick={() => setActiveTab("requirements")} className="cursor-pointer">Exigences</Tab>
-                  <Tab value="advantages"   onClick={() => setActiveTab("advantages")}   className="cursor-pointer">Avantages</Tab>
-                  <Tab value="company"      onClick={() => setActiveTab("company")}      className="cursor-pointer">Entreprise</Tab>
+                  <Tab value="advantages" onClick={() => setActiveTab("advantages")} className="cursor-pointer">Avantages</Tab>
+                  <Tab value="company" onClick={() => setActiveTab("company")} className="cursor-pointer">Entreprise</Tab>
                 </TabsHeader>
               </Tabs>
 
@@ -494,8 +494,8 @@ export function StudentDashboard() {
             {hasApplied(selectedOffer?.id)
               ? "✓ Déjà postulé"
               : loading
-              ? "Envoi en cours..."
-              : "✅ Postuler"}
+                ? "Envoi en cours..."
+                : "✅ Postuler"}
           </Button>
         </DialogFooter>
       </Dialog>

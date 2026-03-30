@@ -8,6 +8,7 @@ import {
   EyeIcon, EyeSlashIcon, BuildingOfficeIcon, AcademicCapIcon,
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
+import LandingNavbar from "../Landingnavbar";
 
 export function SignUp() {
   const navigate = useNavigate();
@@ -59,6 +60,8 @@ export function SignUp() {
   };
 
   return (
+    <>
+          <LandingNavbar />
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-md">
         <Card className="shadow-2xl border-0">
@@ -204,6 +207,7 @@ export function SignUp() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
 

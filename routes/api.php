@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/applications', [ApplicationController::class, 'store']);
     Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
     Route::get('/enterprise/applications', [ApplicationController::class, 'receivedApplications']);
-    Route::patch('/applications/{id}',[ApplicationController::class, 'updateStatus']);
+    Route::patch('/applications/{id}', [ApplicationController::class, 'updateStatus']);
     Route::post('/enterprise/interviews', [InterviewController::class, 'store']);
     Route::patch('/enterprise/interviews/{id}/result', [InterviewController::class, 'updateResult']);
     Route::get('/enterprise/applications/{id}/interviews', [InterviewController::class, 'history']);
@@ -109,9 +109,9 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user/profile',         [ProfileController::class, 'show']);
-    Route::post('/user/profile',        [ProfileController::class, 'update']);
-    Route::post('/user/change-password',[ProfileController::class, 'changePassword']);
+    Route::get('/user/profile', [ProfileController::class, 'show']);
+    Route::post('/user/profile', [ProfileController::class, 'update']);
+    Route::post('/user/change-password', [ProfileController::class, 'changePassword']);
 });
 
 // 🧑‍🎓 Étudiant : offres publiques
