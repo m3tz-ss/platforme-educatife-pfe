@@ -10,9 +10,28 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('communications_tables', function (Blueprint $table) {
+        Schema::create('conversations', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_one_id');
+            $table->unsignedBigInteger('user_two_id');
+            $table->string('title')->nullable();
             $table->timestamps();
+
+            $table->foreign('user_one_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_two_id')->references('id')->on('users')->onDelete('cascade');
+        });
+
+        Schema::create('messages', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('sender_id');
+            $table->text('body');
+            $table->json('attachment')->nullable();
+            $table->enum('status', ['unread', 'read'])->default('unread');
+            $table->timestamps();
+
+            $table->foreign('conversation_id')->references('id')->on('conversations')->onDelete('cascade');
+            $table->foreign('sender_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
@@ -21,6 +40,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('communications_tables');
+        Schema::dropIfExists('messages');
+        Schema::dropIfExists('conversations');
     }
 };
