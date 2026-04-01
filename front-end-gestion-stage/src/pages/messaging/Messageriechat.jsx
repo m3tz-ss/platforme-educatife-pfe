@@ -1,15 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import api from "@/services/api";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function authHeaders() {
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-  return {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
 
 function timeAgo(iso) {
   const d = new Date(iso);
@@ -116,6 +109,9 @@ function RoleBadge({ role }) {
 //   otherUser   : { id, name, role } | null  — interlocuteur pré-sélectionné (optionnel)
 
 export default function MessagerieChat({ currentUser, otherUser: initialOther }) {
+
+
+
   // ── State ──────────────────────────────────────────────────────
   const [conversations, setConversations] = useState([]);
   const [activeConv, setActiveConv]       = useState(null);
@@ -135,9 +131,8 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
   // ── Charger la liste des conversations ────────────────────────
   const loadConversations = useCallback(async () => {
   try {
-    const res  = await fetch("/api/messages/conversations", { headers: authHeaders() });
-    const data = await res.json();
-    setConversations(Array.isArray(data) ? data : []);
+    const { data } = await api.get("/messages/conversations");
+setConversations(Array.isArray(data) ? data : []);
   } catch (e) {
     console.error("Erreur chargement conversations", e);
   }
@@ -157,9 +152,8 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
   const other = conv.other_user || null;
   setOtherUser(other);
   try {
-    const res  = await fetch(`/api/messages/conversations/${conv.id}`, { headers: authHeaders() });
-    const data = await res.json();
-    setMessages(Array.isArray(data) ? data : []);
+    const { data } = await api.get(`/messages/conversations/${conv.id}`);
+setMessages(Array.isArray(data) ? data : []);
     setCanReply(true);
   } catch (e) {
     console.error(e);
@@ -174,9 +168,8 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
     clearInterval(pollingRef.current);
     pollingRef.current = setInterval(async () => {
   try {
-    const res  = await fetch(`/api/messages/conversations/${activeConv.id}`, { headers: authHeaders() });
-    const data = await res.json();
-    setMessages(Array.isArray(data) ? data : []);
+    const { data } = await api.get(`/messages/conversations/${activeConv.id}`);
+setMessages(Array.isArray(data) ? data : []);
   } catch (e) {}
 }, 5_000);
     return () => clearInterval(pollingRef.current);
@@ -192,14 +185,42 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
   if (!input.trim() || !activeConv || sending || !otherUser) return;
   setSending(true);
   try {
-    const res = await fetch("/api/messages/send", {
-      method:  "POST",
-      headers: authHeaders(),
-      body:    JSON.stringify({
-        receiver_id: otherUser.id,
-        body:        input.trim(),
-      }),
+    const sendMessage = async () => {
+  if (!input.trim() || !activeConv || sending || !otherUser) return;
+
+  setSending(true);
+
+  try {
+    const { data } = await api.post("/messages/send", {
+      receiver_id: otherUser.id,
+      content: input.trim(), 
     });
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        ...data.message,
+        sender: {
+          id: data.message.sender_id,
+          name: currentUser?.name,
+        },
+      },
+    ]);
+
+    setInput("");
+    loadConversations();
+
+  } catch (err) {
+    if (err.response?.status === 403) {
+      alert("❌ message");
+    } else {
+      alert(err.response?.data?.message || "Erreur envoi");
+    }
+  }
+
+  setSending(false);
+  inputRef.current?.focus();
+};
     if (res.ok) {
       const data = await res.json();
       setMessages((prev) => [...prev, { ...data.message, sender: { id: data.message.sender_id } }]);
