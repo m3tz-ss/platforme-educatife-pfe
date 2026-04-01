@@ -22,6 +22,8 @@ use App\Http\Controllers\Student\StudentSupervisionController;
 use App\Http\Controllers\Student\StudentTaskController;
 use App\Http\Controllers\Student\StudentNotificationController;
 
+use App\Http\Controllers\MessageController;
+
 
 
 
@@ -106,6 +108,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/notifications/read-all', [EncadrantNotificationController::class, 'markAllRead']);
         Route::post('/notifications/{id}/read', [EncadrantNotificationController::class, 'markAsRead']);
     });
+});
+// 💬 Messagerie interne
+
+
+Route::middleware('auth:sanctum')->prefix('messages')->group(function () {
+    Route::get('/conversations', [MessageController::class, 'conversations']);
+    Route::get('/conversations/{conversationId}', [MessageController::class, 'show']);
+    Route::post('/send', [MessageController::class, 'send']);
+    Route::get('/contacts', [MessageController::class, 'contacts']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {

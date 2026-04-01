@@ -3,11 +3,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function authHeaders() {
-  const token = document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] || "";
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
   return {
-    "X-XSRF-TOKEN": decodeURIComponent(token),
     Accept: "application/json",
     "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
   };
 }
 
@@ -134,14 +134,14 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
 
   // ── Charger la liste des conversations ────────────────────────
   const loadConversations = useCallback(async () => {
-    try {
-      const res  = await fetch("/api/conversations", { headers: authHeaders() });
-      const data = await res.json();
-      setConversations(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error("Erreur chargement conversations", e);
-    }
-  }, []);
+  try {
+    const res  = await fetch("/api/messages/conversations", { headers: authHeaders() });
+    const data = await res.json();
+    setConversations(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error("Erreur chargement conversations", e);
+  }
+}, []);
 
   useEffect(() => {
     loadConversations();
@@ -151,37 +151,34 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
 
   // ── Ouvrir une conversation ────────────────────────────────────
   const openConversation = useCallback(async (conv) => {
-    setActiveConv(conv);
-    setMessages([]);
-    setLoading(true);
-
-    // Identifier l'interlocuteur
-    const other = conv.other_user || null;
-    setOtherUser(other);
-
-    try {
-      const res  = await fetch(`/api/conversations/${conv.id}/messages`, { headers: authHeaders() });
-      const data = await res.json();
-      setMessages(data.data || []);
-      setCanReply(data.can_reply ?? true);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-    inputRef.current?.focus();
-  }, []);
+  setActiveConv(conv);
+  setMessages([]);
+  setLoading(true);
+  const other = conv.other_user || null;
+  setOtherUser(other);
+  try {
+    const res  = await fetch(`/api/messages/conversations/${conv.id}`, { headers: authHeaders() });
+    const data = await res.json();
+    setMessages(Array.isArray(data) ? data : []);
+    setCanReply(true);
+  } catch (e) {
+    console.error(e);
+  }
+  setLoading(false);
+  inputRef.current?.focus();
+}, []);
 
   // ── Polling des messages de la conversation active ─────────────
   useEffect(() => {
     if (!activeConv) return;
     clearInterval(pollingRef.current);
     pollingRef.current = setInterval(async () => {
-      try {
-        const res  = await fetch(`/api/conversations/${activeConv.id}/messages`, { headers: authHeaders() });
-        const data = await res.json();
-        setMessages(data.data || []);
-      } catch (e) {}
-    }, 5_000);
+  try {
+    const res  = await fetch(`/api/messages/conversations/${activeConv.id}`, { headers: authHeaders() });
+    const data = await res.json();
+    setMessages(Array.isArray(data) ? data : []);
+  } catch (e) {}
+}, 5_000);
     return () => clearInterval(pollingRef.current);
   }, [activeConv]);
 
@@ -192,26 +189,32 @@ export default function MessagerieChat({ currentUser, otherUser: initialOther })
 
   // ── Envoyer un message ─────────────────────────────────────────
   const sendMessage = async () => {
-    if (!input.trim() || !activeConv || sending) return;
-    setSending(true);
-    try {
-      const res = await fetch(`/api/conversations/${activeConv.id}/messages`, {
-        method:  "POST",
-        headers: authHeaders(),
-        body:    JSON.stringify({ body: input.trim() }),
-      });
-      if (res.ok) {
-        const msg = await res.json();
-        setMessages((prev) => [...prev, msg]);
-        setInput("");
-        loadConversations();
-      }
-    } catch (e) {
-      console.error(e);
+  if (!input.trim() || !activeConv || sending || !otherUser) return;
+  setSending(true);
+  try {
+    const res = await fetch("/api/messages/send", {
+      method:  "POST",
+      headers: authHeaders(),
+      body:    JSON.stringify({
+        receiver_id: otherUser.id,
+        body:        input.trim(),
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setMessages((prev) => [...prev, { ...data.message, sender: { id: data.message.sender_id } }]);
+      setInput("");
+      loadConversations();
+    } else {
+      const err = await res.json();
+      alert(err.message || "Erreur envoi");
     }
-    setSending(false);
-    inputRef.current?.focus();
-  };
+  } catch (e) {
+    console.error(e);
+  }
+  setSending(false);
+  inputRef.current?.focus();
+};
 
   const onKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {

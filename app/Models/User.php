@@ -119,4 +119,10 @@ class User extends Authenticatable
     {
         return $query->where('type', 'student');
     }
+      // ✅ Conversations de l'utilisateur
+    public function conversations()
+{
+    return $this->belongsToMany(Conversation::class, 'conversation_participants');
+}
+
 }
