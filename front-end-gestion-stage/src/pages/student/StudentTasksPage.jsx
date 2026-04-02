@@ -6,6 +6,7 @@ import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
 import { getStudentMenuItems } from "../../config/sidebarConfig";
 import StudentNotificationBell from "../../components/student/StudentNotificationBell";
+import ChatBox from "../../components/ChatBox";
 
 // ── Column definitions ────────────────────────────────────────────────────────
 const TASK_COLUMNS = [
@@ -818,6 +819,7 @@ export default function StudentTasksPage() {
             ) : null}
           </>
         )}
+        <ChatBox />
       </div>
     </BaseLayout>
   );

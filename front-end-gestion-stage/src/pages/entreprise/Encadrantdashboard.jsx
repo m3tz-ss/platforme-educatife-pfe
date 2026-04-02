@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import ChatBox from "../../components/ChatBox";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(
   /\/api\/?$/,
@@ -535,9 +536,11 @@ export default function EncadrantDashboard() {
               className="px-4 py-2 rounded-xl border border-slate-200 text-sm disabled:opacity-40">
               Suivant
             </button>
+            
           </div>
         )}
       </main>
+<ChatBox/>
     </div>
   );
 }

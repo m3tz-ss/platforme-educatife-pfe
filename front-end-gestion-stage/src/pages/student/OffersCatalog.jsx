@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Swal from 'sweetalert2';
+
 import {
   Input,
   Card,
@@ -668,6 +669,7 @@ export default function OffersCatalog() {
                 ? "Envoi en cours..."
                 : "✅ Postuler"}
             </Button>
+            
           </div>
         </DialogFooter>
       </Dialog>

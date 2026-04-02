@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import ChatBox from "../../components/ChatBox";
 import {
   Typography,
   Card,
@@ -477,7 +478,9 @@ export function StudentDashboard() {
                   </div>
                 )}
               </div>
+              
             </div>
+            
           )}
         </DialogBody>
 
@@ -497,9 +500,12 @@ export function StudentDashboard() {
                 ? "Envoi en cours..."
                 : "✅ Postuler"}
           </Button>
+          
         </DialogFooter>
       </Dialog>
+      <ChatBox/>
     </BaseLayout>
+    
   );
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import ChatBox from "../../components/ChatBox";
 import {
   Button,
   Typography,
@@ -596,6 +597,7 @@ export default function ReceivedApplications() {
         applicationId={historyAppId}
         onClose={() => setHistoryAppId(null)}
       />
+      <ChatBox />
     </div>
   );
 }

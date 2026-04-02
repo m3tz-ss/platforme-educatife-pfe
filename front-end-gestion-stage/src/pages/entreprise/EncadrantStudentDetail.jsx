@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../../services/api";
+import ChatBox from "@/components/ChatBox";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
 function storageUrl(path) { return path ? `${API_ORIGIN}/storage/${path}` : null; }
@@ -116,6 +117,7 @@ function TaskCard({ task, col, busy, onDelete, onUpdateStatus, onDragStart, onDr
   };
 
   return (
+    
     <div
       draggable
       onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; onDragStart(task.id); setIsDragging(true); }}
@@ -851,6 +853,10 @@ export default function EncadrantStudentDetail() {
         </section>
 
       </div>
+      <ChatBox applicationId={id} />
     </div>
+    
+    
   );
+  
 }
