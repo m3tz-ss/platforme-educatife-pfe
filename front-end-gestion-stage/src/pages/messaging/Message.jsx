@@ -5,92 +5,81 @@ export default function Message() {
   const [conversations, setConversations] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [selectedConv, setSelectedConv] = useState(null);
   const [receiverId, setReceiverId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
 
   const messagesEndRef = useRef(null);
 
-  // Scroll automatique vers le bas
+  // 🔽 Scroll auto
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Récupérer les conversations
+  // 🔽 Conversations
   const fetchConversations = async () => {
     try {
       const res = await api.get("/messages/conversations");
       setConversations(res.data);
     } catch (err) {
-      console.error("Erreur fetch conversations:", err);
+      console.error(err);
     }
   };
 
-  // Récupérer les contacts (encadrant / stagiaires)
+  // 🔽 Contacts
   const fetchContacts = async () => {
     try {
       const res = await api.get("/messages/contacts");
       setContacts(res.data);
     } catch (err) {
-      console.error("Erreur fetch contacts:", err);
+      console.error(err);
     }
   };
 
-  // Charger les messages d'une conversation
+  // 🔽 Messages
   const fetchMessages = async (conversationId, otherUserId) => {
     try {
       const res = await api.get(`/messages/conversations/${conversationId}`);
       setMessages(res.data);
-      setSelectedConv(conversationId);
       setReceiverId(otherUserId);
       scrollToBottom();
     } catch (err) {
-      console.error("Erreur fetch messages:", err);
+      console.error(err);
     }
   };
 
-  // Envoyer un message
+  // 🔽 Send message
   const handleSend = async () => {
     if (!newMessage.trim() || !receiverId) return;
 
-    const tempMessage = {
+    const temp = {
       id: Date.now(),
       body: newMessage,
       is_mine: true,
-      created_at: new Date().toISOString(),
       sending: true,
     };
 
-    setMessages((prev) => [...prev, tempMessage]);
-    const messageToSend = newMessage;
+    setMessages((prev) => [...prev, temp]);
     setNewMessage("");
 
     try {
       const res = await api.post("/messages/send", {
         receiver_id: receiverId,
-        body: messageToSend,
+        body: temp.body,
       });
 
-      // Remplacer le message temporaire par le vrai message
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === tempMessage.id
-            ? { ...res.data.message, is_mine: true }
-            : msg
+        prev.map((m) =>
+          m.id === temp.id ? { ...res.data.message, is_mine: true } : m
         )
       );
 
-      fetchConversations(); // Mettre à jour conversations
+      fetchConversations();
     } catch (err) {
-      console.error("Erreur envoi message:", err);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === tempMessage.id ? { ...msg, error: true } : msg
-        )
-      );
+      console.error(err);
     }
   };
 
+  // 🔽 Enter
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSend();
   };
@@ -105,110 +94,91 @@ export default function Message() {
   }, [messages]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen">
 
-      {/* Liste des conversations */}
-      <div className="w-1/4 bg-white border-r p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">💬 Conversations</h2>
-
-        {conversations.length === 0 && (
-          <p className="text-gray-400 text-sm">Aucune conversation</p>
-        )}
+      {/* 🔹 Conversations */}
+      <div className="w-1/4 border-r p-3 overflow-y-auto">
+        <h2 className="font-bold mb-3">Conversations</h2>
 
         {conversations.map((conv) => (
           <div
             key={conv.id}
             onClick={() =>
-              fetchMessages(conv.id, conv.other_user.id)
+              fetchMessages(conv.id, conv.user?.id)
             }
-            className="p-3 mb-2 border rounded cursor-pointer hover:bg-gray-100"
+            className="p-2 border mb-2 cursor-pointer hover:bg-gray-100"
           >
-            <p className="font-semibold">{conv.other_user.name}</p>
-            <p className="text-sm text-gray-500 truncate">
-              {conv.last_message || "Aucun message"}
+            <p className="font-semibold">
+              {conv.user?.name || "User"}
             </p>
-            {conv.unread_count > 0 && (
-              <span className="text-xs text-red-500">
-                {conv.unread_count} non lus
-              </span>
-            )}
+
+            <p className="text-sm text-gray-500">
+              {conv.last_message?.body || "Aucun message"}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Zone de chat */}
+      {/* 🔹 Chat */}
       <div className="w-2/4 flex flex-col">
-        <div className="p-3 border-b bg-white">
+
+        {/* Header */}
+        <div className="p-3 border-b">
           {receiverId ? (
-            <p className="font-bold">
-              Conversation avec{" "}
-              {contacts.find((c) => c.id === receiverId)?.name || "Utilisateur"}
+            <p>
+              Chat avec{" "}
+              {contacts.find((c) => c.id === receiverId)?.name}
             </p>
           ) : (
-            <p className="text-gray-400">Sélectionner un contact</p>
+            <p>Sélectionner contact</p>
           )}
         </div>
 
-        <div className="flex-1 p-4 overflow-y-auto">
-          {messages.length === 0 && (
-            <p className="text-gray-400 text-center mt-10">
-              Aucune conversation sélectionnée
-            </p>
-          )}
-
+        {/* Messages */}
+        <div className="flex-1 p-3 overflow-y-auto">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-2 ${msg.is_mine ? "text-right" : "text-left"}`}
+              className={`mb-2 ${
+                msg.is_mine ? "text-right" : "text-left"
+              }`}
             >
-              <div
-                className={`inline-block px-3 py-2 rounded-lg ${
-                  msg.is_mine ? "bg-blue-500 text-white" : "bg-gray-300"
+              <span
+                className={`px-3 py-2 rounded inline-block ${
+                  msg.is_mine
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-300"
                 }`}
               >
                 {msg.body}
-                {msg.sending && (
-                  <span className="block text-xs opacity-70">Envoi...</span>
-                )}
-                {msg.error && (
-                  <span className="block text-xs text-red-200">Échec</span>
-                )}
-              </div>
+              </span>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input message */}
-        <div className="p-3 bg-white border-t flex">
+        {/* Input */}
+        <div className="p-3 border-t flex">
           <input
-            type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Écrire un message..."
-            className="flex-1 border px-3 py-2 rounded"
-            disabled={!receiverId}
+            className="flex-1 border px-2"
+            placeholder="Message..."
           />
+
           <button
             onClick={handleSend}
-            disabled={!receiverId}
-            className={`ml-2 px-4 rounded ${
-              receiverId ? "bg-blue-500 text-white" : "bg-gray-300 cursor-not-allowed"
-            }`}
+            className="ml-2 bg-blue-500 text-white px-4"
           >
-            Envoyer
+            Send
           </button>
         </div>
       </div>
 
-      {/* Liste des contacts */}
-      <div className="w-1/4 bg-white border-l p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">👥 Contacts</h2>
-
-        {contacts.length === 0 && (
-          <p className="text-gray-400 text-sm">Aucun contact disponible</p>
-        )}
+      {/* 🔹 Contacts */}
+      <div className="w-1/4 border-l p-3 overflow-y-auto">
+        <h2 className="font-bold mb-3">Contacts</h2>
 
         {contacts.map((c) => (
           <div
@@ -216,12 +186,13 @@ export default function Message() {
             onClick={() => {
               setReceiverId(c.id);
               setMessages([]);
-              setSelectedConv(null);
             }}
-            className="p-2 border mb-2 rounded cursor-pointer hover:bg-gray-100"
+            className="p-2 border mb-2 cursor-pointer hover:bg-gray-100"
           >
-            <p className="font-medium">{c.name}</p>
-            <p className="text-xs text-gray-500">{c.role || c.type}</p>
+            <p>{c.name}</p>
+            <p className="text-xs text-gray-500">
+              {c.role || c.type}
+            </p>
           </div>
         ))}
       </div>

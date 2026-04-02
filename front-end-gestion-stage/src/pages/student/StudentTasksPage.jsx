@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Typography, Select, Option } from "@material-tailwind/react";
+import Swal from "sweetalert2";
 import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -57,10 +58,9 @@ function StudentTaskCard({
   const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
   const taskComments = task.comments || task.taskComments || [];
 
-  // Separate encadrant vs student comments
-  const encComments  = taskComments.filter(c => encadrantId && c.user?.id === encadrantId);
-  const myComments   = taskComments.filter(c => encadrantId ? c.user?.id !== encadrantId : true);
-  const totalCount   = taskComments.length;
+  const encComments = taskComments.filter(c => encadrantId && c.user?.id === encadrantId);
+  const myComments  = taskComments.filter(c => encadrantId ? c.user?.id !== encadrantId : true);
+  const totalCount  = taskComments.length;
 
   return (
     <div
@@ -84,7 +84,6 @@ function StudentTaskCard({
             </svg>
           </div>
           <p className="flex-1 font-semibold text-sm text-slate-900 leading-snug">{task.title}</p>
-          {/* Encadrant feedback badge */}
           {encComments.length > 0 && (
             <span className="flex-shrink-0 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full border border-indigo-200"
               title="Feedback de l'encadrant">
@@ -130,8 +129,6 @@ function StudentTaskCard({
         {/* Expanded accordion */}
         {expanded && (
           <div className="border-t border-slate-100 pt-3 space-y-3">
-
-            {/* Description */}
             {task.description && (
               <div className="bg-slate-50 rounded-xl border border-slate-100 px-3.5 py-2.5">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
@@ -139,7 +136,6 @@ function StudentTaskCard({
               </div>
             )}
 
-            {/* Encadrant feedback (read-only) */}
             {encComments.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-bold text-indigo-600 uppercase tracking-wide flex items-center gap-1.5">
@@ -173,7 +169,6 @@ function StudentTaskCard({
               </div>
             )}
 
-            {/* Student comments */}
             {myComments.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">Mes commentaires</p>
@@ -268,7 +263,6 @@ function StudentKanbanBoard({
             className={`rounded-2xl border transition-all duration-200 ${col.border} ${col.bg}
               ${isOver ? `ring-2 ${col.dropRing} ring-offset-2 shadow-lg` : "shadow-sm"}`}
           >
-            {/* Column header */}
             <div className="rounded-t-2xl px-4 py-3 flex items-center justify-between"
               style={{ background: col.headerGrad }}>
               <div className="flex items-center gap-2">
@@ -280,13 +274,11 @@ function StudentKanbanBoard({
               </span>
             </div>
 
-            {/* Drop indicator */}
             {isOver && (
               <div className="mx-3 mt-3 h-1.5 rounded-full opacity-60 animate-pulse"
                 style={{ background: col.headerGrad }} />
             )}
 
-            {/* Cards */}
             <div className="p-3 space-y-2.5 min-h-[180px]">
               {colTasks.length === 0 && !isOver && (
                 <div className="flex flex-col items-center justify-center h-20 text-xs text-slate-400 italic gap-1.5">
@@ -319,13 +311,16 @@ function StudentKanbanBoard({
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function StudentTasksPage() {
-  const [applications,  setApplications]  = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [selectedId,    setSelectedId]    = useState(null);
-  const [supervision,   setSupervision]   = useState(null);
-  const [loadingSup,    setLoadingSup]    = useState(false);
-  const [commentDrafts, setCommentDrafts] = useState({});
-  const [busy,          setBusy]          = useState(false);
+  const [applications,    setApplications]    = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [selectedId,      setSelectedId]      = useState(null);
+  const [supervision,     setSupervision]     = useState(null);
+  const [loadingSup,      setLoadingSup]      = useState(false);
+  const [commentDrafts,   setCommentDrafts]   = useState({});
+  const [busy,            setBusy]            = useState(false);
+  const [showCreateTask,  setShowCreateTask]  = useState(false);
+  const [newTask,         setNewTask]         = useState({ title: "", description: "", due_date: "" });
+  const [creating,        setCreating]        = useState(false);
 
   // Load candidatures
   useEffect(() => {
@@ -364,6 +359,31 @@ export default function StudentTasksPage() {
 
   useEffect(() => { loadSupervision(); }, [loadSupervision]);
 
+  // ── Create task ─────────────────────────────────────────────────────────────
+  const createTask = async () => {
+    if (!newTask.title.trim()) {
+      Swal.fire({ icon: "warning", title: "Titre requis" });
+      return;
+    }
+    setCreating(true);
+    try {
+      await api.post(`/student/applications/${selectedId}/tasks`, newTask);
+      Swal.fire({ icon: "success", title: "Tâche créée !", timer: 2000, showConfirmButton: false });
+      setNewTask({ title: "", description: "", due_date: "" });
+      setShowCreateTask(false);
+      loadSupervision();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: err.response?.data?.message || "Impossible de créer la tâche",
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // ── Patch status ────────────────────────────────────────────────────────────
   const patchStatus = async (taskId, status) => {
     if (!selectedId) return;
     setBusy(true);
@@ -377,6 +397,7 @@ export default function StudentTasksPage() {
     finally { setBusy(false); }
   };
 
+  // ── Send comment ────────────────────────────────────────────────────────────
   const sendComment = async (taskId) => {
     const body = (commentDrafts[taskId] || "").trim();
     if (!body || !selectedId) return;
@@ -397,8 +418,7 @@ export default function StudentTasksPage() {
     [applications]
   );
 
-  const rawTasks   = supervision?.tasks || [];
-  const tasks      = rawTasks;
+  const tasks       = supervision?.tasks || [];
   const encadrantId = supervision?.encadrant?.id ?? null;
 
   const stats = useMemo(() => ({
@@ -527,6 +547,106 @@ export default function StudentTasksPage() {
               </div>
             ) : supervision ? (
               <>
+                {/* ── Bouton créer une tâche ── */}
+                {!showCreateTask && (
+                  <button
+                    onClick={() => setShowCreateTask(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 active:scale-95 transition-all shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Créer une nouvelle tâche
+                  </button>
+                )}
+
+                {/* ── Formulaire de création ── */}
+                {showCreateTask && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </div>
+                      <h4 className="font-bold text-blue-900 text-sm">Nouvelle tâche</h4>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-800 mb-1">
+                          Titre <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex : Rédiger le rapport hebdomadaire"
+                          value={newTask.title}
+                          onChange={(e) => setNewTask(t => ({ ...t, title: e.target.value }))}
+                          onKeyDown={(e) => e.key === "Enter" && createTask()}
+                          className="w-full px-3.5 py-2.5 border border-blue-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition placeholder-slate-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-800 mb-1">
+                          Description <span className="text-slate-400 font-normal">(optionnel)</span>
+                        </label>
+                        <textarea
+                          placeholder="Décrivez la tâche en détail…"
+                          value={newTask.description}
+                          onChange={(e) => setNewTask(t => ({ ...t, description: e.target.value }))}
+                          rows={3}
+                          className="w-full px-3.5 py-2.5 border border-blue-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition placeholder-slate-400 resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-800 mb-1">
+                          Date limite <span className="text-slate-400 font-normal">(optionnel)</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={newTask.due_date}
+                          onChange={(e) => setNewTask(t => ({ ...t, due_date: e.target.value }))}
+                          className="w-full px-3.5 py-2.5 border border-blue-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2.5 pt-1">
+                      <button
+                        onClick={createTask}
+                        disabled={creating || !newTask.title.trim()}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95"
+                      >
+                        {creating ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                            Création…
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Créer la tâche
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => { setShowCreateTask(false); setNewTask({ title: "", description: "", due_date: "" }); }}
+                        className="flex-1 bg-white border border-slate-300 text-slate-700 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50 transition active:scale-95"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Hint glisser */}
                 <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
                   <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -564,7 +684,6 @@ export default function StudentTasksPage() {
                 {/* ── Feedback général de l'encadrant ── */}
                 {(supervision.comments || []).length > 0 && (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50/40 shadow-sm overflow-hidden">
-                    {/* Header */}
                     <div className="flex items-center gap-2.5 px-5 py-4 border-b border-amber-200"
                       style={{ background: "linear-gradient(135deg,#fef3c7,#fde68a)" }}>
                       <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shadow-sm">
@@ -630,7 +749,6 @@ export default function StudentTasksPage() {
 
                   return (
                     <div className="rounded-2xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
-                      {/* Header */}
                       <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-100"
                         style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)" }}>
                         <div className="flex items-center gap-2.5">
@@ -651,10 +769,8 @@ export default function StudentTasksPage() {
                       </div>
 
                       <div className="px-5 py-5 space-y-4">
-                        {/* Score */}
                         {score != null && (
                           <div className="flex items-center gap-5">
-                            {/* Circle progress */}
                             <div className="relative w-20 h-20 flex-shrink-0">
                               <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
                                 <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="2.5"/>
@@ -670,14 +786,12 @@ export default function StudentTasksPage() {
                                 <span className="text-base font-black text-slate-800">{score}</span>
                               </div>
                             </div>
-                            {/* Score details */}
                             <div>
                               <p className="text-3xl font-black text-slate-900">
                                 {score}
                                 <span className="text-base font-semibold text-slate-400">/20</span>
                               </p>
                               <p className="text-xs text-slate-500 font-semibold mt-0.5">Note finale</p>
-                              {/* Score bar */}
                               <div className="mt-2 w-40 h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div
                                   className="h-full rounded-full transition-all duration-1000"
@@ -688,7 +802,6 @@ export default function StudentTasksPage() {
                           </div>
                         )}
 
-                        {/* Appreciation */}
                         {ev.notes && (
                           <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5">
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">

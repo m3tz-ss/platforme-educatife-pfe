@@ -21,6 +21,7 @@ use App\Http\Controllers\EnterpriseController;
 use App\Http\Controllers\Student\StudentSupervisionController;
 use App\Http\Controllers\Student\StudentTaskController;
 use App\Http\Controllers\Student\StudentNotificationController;
+use App\Http\Controllers\Student\StudentTaskCreateController;
 
 use App\Http\Controllers\MessageController;
 
@@ -58,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/applications/{applicationId}/tasks/{taskId}/status', [StudentTaskController::class, 'updateStatus']);
         Route::get('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'comments']);
         Route::post('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'storeComment']);
+        Route::post('/applications/{applicationId}/tasks', [StudentTaskCreateController::class, 'store']);
 
         Route::get('/notifications', [StudentNotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [StudentNotificationController::class, 'unreadCount']);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Application;
 use App\Services\MessageService;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,6 @@ class MessageController extends Controller
 
     /**
      * GET /api/messages/conversations
-     * Liste toutes les conversations de l'utilisateur connecté.
      */
     public function conversations(Request $request)
     {
@@ -22,7 +22,6 @@ class MessageController extends Controller
 
     /**
      * GET /api/messages/conversations/{conversationId}
-     * Retourne les messages d'une conversation.
      */
     public function show(Request $request, int $conversationId)
     {
@@ -50,7 +49,6 @@ class MessageController extends Controller
 
     /**
      * POST /api/messages/send
-     * Envoie un message à un utilisateur.
      */
     public function send(Request $request)
     {
@@ -64,7 +62,7 @@ class MessageController extends Controller
 
         if (!$this->service->canSendTo($sender, $receiver)) {
             return response()->json([
-                'message' => 'Vous n\'êtes pas autorisé à envoyer un message à cet utilisateur.'
+                'message' => 'Non autorisé'
             ], 403);
         }
 
@@ -84,28 +82,59 @@ class MessageController extends Controller
 
     /**
      * GET /api/messages/contacts
-     * Retourne la liste des contacts avec qui l'utilisateur peut discuter.
      */
     public function contacts(Request $request)
-{
-    $user = $request->user();
-    $contacts = collect();
+    {
+        $user = $request->user();
+        $contacts = collect();
 
-    if ($user->role === 'rh') {
-        $contacts = User::where('id', '!=', $user->id)
-            ->where('role', '!=', 'rh')
-            ->select('id', 'name', 'role', 'type')
-            ->get();
-    } elseif ($user->role === 'encadrant') {
-        $contacts = $user->stagiaires()->select('id', 'name', 'type')->get()
-            ->map(fn($u) => array_merge($u->toArray(), ['role' => 'student']));
-    } elseif ($user->type === 'student') {
-        $encadrant = $user->encadrant()->select('id', 'name', 'role')->first();
-        if ($encadrant) {
-            $contacts = collect([$encadrant]);
+        // ✅ RH → tous les utilisateurs sauf RH
+        if ($user->role === 'rh') {
+
+            $contacts = User::where('id', '!=', $user->id)
+                ->where('role', '!=', 'rh')
+                ->select('id', 'name', 'role', 'type')
+                ->get();
         }
-    }
 
-    return response()->json($contacts->values());
-}
+        // ✅ ENCadrant → ses étudiants via applications
+        elseif ($user->role === 'encadrant') {
+
+            $applications = Application::with('student')
+                ->where('encadrant_id', $user->id)
+                ->get();
+
+            $contacts = $applications->map(function ($app) {
+                return [
+                    'id'   => $app->student->id,
+                    'name' => $app->student->name,
+                    'role' => 'student',
+                    'type' => 'student'
+                ];
+            });
+        }
+
+        // ✅ STUDENT → son encadrant via applications
+        elseif ($user->type === 'student') {
+
+            $application = Application::with('encadrant')
+                ->where('student_id', $user->id)
+                ->whereNotNull('encadrant_id')
+                ->latest()
+                ->first();
+
+            if ($application && $application->encadrant) {
+                $contacts = collect([
+                    [
+                        'id'   => $application->encadrant->id,
+                        'name' => $application->encadrant->name,
+                        'role' => 'encadrant',
+                        'type' => 'enterprise'
+                    ]
+                ]);
+            }
+        }
+
+        return response()->json($contacts->values());
+    }
 }

@@ -376,10 +376,10 @@ function EncadrantComments({ comments = [] }) {
         <div key={c.id ?? idx} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold">
-              {(c.encadrant?.name || c.user?.name || "E")[0].toUpperCase()}
+              {(c.encadrant?.name || "Encadrant")[0].toUpperCase()}
             </div>
             <span className="text-xs font-semibold text-slate-700">
-              {c.encadrant?.name || c.user?.name || "Encadrant"}
+              {c.encadrant?.name || "Encadrant"}
             </span>
             <span className="text-xs text-slate-400 ml-auto">
               {c.created_at ? new Date(c.created_at).toLocaleString("fr-FR") : ""}

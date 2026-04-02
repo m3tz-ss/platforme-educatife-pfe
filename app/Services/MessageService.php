@@ -2,119 +2,109 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\Conversation;
 use App\Models\Message;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\Models\Application;
 
 class MessageService
 {
     /**
-     * Vérifie si l'expéditeur peut envoyer un message au destinataire.
+     * 🔒 Vérifier si un utilisateur peut envoyer un message
      */
     public function canSendTo(User $sender, User $receiver): bool
     {
-        // Personne ne peut envoyer au RH
-        if ($receiver->role === 'rh') {
-            return false;
-        }
-
-        // RH peut envoyer à tout le monde
+        // ✅ RH → tout le monde
         if ($sender->role === 'rh') {
             return true;
         }
 
-        // Étudiant → uniquement son encadrant assigné
+        // ✅ STUDENT → son encadrant uniquement
         if ($sender->type === 'student') {
-            return $sender->encadrant_id === $receiver->id;
+            return Application::where('student_id', $sender->id)
+                ->where('encadrant_id', $receiver->id)
+                ->exists();
         }
 
-        // Encadrant → uniquement ses stagiaires
+        // ✅ ENCADRANT → ses étudiants uniquement
         if ($sender->role === 'encadrant') {
-            return $receiver->encadrant_id === $sender->id;
+            return Application::where('encadrant_id', $sender->id)
+                ->where('student_id', $receiver->id)
+                ->exists();
         }
 
         return false;
     }
 
     /**
-     * Trouve ou crée une conversation entre deux utilisateurs.
+     * 📩 Trouver ou créer conversation
      */
-    public function findOrCreateConversation(User $userA, User $userB): Conversation
+    public function findOrCreateConversation(User $user1, User $user2): Conversation
     {
-        // Cherche une conversation existante entre les deux
-        $conversation = Conversation::whereHas('participants', function ($q) use ($userA) {
-            $q->where('user_id', $userA->id);
-        })->whereHas('participants', function ($q) use ($userB) {
-            $q->where('user_id', $userB->id);
-        })->first();
+        $conversation = Conversation::whereHas('participants', function ($q) use ($user1) {
+                $q->where('user_id', $user1->id);
+            })
+            ->whereHas('participants', function ($q) use ($user2) {
+                $q->where('user_id', $user2->id);
+            })
+            ->first();
 
         if (!$conversation) {
-            $conversation = DB::transaction(function () use ($userA, $userB) {
-                $conv = Conversation::create();
-                $conv->participants()->attach($userA->id);
-$conv->participants()->attach($userB->id);
-                return $conv;
-            });
+            $conversation = Conversation::create();
+
+            $conversation->participants()->attach([
+                $user1->id,
+                $user2->id
+            ]);
         }
 
         return $conversation;
     }
 
     /**
-     * Envoie un message.
+     * ✉️ Envoyer message
      */
     public function sendMessage(Conversation $conversation, User $sender, string $body): Message
     {
-        return Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id'       => $sender->id,
-            'body'            => $body,
+        return $conversation->messages()->create([
+            'sender_id' => $sender->id,
+            'body'      => $body,
         ]);
     }
 
     /**
-     * Marque tous les messages non lus d'une conversation comme lus.
+     * 👁️ Marquer comme lu
      */
     public function markAsRead(Conversation $conversation, User $user): void
     {
-        Message::where('conversation_id', $conversation->id)
-            ->where('sender_id', '!=', $user->id)
+        $conversation->messages()
             ->whereNull('read_at')
+            ->where('sender_id', '!=', $user->id)
             ->update(['read_at' => now()]);
     }
 
     /**
-     * Retourne les conversations d'un utilisateur avec le dernier message.
+     * 📥 Récupérer conversations utilisateur
      */
-    public function getUserConversations(User $user): \Illuminate\Support\Collection
+    public function getUserConversations(User $user)
     {
         return $user->conversations()
-            ->with([
-                'participants',
-                'latestMessage.sender',
-            ])
+            ->with(['participants:id,name', 'messages' => function ($q) {
+                $q->latest()->limit(1);
+            }])
             ->get()
             ->map(function ($conv) use ($user) {
+
                 $other = $conv->participants->firstWhere('id', '!=', $user->id);
-                $unread = Message::where('conversation_id', $conv->id)
-                    ->where('sender_id', '!=', $user->id)
-                    ->whereNull('read_at')
-                    ->count();
 
                 return [
-                    'id'             => $conv->id,
-                    'other_user'     => [
-                        'id'   => $other?->id,
-                        'name' => $other?->name,
-                        'role' => $other?->role ?? $other?->type,
-                    ],
-                    'last_message'   => $conv->latestMessage?->body,
-                    'last_message_at'=> $conv->latestMessage?->created_at,
-                    'unread_count'   => $unread,
+                    'id' => $conv->id,
+                    'user' => $other ? [
+                        'id'   => $other->id,
+                        'name' => $other->name,
+                    ] : null,
+                    'last_message' => $conv->messages->first()
                 ];
-            })
-            ->sortByDesc('last_message_at')
-            ->values();
+            });
     }
 }
