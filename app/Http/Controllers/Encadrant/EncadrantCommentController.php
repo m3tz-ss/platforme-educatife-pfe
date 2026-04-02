@@ -24,7 +24,8 @@ class EncadrantCommentController extends Controller
     }
 
     public function store(Request $request, int $applicationId)
-    {
+{
+    try {
         $user = $request->user();
         $this->supervision->ensureEncadrant($user);
 
@@ -33,7 +34,14 @@ class EncadrantCommentController extends Controller
         ]);
 
         return response()->json($this->comments->store($user->id, $applicationId, $data['body']), 201);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'An unexpected error occurred.',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 
     public function destroy(Request $request, int $commentId)
     {

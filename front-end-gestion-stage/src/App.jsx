@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import AccessDenied from "./pages/AccessDenied";
-import Messageriechat from "./pages/messaging/Messageriechat";
+
 
 
 // Lazy loading pour réduire le temps de chargement initial
@@ -48,8 +48,7 @@ function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route path="/messaging" element={<ProtectedRoute allowedRoles={["student", "manager", "rh", "encadrant"]}><Messageriechat /></ProtectedRoute>} />
-
+        
         {/* Landing Page - public */}
         <Route path="/" element={<LandingPage />} />
 
@@ -97,7 +96,7 @@ function App() {
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/messaging" element={<ProtectedRoute allowedRoles={["student", "manager", "rh", "encadrant"]}><Messageriechat /></ProtectedRoute>} />
+        
 
       </Routes>
     </Suspense>
