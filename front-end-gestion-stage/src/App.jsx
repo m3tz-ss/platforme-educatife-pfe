@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import AccessDenied from "./pages/AccessDenied";
+import Message from "./pages/messaging/Message";
 
 
 
@@ -36,6 +37,7 @@ const SignUp = lazy(() => import("./pages/auth/sign-up"));
 
 
 
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
@@ -48,7 +50,7 @@ function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        
+        <Route path="/message" element={<Message />} />
         {/* Landing Page - public */}
         <Route path="/" element={<LandingPage />} />
 

@@ -13,11 +13,11 @@ class AdminController extends Controller
     public function dashboard()
 {
     return response()->json([
-        'students' => \App\Models\User::where('type','student')->count(),
-        'enterprises' => \App\Models\User::where('type','enterprise')->count(),
-        'offers' => \App\Models\Offer::count(),
-        'applications' => \App\Models\Application::count(),
-        'interviews' => \App\Models\Interview::count(),
+        'students' => User::where('type','student')->count(),
+        'enterprises' => User::where('type','enterprise')->count(),
+        'offers' => Offer::count(),
+        'applications' => Application::count(),
+        'interviews' => Interview::count(),
 
          "latest_students" => User::where('type','student')
                                 ->latest()
@@ -37,4 +37,5 @@ class AdminController extends Controller
         
     ]);
 }
+
 }

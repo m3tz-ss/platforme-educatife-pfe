@@ -138,8 +138,14 @@ class UserController extends Controller
         ]);
     }
 
-    public function encadrants()
+   public function encadrants(Request $request)
 {
-    return User::where('role', 'encadrant')->get();
+    if ($request->user()->role !== 'rh') {
+        return response()->json(['message' => 'Accès refusé'], 403);
+    }
+
+    return User::where('role', 'encadrant')
+               ->where('manager_id', $request->user()->manager_id)
+               ->get();
 }
 }

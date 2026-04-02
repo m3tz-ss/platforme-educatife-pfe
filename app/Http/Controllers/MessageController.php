@@ -87,27 +87,25 @@ class MessageController extends Controller
      * Retourne la liste des contacts avec qui l'utilisateur peut discuter.
      */
     public function contacts(Request $request)
-    {
-        $user = $request->user();
-        $contacts = collect();
+{
+    $user = $request->user();
+    $contacts = collect();
 
-        if ($user->role === 'rh') {
-            // RH voit tous les étudiants et encadrants (sauf autres RH)
-            $contacts = User::where('id', '!=', $user->id)
-                ->where('role', '!=', 'rh')
-                ->select('id', 'name', 'role', 'type')
-                ->get();
-        } elseif ($user->role === 'encadrant') {
-            // Encadrant voit ses stagiaires
-            $contacts = $user->stagiaires()->select('id', 'name', 'type')->get()
-                ->map(fn($u) => array_merge($u->toArray(), ['role' => 'student']));
-        } elseif ($user->type === 'student') {
-            // Étudiant voit son encadrant
-            if ($user->encadrant) {
-                $contacts = collect([$user->encadrant()->select('id', 'name', 'role')->first()]);
-            }
+    if ($user->role === 'rh') {
+        $contacts = User::where('id', '!=', $user->id)
+            ->where('role', '!=', 'rh')
+            ->select('id', 'name', 'role', 'type')
+            ->get();
+    } elseif ($user->role === 'encadrant') {
+        $contacts = $user->stagiaires()->select('id', 'name', 'type')->get()
+            ->map(fn($u) => array_merge($u->toArray(), ['role' => 'student']));
+    } elseif ($user->type === 'student') {
+        $encadrant = $user->encadrant()->select('id', 'name', 'role')->first();
+        if ($encadrant) {
+            $contacts = collect([$encadrant]);
         }
-
-        return response()->json($contacts->values());
     }
+
+    return response()->json($contacts->values());
+}
 }
