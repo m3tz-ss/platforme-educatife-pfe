@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../../services/api";
 import ChatBox from "@/components/ChatBox";
@@ -7,11 +7,11 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api")
 function storageUrl(path) { return path ? `${API_ORIGIN}/storage/${path}` : null; }
 
 const APP_STATUSES = [
-  { value: "nouveau",        label: "Nouveau",     color: "bg-slate-100 text-slate-600 border-slate-200" },
-  { value: "preselectionnee",label: "Présélection", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: "entretien",      label: "Entretien",   color: "bg-amber-50 text-amber-700 border-amber-200" },
-  { value: "acceptee",       label: "Accepté",     color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { value: "refusee",        label: "Refusé",      color: "bg-rose-50 text-rose-700 border-rose-200" },
+  { value: "nouveau",         label: "Nouveau",      color: "bg-slate-100 text-slate-600 border-slate-200" },
+  { value: "preselectionnee", label: "Présélection",  color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "entretien",       label: "Entretien",    color: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: "acceptee",        label: "Accepté",      color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: "refusee",         label: "Refusé",       color: "bg-rose-50 text-rose-700 border-rose-200" },
 ];
 
 const TASK_COLUMNS = [
@@ -19,28 +19,22 @@ const TASK_COLUMNS = [
     key: "todo", label: "À faire",
     headerGrad: "linear-gradient(135deg,#64748b,#475569)",
     border: "border-slate-200", bg: "bg-slate-50/60",
-    badge: "bg-slate-700 text-white",
-    dot: "bg-slate-400",
-    dropRing: "ring-slate-400",
-    emptyIcon: "📋",
+    dot: "bg-slate-400", dropRing: "ring-slate-400",
+    emptyIcon: "📋", accentColor: "#64748b",
   },
   {
     key: "in_progress", label: "En cours",
     headerGrad: "linear-gradient(135deg,#f59e0b,#ea580c)",
     border: "border-amber-200", bg: "bg-amber-50/30",
-    badge: "bg-amber-500 text-white",
-    dot: "bg-amber-400",
-    dropRing: "ring-amber-400",
-    emptyIcon: "⚡",
+    dot: "bg-amber-400", dropRing: "ring-amber-400",
+    emptyIcon: "⚡", accentColor: "#f59e0b",
   },
   {
     key: "done", label: "Terminé",
     headerGrad: "linear-gradient(135deg,#10b981,#0d9488)",
     border: "border-emerald-200", bg: "bg-emerald-50/20",
-    badge: "bg-emerald-600 text-white",
-    dot: "bg-emerald-500",
-    dropRing: "ring-emerald-400",
-    emptyIcon: "✅",
+    dot: "bg-emerald-500", dropRing: "ring-emerald-400",
+    emptyIcon: "✅", accentColor: "#10b981",
   },
 ];
 
@@ -69,32 +63,48 @@ function Toast({ error, success }) {
   );
 }
 
-// ── TaskCard ──────────────────────────────────────────────────────────────────
-function TaskCard({ task, col, busy, onDelete, onUpdateStatus, onDragStart, onDragEnd }) {
-  const [expanded, setExpanded]       = useState(false);
-  const [taskComments, setTaskComments] = useState(null);
-  const [loading, setLoading]         = useState(false);
-  const [draft, setDraft]             = useState("");
-  const [sending, setSending]         = useState(false);
-  const [isDragging, setIsDragging]   = useState(false);
+// ── TaskModal ─────────────────────────────────────────────────────────────────
+function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onCommentsUpdated }) {
+  const overlayRef  = useRef(null);
+  const inputRef    = useRef(null);
+  const [comments, setComments]   = useState(null);
+  const [loading,  setLoading]    = useState(false);
+  const [draft,    setDraft]      = useState("");
+  const [sending,  setSending]    = useState(false);
+
+  // Fermeture Escape
+  useEffect(() => {
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  // Chargement des commentaires à l'ouverture
+  useEffect(() => {
+    if (!task) return;
+    setLoading(true);
+    api.get(`/encadrant/tasks/${task.id}/comments`)
+      .then(r => {
+        const raw = r.data?.data ?? r.data ?? [];
+        setComments(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => setComments([]))
+      .finally(() => setLoading(false));
+    setTimeout(() => inputRef.current?.focus(), 150);
+  }, [task]);
+
+  if (!task || !col) return null;
 
   const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
-  const displayComments = taskComments ?? (task.taskComments || []);
+  const displayComments = comments ?? (task.taskComments || []);
 
-  const loadComments = useCallback(async () => {
-    setLoading(true);
+  const reloadComments = async () => {
     try {
-      const res = await api.get(`/encadrant/tasks/${task.id}/comments`);
-      const raw = res.data?.data ?? res.data ?? [];
-      setTaskComments(Array.isArray(raw) ? raw : []);
-    } catch { setTaskComments([]); }
-    finally { setLoading(false); }
-  }, [task.id]);
-
-  const toggleExpand = () => {
-    const next = !expanded;
-    setExpanded(next);
-    if (next && taskComments === null) loadComments();
+      const r = await api.get(`/encadrant/tasks/${task.id}/comments`);
+      const raw = r.data?.data ?? r.data ?? [];
+      setComments(Array.isArray(raw) ? raw : []);
+      onCommentsUpdated?.();
+    } catch {}
   };
 
   const sendComment = async () => {
@@ -103,7 +113,7 @@ function TaskCard({ task, col, busy, onDelete, onUpdateStatus, onDragStart, onDr
     try {
       await api.post(`/encadrant/tasks/${task.id}/comments`, { body: draft.trim() });
       setDraft("");
-      loadComments();
+      reloadComments();
     } catch (e) { console.error(e); }
     finally { setSending(false); }
   };
@@ -112,176 +122,256 @@ function TaskCard({ task, col, busy, onDelete, onUpdateStatus, onDragStart, onDr
     if (!window.confirm("Supprimer ce commentaire ?")) return;
     try {
       await api.delete(`/encadrant/tasks/${task.id}/comments/${cId}`);
-      setTaskComments(prev => prev.filter(c => c.id !== cId));
+      setComments(prev => prev.filter(c => c.id !== cId));
+      onCommentsUpdated?.();
     } catch {}
   };
 
   return (
-    
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto border border-slate-200 flex flex-col"
+        style={{ animation: "modalIn .18s ease" }}
+      >
+        <style>{`
+          @keyframes modalIn {
+            from { opacity:0; transform:scale(.96) translateY(8px); }
+            to   { opacity:1; transform:none; }
+          }
+        `}</style>
+
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-100 px-5 py-4 flex items-start gap-3">
+          <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ background: col.accentColor }} />
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-slate-900 text-base leading-snug">{task.title}</p>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <span
+                className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full border"
+                style={{ background: col.accentColor + "18", color: col.accentColor, borderColor: col.accentColor + "44" }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: col.accentColor }} />
+                {col.label}
+              </span>
+              {task.due_date && (
+                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border
+                  ${isOverdue ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+                  {isOverdue && <span>⚠</span>}
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}
+                </span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 flex-shrink-0 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 space-y-5 flex-1">
+
+          {/* Description */}
+          {task.description ? (
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</p>
+              <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {task.description}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 italic">
+              Aucune description pour cette tâche.
+            </div>
+          )}
+
+          {/* Changer le statut */}
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Changer le statut</p>
+            <div className="flex gap-2 flex-wrap">
+              {TASK_STATUS_OPTS.map(o => {
+                const c = TASK_COLUMNS.find(c => c.key === o.value);
+                const active = task.status === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    disabled={busy || active}
+                    onClick={() => { onUpdateStatus(task.id, o.value); onClose(); }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all
+                      ${active
+                        ? "text-white border-transparent shadow-sm"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"}`}
+                    style={active ? { background: c?.accentColor, borderColor: c?.accentColor } : {}}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Commentaires */}
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              Commentaires {loading ? "…" : `(${displayComments.length})`}
+            </p>
+
+            {loading ? (
+              <div className="flex items-center gap-2 text-xs text-slate-400 py-3">
+                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                Chargement…
+              </div>
+            ) : displayComments.length === 0 ? (
+              <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 italic text-center">
+                Aucun commentaire. Ajoutez le premier !
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-0.5">
+                {displayComments.map((c, idx) => {
+                  const name = c.user?.name || "Utilisateur";
+                  const body = c.body || c.content || "";
+                  const date = c.created_at
+                    ? new Date(c.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                    : "";
+                  return (
+                    <div key={c.id ?? idx} className="rounded-xl bg-indigo-50 border border-indigo-100 px-3.5 py-3">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-black flex-shrink-0">
+                          {name[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-xs font-black text-indigo-900 flex-1">{name}</span>
+                        <span className="text-xs text-slate-400">{date}</span>
+                        <button onClick={() => deleteComment(c.id)}
+                          className="text-rose-300 hover:text-rose-600 transition-colors ml-1 flex-shrink-0">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{body}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Ajouter commentaire */}
+          <div className="border-t border-slate-100 pt-4">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ajouter un commentaire</p>
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Écrire un commentaire sur cette tâche…"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendComment()}
+                className="flex-1 text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition placeholder-slate-300"
+              />
+              <button
+                onClick={sendComment}
+                disabled={sending || !draft.trim()}
+                className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex-shrink-0 active:scale-95"
+              >
+                {sending ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                ) : "Envoyer"}
+              </button>
+            </div>
+          </div>
+
+          {/* Supprimer la tâche */}
+          <div className="border-t border-slate-100 pt-4">
+            <button
+              onClick={() => { onDelete(task.id); onClose(); }}
+              disabled={busy}
+              className="inline-flex items-center gap-2 text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-2 rounded-xl border border-rose-100 transition disabled:opacity-40"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              Supprimer cette tâche
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TaskCard ──────────────────────────────────────────────────────────────────
+function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
+  const commentCount = (task.taskComments || []).length;
+
+  return (
     <div
       draggable
       onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; onDragStart(task.id); setIsDragging(true); }}
       onDragEnd={() => { onDragEnd(); setIsDragging(false); }}
+      onClick={() => onOpenModal(task)}
       className={`group relative bg-white rounded-xl border ${col.border} shadow-sm
-        hover:shadow-lg transition-all duration-200 select-none
-        ${isDragging ? "opacity-40 scale-95 rotate-1 shadow-none" : "cursor-grab active:cursor-grabbing"}`}
+        hover:shadow-lg hover:border-slate-300 transition-all duration-200 select-none
+        ${isDragging ? "opacity-40 scale-95 rotate-1 shadow-none" : "cursor-pointer active:scale-[.98]"}`}
     >
-      {/* Top accent line */}
       <div className="h-0.5 rounded-t-xl" style={{ background: col.headerGrad }} />
 
       <div className="p-3.5 space-y-2">
-        {/* Title + drag + delete */}
+        {/* Title row */}
         <div className="flex items-start gap-2">
-          {/* Drag dots */}
-          <div className="flex-shrink-0 text-slate-300 mt-0.5 cursor-grab">
+          <div className="flex-shrink-0 text-slate-300 mt-0.5">
             <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-              <circle cx="2.5" cy="2.5" r="1.5"/> <circle cx="7.5" cy="2.5" r="1.5"/>
-              <circle cx="2.5" cy="8"   r="1.5"/> <circle cx="7.5" cy="8"   r="1.5"/>
+              <circle cx="2.5" cy="2.5"  r="1.5"/> <circle cx="7.5" cy="2.5"  r="1.5"/>
+              <circle cx="2.5" cy="8"    r="1.5"/> <circle cx="7.5" cy="8"    r="1.5"/>
               <circle cx="2.5" cy="13.5" r="1.5"/> <circle cx="7.5" cy="13.5" r="1.5"/>
             </svg>
           </div>
           <p className="flex-1 font-semibold text-sm text-slate-900 leading-snug break-words">{task.title}</p>
-          <button
-            onClick={() => onDelete(task.id)}
-            disabled={busy}
-            className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 disabled:opacity-40"
-            title="Supprimer"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+          {commentCount > 0 && (
+            <span className="flex-shrink-0 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full border border-indigo-200">
+              💬 {commentCount}
+            </span>
+          )}
         </div>
 
-        {/* Metadata chips */}
+        {/* Metadata */}
         <div className="flex flex-wrap items-center gap-1.5">
           {task.due_date && (
             <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border
-              ${isOverdue
-                ? "bg-rose-50 text-rose-600 border-rose-200"
-                : "bg-slate-50 text-slate-500 border-slate-200"}`}
-            >
-              {isOverdue && <span className="text-xs">⚠</span>}
+              ${isOverdue ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+              {isOverdue && <span>⚠</span>}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
             </span>
           )}
-          <button
-            onClick={toggleExpand}
-            className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border transition-colors
-              ${displayComments.length > 0
-                ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
-                : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100 hover:text-slate-600"}`}
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-            {displayComments.length}
-            <svg className={`w-2.5 h-2.5 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-
-          {/* Status change select */}
-          <select
-            value={task.status}
-            disabled={busy}
-            onChange={(e) => onUpdateStatus(task.id, e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            className="ml-auto text-xs border border-slate-200 rounded-lg px-2 py-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 text-slate-700 font-medium cursor-pointer disabled:opacity-50 transition"
-          >
-            {TASK_STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <span className="ml-auto text-xs text-slate-300 group-hover:text-slate-400 transition hidden sm:inline">
+            Détails →
+          </span>
         </div>
-
-        {/* Expandable accordion */}
-        {expanded && (
-          <div className="border-t border-slate-100 pt-3 space-y-3">
-            {/* Description */}
-            {task.description && (
-              <div className="bg-slate-50 rounded-xl border border-slate-100 px-3.5 py-2.5">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
-                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{task.description}</p>
-              </div>
-            )}
-
-            {/* Comments */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                Commentaires {loading ? "…" : `(${displayComments.length})`}
-              </p>
-
-              {loading ? (
-                <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
-                  <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Chargement…
-                </div>
-              ) : displayComments.length === 0 ? (
-                <p className="text-xs text-slate-400 italic py-1">Aucun commentaire. Ajoutez le premier !</p>
-              ) : (
-                <div className="space-y-2 max-h-52 overflow-y-auto pr-0.5">
-                  {displayComments.map((c, idx) => {
-                    const name = c.user?.name || "Utilisateur";
-                    const body = c.body || c.content || "";
-                    const date = c.created_at ? new Date(c.created_at).toLocaleString("fr-FR", {
-                      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
-                    }) : "";
-                    return (
-                      <div key={c.id ?? idx} className="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2.5">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                            {name[0]?.toUpperCase()}
-                          </div>
-                          <span className="text-xs font-bold text-indigo-900 flex-1">{name}</span>
-                          <span className="text-xs text-slate-400">{date}</span>
-                          <button
-                            onClick={() => deleteComment(c.id)}
-                            className="text-rose-300 hover:text-rose-600 transition-colors ml-1 flex-shrink-0"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                          </button>
-                        </div>
-                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{body}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Add comment input */}
-              <div className="flex gap-2 pt-1">
-                <input
-                  type="text"
-                  placeholder="Écrire un commentaire sur cette tâche…"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendComment()}
-                  className="flex-1 text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition placeholder-slate-300"
-                />
-                <button
-                  onClick={sendComment}
-                  disabled={sending || !draft.trim()}
-                  className="px-3.5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex-shrink-0"
-                >
-                  {sending ? (
-                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                  ) : "Envoyer"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -289,10 +379,10 @@ function TaskCard({ task, col, busy, onDelete, onUpdateStatus, onDragStart, onDr
 
 // ── AddTaskInline ─────────────────────────────────────────────────────────────
 function AddTaskInline({ onAdd, busy }) {
-  const [open, setOpen]     = useState(false);
-  const [title, setTitle]   = useState("");
-  const [desc, setDesc]     = useState("");
-  const [due, setDue]       = useState("");
+  const [open,  setOpen]  = useState(false);
+  const [title, setTitle] = useState("");
+  const [desc,  setDesc]  = useState("");
+  const [due,   setDue]   = useState("");
 
   const submit = (e) => {
     e.preventDefault();
@@ -315,25 +405,12 @@ function AddTaskInline({ onAdd, busy }) {
 
   return (
     <form onSubmit={submit} className="mt-1 rounded-xl border-2 border-indigo-300 bg-white p-3 space-y-2 shadow-md">
-      <input
-        autoFocus
-        placeholder="Titre *"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
-      />
-      <input
-        placeholder="Description"
-        value={desc}
-        onChange={(e) => setDesc(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
-      />
-      <input
-        type="date"
-        value={due}
-        onChange={(e) => setDue(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-slate-600"
-      />
+      <input autoFocus placeholder="Titre *" value={title} onChange={(e) => setTitle(e.target.value)}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"/>
+      <input placeholder="Description" value={desc} onChange={(e) => setDesc(e.target.value)}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"/>
+      <input type="date" value={due} onChange={(e) => setDue(e.target.value)}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-slate-600"/>
       <div className="flex gap-2">
         <button type="submit" disabled={busy || !title.trim()}
           className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition">
@@ -351,8 +428,9 @@ function AddTaskInline({ onAdd, busy }) {
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
 function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
-  const [draggingId, setDraggingId]       = useState(null);
-  const [dragOverCol, setDragOverCol]     = useState(null);
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
+  const [modalTask, setModalTask]   = useState(null);
 
   const grouped = TASK_COLUMNS.reduce((acc, col) => {
     acc[col.key] = (tasks || [])
@@ -380,27 +458,44 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
     setDragOverCol(null);
   };
 
+  // Colonne de la tâche modale (suivre les changements optimistes)
+  const syncedModalTask = modalTask ? tasks.find(t => t.id === modalTask.id) || modalTask : null;
+  const modalCol = syncedModalTask ? TASK_COLUMNS.find(c => c.key === syncedModalTask.status) : null;
+
   return (
     <section className="space-y-5">
+      {/* Modal */}
+      {syncedModalTask && (
+        <TaskModal
+          task={syncedModalTask}
+          col={modalCol}
+          busy={busy}
+          onClose={() => setModalTask(null)}
+          onDelete={onDelete}
+          onUpdateStatus={onUpdateStatus}
+          onCommentsUpdated={() => {}}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
-            <svg className="w-4.5 h-4.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
             </svg>
           </div>
           Tableau de tâches
-          <span className="text-xs font-normal text-slate-400 normal-case">(glissez pour changer le statut)</span>
+          <span className="text-xs font-normal text-slate-400 normal-case">
+            (cliquez pour détails · glissez pour changer le statut)
+          </span>
         </h2>
         {stats.total > 0 && (
           <div className="flex items-center gap-3">
             <div className="w-36 h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#10b981,#0d9488)" }}
-              />
+              <div className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#10b981,#0d9488)" }}/>
             </div>
             <span className="text-sm font-black text-slate-600">{pct}%</span>
           </div>
@@ -422,7 +517,7 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
         ))}
       </div>
 
-      {/* Kanban columns */}
+      {/* Colonnes Kanban */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {TASK_COLUMNS.map(col => {
           const colTasks = grouped[col.key] || [];
@@ -437,8 +532,8 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
               className={`rounded-2xl border transition-all duration-200 ${col.border} ${col.bg}
                 ${isOver ? `ring-2 ${col.dropRing} ring-offset-2 shadow-lg` : "shadow-sm"}`}
             >
-              {/* Column header */}
-              <div className="rounded-t-2xl px-4 py-3 flex items-center justify-between" style={{ background: col.headerGrad }}>
+              <div className="rounded-t-2xl px-4 py-3 flex items-center justify-between"
+                style={{ background: col.headerGrad }}>
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${col.dot}`} />
                   <span className="text-white font-bold text-sm tracking-wide">{col.label}</span>
@@ -448,12 +543,11 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
                 </span>
               </div>
 
-              {/* Drop indicator */}
               {isOver && (
-                <div className="mx-3 mt-3 h-1.5 rounded-full opacity-60 animate-pulse" style={{ background: col.headerGrad }} />
+                <div className="mx-3 mt-3 h-1.5 rounded-full opacity-60 animate-pulse"
+                  style={{ background: col.headerGrad }} />
               )}
 
-              {/* Cards */}
               <div className="p-3 space-y-2.5 min-h-[200px]">
                 {colTasks.length === 0 && !isOver && (
                   <div className="flex flex-col items-center justify-center h-24 text-xs text-slate-400 italic gap-1">
@@ -467,17 +561,12 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
                     task={task}
                     col={col}
                     busy={busy}
-                    onDelete={onDelete}
-                    onUpdateStatus={onUpdateStatus}
                     onDragStart={(taskId) => setDraggingId(taskId)}
                     onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
+                    onOpenModal={setModalTask}
                   />
                 ))}
-
-                {/* Add task - only in todo */}
-                {col.key === "todo" && (
-                  <AddTaskInline onAdd={onAdd} busy={busy} />
-                )}
+                {col.key === "todo" && <AddTaskInline onAdd={onAdd} busy={busy} />}
               </div>
             </div>
           );
@@ -492,16 +581,16 @@ export default function EncadrantStudentDetail() {
   const { applicationId } = useParams();
   const id = Number(applicationId);
 
-  const [detail,       setDetail]       = useState(null);
-  const [loading,      setLoading]      = useState(true);
-  const [tasksRes,     setTasksRes]     = useState({ data: [] });
-  const [commentsRes,  setCommentsRes]  = useState({ data: [] });
-  const [evaluation,   setEvaluation]   = useState(null);
-  const [commentBody,  setCommentBody]  = useState("");
-  const [busy,         setBusy]         = useState(false);
-  const [evalForm,     setEvalForm]     = useState({ score: "", final_decision: "pending", notes: "" });
-  const [formError,    setFormError]    = useState("");
-  const [formSuccess,  setFormSuccess]  = useState("");
+  const [detail,      setDetail]      = useState(null);
+  const [loading,     setLoading]     = useState(true);
+  const [tasks,       setTasks]       = useState([]);
+  const [commentsRes, setCommentsRes] = useState({ data: [] });
+  const [evaluation,  setEvaluation]  = useState(null);
+  const [commentBody, setCommentBody] = useState("");
+  const [busy,        setBusy]        = useState(false);
+  const [evalForm,    setEvalForm]    = useState({ score: "", final_decision: "pending", notes: "" });
+  const [formError,   setFormError]   = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   const flash = (type, msg) => {
     if (type === "error") {
@@ -513,7 +602,7 @@ export default function EncadrantStudentDetail() {
     }
   };
 
-  const loadDetail     = useCallback(() => {
+  const loadDetail = useCallback(() => {
     if (!id) return;
     setLoading(true);
     api.get(`/encadrant/supervision/applications/${id}`)
@@ -522,14 +611,18 @@ export default function EncadrantStudentDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const loadTasks      = useCallback(() => {
-    if (id) api.get(`/encadrant/applications/${id}/tasks?per_page=50`)
-      .then(r => setTasksRes(r.data));
+  // ── Charge UNIQUEMENT les tâches (pas toute la page) ──────────────────────
+  const loadTasks = useCallback(() => {
+    if (!id) return;
+    api.get(`/encadrant/applications/${id}/tasks?per_page=50`)
+      .then(r => {
+        const raw = r.data?.data ?? r.data ?? [];
+        setTasks(Array.isArray(raw) ? raw : []);
+      });
   }, [id]);
 
-  const loadComments   = useCallback(() => {
-    if (id) api.get(`/encadrant/applications/${id}/comments`)
-      .then(r => setCommentsRes(r.data));
+  const loadComments = useCallback(() => {
+    if (id) api.get(`/encadrant/applications/${id}/comments`).then(r => setCommentsRes(r.data));
   }, [id]);
 
   const loadEvaluation = useCallback(() => {
@@ -550,7 +643,7 @@ export default function EncadrantStudentDetail() {
     if (detail) { loadTasks(); loadComments(); loadEvaluation(); }
   }, [detail]);
 
-  const patchStatus = (status) => {
+  const patchAppStatus = (status) => {
     setBusy(true);
     api.patch(`/encadrant/supervision/applications/${id}/status`, { status })
       .then(r => setDetail(d => ({ ...d, status: r.data.status })))
@@ -560,22 +653,24 @@ export default function EncadrantStudentDetail() {
   const handleAddTask = (data) => {
     setBusy(true);
     api.post(`/encadrant/applications/${id}/tasks`, data)
-      .then(() => { loadTasks(); loadDetail(); })
+      .then(() => loadTasks())           // ← recharge seulement les tâches
       .finally(() => setBusy(false));
   };
 
+  // ── Mise à jour optimiste du statut d'une tâche ───────────────────────────
   const handleUpdateTaskStatus = (taskId, status) => {
-    setBusy(true);
+    // 1. Mise à jour immédiate dans le state (zéro flash)
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
+    // 2. Appel API en arrière-plan, resync si erreur
     api.put(`/encadrant/tasks/${taskId}`, { status })
-      .then(() => { loadTasks(); loadDetail(); })
-      .finally(() => setBusy(false));
+      .catch(() => loadTasks());         // rollback silencieux si l'API échoue
   };
 
   const handleDeleteTask = (taskId) => {
     if (!window.confirm("Supprimer cette tâche ?")) return;
     setBusy(true);
     api.delete(`/encadrant/tasks/${taskId}`)
-      .then(() => { loadTasks(); loadDetail(); })
+      .then(() => loadTasks())           // ← recharge seulement les tâches
       .finally(() => setBusy(false));
   };
 
@@ -632,7 +727,6 @@ export default function EncadrantStudentDetail() {
   const offer      = detail.offer;
   const interviews = detail.interviews || [];
   const cv         = storageUrl(s?.cv_path || detail.cv);
-  const tasks      = tasksRes.data || [];
   const comments   = commentsRes.data || [];
   const currentStatus = APP_STATUSES.find(a => a.value === detail.status);
 
@@ -671,7 +765,7 @@ export default function EncadrantStudentDetail() {
               <select
                 value={detail.status}
                 disabled={busy}
-                onChange={(e) => patchStatus(e.target.value)}
+                onChange={(e) => patchAppStatus(e.target.value)}
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-200 shadow-sm"
               >
                 {APP_STATUSES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -689,7 +783,6 @@ export default function EncadrantStudentDetail() {
             </div>
           </div>
 
-          {/* Offer pill */}
           {offer && (
             <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl px-4 py-2">
               <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -853,10 +946,7 @@ export default function EncadrantStudentDetail() {
         </section>
 
       </div>
-      <ChatBox applicationId={id} />
+      <ChatBox />
     </div>
-    
-    
   );
-  
 }
