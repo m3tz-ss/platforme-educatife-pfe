@@ -22,7 +22,8 @@ use App\Http\Controllers\Student\StudentSupervisionController;
 use App\Http\Controllers\Student\StudentTaskController;
 use App\Http\Controllers\Student\StudentNotificationController;
 use App\Http\Controllers\Student\StudentTaskCreateController;
-
+use App\Http\Controllers\AdminEnterpriseController;
+use App\Http\Controllers\AdminOfferController;
 use App\Http\Controllers\MessageController;
 
 
@@ -132,6 +133,18 @@ Route::get('/public/offers', [OfferController::class, 'publicIndex']);
 Route::get('/public/offers/{offer}', [OfferController::class, 'publicShow']);
 
 Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/admin/users', [AdminController::class, 'users']);
+    Route::put('/admin/users/{user}/role', [AdminController::class, 'updateRole']);
+    Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function() {
+  Route::apiResource('enterprises', AdminEnterpriseController::class);
+});
+Route::middleware('auth:sanctum')->prefix('admin')->group(function() {
+    Route::apiResource('offers', AdminOfferController::class);
+});
 
 Route::post('/enterprise/login', [AuthController::class, 'enterpriseLogin']);
 

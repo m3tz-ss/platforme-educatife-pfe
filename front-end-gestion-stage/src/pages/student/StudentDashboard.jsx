@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import ChatBox from "../../components/ChatBox";
@@ -37,6 +37,163 @@ import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
 import { getStudentMenuItems } from "../../config/sidebarConfig";
 import StudentNotificationBell from "../../components/student/StudentNotificationBell";
 
+// ─── Format date (en dehors du composant → ne se recrée jamais) ───────────────
+const formatDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  try {
+    return new Date(dateStr).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+// ─── Status helpers (en dehors du composant) ─────────────────────────────────
+const STATUS_MAP = {
+  nouveau: "pending",
+  preselectionnee: "reviewing",
+  entretien: "interview",
+  acceptee: "accepted",
+  refusee: "rejected",
+};
+
+const normalizeStatus = (status) => STATUS_MAP[status] ?? status;
+
+const STATUS_COLOR = {
+  accepted: "green",
+  rejected: "red",
+  interview: "purple",
+  reviewing: "amber",
+  pending: "orange",
+};
+
+const STATUS_LABEL = {
+  accepted: "✅ Acceptée",
+  rejected: "❌ Refusée",
+  interview: "📞 Entretien",
+  reviewing: "👀 Présélectionnée",
+  pending: "⏳ En attente",
+};
+
+const statusColor = (status) => STATUS_COLOR[normalizeStatus(status)] ?? "orange";
+const statusLabel = (status) => STATUS_LABEL[normalizeStatus(status)] ?? "⏳ En attente";
+
+// ─── STATS config (constante, hors composant) ────────────────────────────────
+const STAT_CONFIG = [
+  {
+    key: "applications",
+    label: "Candidatures envoyées",
+    icon: BriefcaseIcon,
+    bg: "bg-blue-100",
+    iconColor: "text-blue-500",
+  },
+  {
+    key: "offers",
+    label: "Offres disponibles",
+    icon: MagnifyingGlassIcon,
+    bg: "bg-purple-100",
+    iconColor: "text-purple-500",
+  },
+  {
+    key: "interview",
+    label: "Entretiens planifiés",
+    icon: CalendarIcon,
+    bg: "bg-green-100",
+    iconColor: "text-green-500",
+  },
+  {
+    key: "accepted",
+    label: "Candidatures acceptées",
+    icon: CheckCircleIcon,
+    bg: "bg-orange-100",
+    iconColor: "text-orange-500",
+  },
+];
+
+// ─── StatCard mémoïsé → ne re-render que si value change ─────────────────────
+const StatCard = memo(({ label, value, icon: Icon, bg, iconColor }) => (
+  <Card className="p-6 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
+    <div className="flex items-start justify-between">
+      <div>
+        <Typography className="text-blue-gray-500 text-sm mb-2">{label}</Typography>
+        <Typography className="text-3xl font-bold text-blue-gray-900">{value}</Typography>
+      </div>
+      <div className={`p-3 ${bg} rounded-lg`}>
+        <Icon className={`w-6 h-6 ${iconColor}`} />
+      </div>
+    </div>
+  </Card>
+));
+StatCard.displayName = "StatCard";
+
+// ─── OfferCard mémoïsé ────────────────────────────────────────────────────────
+const OfferCard = memo(({ offer, applied, onOpen }) => (
+  <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
+    <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
+      {offer.title}
+    </Typography>
+    <Typography className="text-sm text-blue-500 font-medium mb-2">
+      {offer.enterprise?.name || "Entreprise"}
+    </Typography>
+    <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
+      <span className="flex items-center gap-1">
+        <MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}
+      </span>
+      <span className="flex items-center gap-1">
+        <ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}
+      </span>
+      <span className="flex items-center gap-1">📅 {formatDate(offer.start_date)}</span>
+      <span className="flex items-center gap-1">
+        👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}
+      </span>
+    </div>
+    <Button
+      size="sm"
+      color={applied ? "green" : "blue"}
+      variant="outlined"
+      className="text-xs"
+      onClick={() => onOpen(offer)}
+      disabled={applied}
+    >
+      {applied ? "✓ Déjà postulé" : "Postuler"}
+    </Button>
+  </div>
+));
+OfferCard.displayName = "OfferCard";
+
+// ─── ApplicationCard mémoïsé ──────────────────────────────────────────────────
+const ApplicationCard = memo(({ app }) => (
+  <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
+    <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
+      {app.offer?.title || "Offre inconnue"}
+    </Typography>
+    <Typography className="text-sm text-blue-500 font-medium mb-1">
+      {app.offer?.enterprise?.name || "Entreprise"}
+    </Typography>
+    <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
+      <span>📍 {app.offer?.location || "N/A"}</span>
+      <span>⏱️ {app.offer?.duration || "N/A"}</span>
+      <span>📅 Début : {formatDate(app.offer?.start_date)}</span>
+    </div>
+    <div className="flex items-center justify-between">
+      <Typography className="text-xs text-blue-gray-500">
+        Postulé le {formatDate(app.created_at)}
+      </Typography>
+      <Chip
+        value={statusLabel(app.status)}
+        color={statusColor(app.status)}
+        size="sm"
+        variant="ghost"
+      />
+    </div>
+  </div>
+));
+ApplicationCard.displayName = "ApplicationCard";
+
+// ─── Composant principal ──────────────────────────────────────────────────────
 export function StudentDashboard() {
   const [applications, setApplications] = useState([]);
   const [offers, setOffers] = useState([]);
@@ -46,181 +203,213 @@ export function StudentDashboard() {
   const [activeTab, setActiveTab] = useState("description");
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userName, setUserName] = useState("Étudiant");
+
+  // ✅ Lecture localStorage une seule fois
+  const [userName] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}")?.name || "Étudiant";
+    } catch {
+      return "Étudiant";
+    }
+  });
+
+  // ✅ Fonctions stables grâce à useCallback
+  const fetchOffers = useCallback(async () => {
+    try {
+      const res = await api.get("/public/offers");
+      setOffers(Array.isArray(res.data) ? res.data : res.data.data ?? []);
+    } catch (err) {
+      console.error("Erreur lors du chargement des offres:", err);
+    }
+  }, []);
+
+  const fetchApplications = useCallback(async () => {
+    try {
+      const res = await api.get("/my-applications");
+      setApplications(Array.isArray(res.data) ? res.data : res.data.data ?? []);
+    } catch (err) {
+      console.error("Erreur chargement candidatures:", err);
+    }
+  }, []);
 
   useEffect(() => {
     fetchOffers();
     fetchApplications();
-    // Récupérer le nom depuis localStorage directement
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user?.name) setUserName(user.name);
-  }, []);
+  }, [fetchOffers, fetchApplications]);
 
-  // ✅ Format date helper
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    try {
-      return new Date(dateStr).toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const fetchOffers = async () => {
-    try {
-      const res = await api.get("/public/offers");
-      setOffers(Array.isArray(res.data) ? res.data : res.data.data || []);
-    } catch (err) {
-      console.error("Erreur lors du chargement des offres:", err);
-    }
-  };
-
-  const fetchApplications = async () => {
-    try {
-      const res = await api.get("/my-applications");
-      setApplications(Array.isArray(res.data) ? res.data : res.data.data || []);
-    } catch (err) {
-      console.error("Erreur chargement candidatures", err);
-    }
-  };
-
-  // ✅ Statut mapping
-  const statusMap = {
-    nouveau: "pending",
-    preselectionnee: "reviewing",
-    entretien: "interview",
-    acceptee: "accepted",
-    refusee: "rejected",
-  };
-
-  const normalizeStatus = (status) => statusMap[status] || status;
-
-  const statusColor = (status) => {
-    switch (normalizeStatus(status)) {
-      case "accepted": return "green";
-      case "rejected": return "red";
-      case "interview": return "purple";
-      case "reviewing": return "amber";
-      default: return "orange";
-    }
-  };
-
-  const statusLabel = (status) => {
-    switch (normalizeStatus(status)) {
-      case "accepted": return "✅ Acceptée";
-      case "rejected": return "❌ Refusée";
-      case "interview": return "📞 Entretien";
-      case "reviewing": return "👀 Présélectionnée";
-      default: return "⏳ En attente";
-    }
-  };
-
-  // ✅ Vérifier si déjà postulé
-  const hasApplied = (offerId) =>
-    applications.some((app) => app.offer_id === offerId || app.offer?.id === offerId);
-
-  const filteredOffers = offers.filter(
-    (offer) =>
-      offer.title?.toLowerCase().includes(search.toLowerCase()) ||
-      offer.description?.toLowerCase().includes(search.toLowerCase()) ||
-      offer.location?.toLowerCase().includes(search.toLowerCase())
+  // ✅ Set pour lookup O(1) au lieu de O(n) à chaque render
+  const appliedOfferIds = useMemo(
+    () => new Set(applications.map((app) => app.offer_id ?? app.offer?.id)),
+    [applications]
   );
 
-  const handleOpenDetails = (offer) => {
+  const hasApplied = useCallback(
+    (offerId) => appliedOfferIds.has(offerId),
+    [appliedOfferIds]
+  );
+
+  // ✅ Filtrage mémoïsé — ne recalcule que si offers ou search changent
+  const filteredOffers = useMemo(
+    () =>
+      offers.filter((offer) => {
+        const q = search.toLowerCase();
+        return (
+          offer.title?.toLowerCase().includes(q) ||
+          offer.description?.toLowerCase().includes(q) ||
+          offer.location?.toLowerCase().includes(q)
+        );
+      }),
+    [offers, search]
+  );
+
+  // ✅ Compteurs mémoïsés
+  const { acceptedCount, interviewCount } = useMemo(() => {
+    let accepted = 0;
+    let interview = 0;
+    for (const a of applications) {
+      const s = normalizeStatus(a.status);
+      if (s === "accepted") accepted++;
+      else if (s === "interview") interview++;
+    }
+    return { acceptedCount: accepted, interviewCount: interview };
+  }, [applications]);
+
+  // ✅ Valeurs des stats mémoïsées
+  const statValues = useMemo(
+    () => ({
+      applications: applications.length,
+      offers: offers.length,
+      interview: interviewCount,
+      accepted: acceptedCount,
+    }),
+    [applications.length, offers.length, interviewCount, acceptedCount]
+  );
+
+  // ─── Handlers stables ────────────────────────────────────────────────────
+  const handleOpenDetails = useCallback((offer) => {
     setSelectedOffer(offer);
     setOpenModal(true);
     setActiveTab("description");
     setIsSaved(false);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setOpenModal(false);
     setSelectedOffer(null);
-  };
+  }, []);
 
-  const applyToOffer = async (offerId) => {
-    const result = await Swal.fire({
-      title: "Confirmer la candidature ?",
-      text: "Vous allez postuler à cette offre.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Oui, postuler !",
-      cancelButtonText: "Annuler",
-      confirmButtonColor: "#3b82f6",
-      cancelButtonColor: "#6b7280",
-    });
+  const handleSearchChange = useCallback((e) => setSearch(e.target.value), []);
 
-    if (!result.isConfirmed) return;
+  const toggleSaved = useCallback(() => setIsSaved((prev) => !prev), []);
 
-    try {
-      setLoading(true);
-      await api.post("/applications", { offer_id: offerId });
-
-      await Swal.fire({
-        icon: "success",
-        title: "Candidature envoyée !",
-        timer: 2500,
-        timerProgressBar: true,
-        showConfirmButton: false,
+  const applyToOffer = useCallback(
+    async (offerId) => {
+      const result = await Swal.fire({
+        title: "Confirmer la candidature ?",
+        text: "Vous allez postuler à cette offre.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Oui, postuler !",
+        cancelButtonText: "Annuler",
+        confirmButtonColor: "#3b82f6",
+        cancelButtonColor: "#6b7280",
       });
 
-      handleCloseModal();
-      fetchApplications();
-    } catch (err) {
-      if (err.response?.status === 409) {
-        Swal.fire({
-          icon: "warning",
-          title: "Déjà postulé",
-          text: "Vous avez déjà postulé à cette offre.",
-          confirmButtonColor: "#f59e0b",
+      if (!result.isConfirmed) return;
+
+      try {
+        setLoading(true);
+        await api.post("/applications", { offer_id: offerId });
+
+        await Swal.fire({
+          icon: "success",
+          title: "Candidature envoyée !",
+          timer: 2500,
+          timerProgressBar: true,
+          showConfirmButton: false,
         });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Erreur",
-          text: err.response?.data?.message || "Erreur lors de la candidature.",
-          confirmButtonColor: "#ef4444",
-        });
+
+        handleCloseModal();
+        fetchApplications();
+      } catch (err) {
+        if (err.response?.status === 409) {
+          Swal.fire({
+            icon: "warning",
+            title: "Déjà postulé",
+            text: "Vous avez déjà postulé à cette offre.",
+            confirmButtonColor: "#f59e0b",
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: err.response?.data?.message || "Erreur lors de la candidature.",
+            confirmButtonColor: "#ef4444",
+          });
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ Compteurs
-  const acceptedCount = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
-  const interviewCount = applications.filter((a) => normalizeStatus(a.status) === "interview").length;
-
-  const sidebarExtra = (
-    <>
-      <div className="bg-blue-50 rounded-lg p-4">
-        <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
-        <Progress value={65} color="blue" className="h-2" />
-        <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
-      </div>
-      <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
-    </>
+    },
+    [handleCloseModal, fetchApplications]
   );
+
+  // ✅ sidebarExtra mémoïsé → ne se recrée pas à chaque render
+  const sidebarExtra = useMemo(
+    () => (
+      <>
+        <div className="bg-blue-50 rounded-lg p-4">
+          <Typography variant="small" className="text-blue-gray-600 mb-1">
+            Votre progression
+          </Typography>
+          <Progress value={65} color="blue" className="h-2" />
+          <Typography variant="caption" className="text-blue-gray-500 mt-2">
+            65% de profil complet
+          </Typography>
+        </div>
+        <Button fullWidth color="blue" variant="gradient" size="sm">
+          ✉️ Contacter support
+        </Button>
+      </>
+    ),
+    []
+  );
+
+  // ✅ menuItems mémoïsé
+  const menuItems = useMemo(
+    () => getStudentMenuItems({ offers: offers.length, applications: applications.length }),
+    [offers.length, applications.length]
+  );
+
+  // ✅ headerActions mémoïsé
+  const headerActions = useMemo(
+    () => (
+      <>
+        <StudentNotificationBell />
+        <IconButton variant="text" color="blue-gray">
+          <ChatBubbleLeftIcon className="w-5 h-5" />
+        </IconButton>
+        <IconButton variant="text" color="blue-gray">
+          <UserCircleIcon className="w-5 h-5" />
+        </IconButton>
+      </>
+    ),
+    []
+  );
+
+  // ─── Slices mémoïsés (évite slice() à chaque render) ─────────────────────
+  const topOffers = useMemo(() => filteredOffers.slice(0, 4), [filteredOffers]);
+  const topApplications = useMemo(() => applications.slice(0, 4), [applications]);
 
   return (
     <BaseLayout
       title="Tableau de Bord"
-      menuItems={getStudentMenuItems({ offers: offers.length, applications: applications.length })}
+      menuItems={menuItems}
       sidebarHeader={<StudentSidebarHeader />}
       sidebarExtra={sidebarExtra}
-      headerActions={
-        <>
-          <StudentNotificationBell />
-          <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
-          <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
-        </>
-      }
+      headerActions={headerActions}
     >
-      {/* ✅ Salut personnalisé depuis localStorage */}
+      {/* Salut personnalisé */}
       <div className="mb-8">
         <Typography variant="h4" className="font-bold text-blue-gray-900">
           Bonjour, {userName} 👋
@@ -230,29 +419,11 @@ export function StudentDashboard() {
         </Typography>
       </div>
 
-      {/* ✅ Statistiques */}
+      {/* Statistiques */}
       <div className="mb-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Candidatures envoyées", value: applications.length, icon: BriefcaseIcon, bg: "bg-blue-100", iconColor: "text-blue-500" },
-          { label: "Offres disponibles", value: offers.length, icon: MagnifyingGlassIcon, bg: "bg-purple-100", iconColor: "text-purple-500" },
-          { label: "Entretiens planifiés", value: interviewCount, icon: CalendarIcon, bg: "bg-green-100", iconColor: "text-green-500" },
-          { label: "Candidatures acceptées", value: acceptedCount, icon: CheckCircleIcon, bg: "bg-orange-100", iconColor: "text-orange-500" },
-        ].map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label} className="p-6 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
-              <div className="flex items-start justify-between">
-                <div>
-                  <Typography className="text-blue-gray-500 text-sm mb-2">{stat.label}</Typography>
-                  <Typography className="text-3xl font-bold text-blue-gray-900">{stat.value}</Typography>
-                </div>
-                <div className={`p-3 ${stat.bg} rounded-lg`}>
-                  <Icon className={`w-6 h-6 ${stat.iconColor}`} />
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+        {STAT_CONFIG.map((stat) => (
+          <StatCard key={stat.key} {...stat} value={statValues[stat.key]} />
+        ))}
       </div>
 
       {/* Barre de recherche */}
@@ -260,19 +431,26 @@ export function StudentDashboard() {
         <Input
           placeholder="Rechercher une offre..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
           icon={<MagnifyingGlassIcon className="h-5 w-5" />}
           className="!border-blue-gray-200"
         />
       </div>
 
-      {/* ✅ Grille 2 colonnes */}
+      {/* Grille 2 colonnes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
         {/* Offres récentes */}
         <Card className="border border-blue-gray-100 shadow-sm">
-          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
-            <Typography variant="h6" color="blue-gray" className="font-bold">Offres récentes</Typography>
+          <CardHeader
+            floated={false}
+            shadow={false}
+            color="transparent"
+            className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100"
+          >
+            <Typography variant="h6" color="blue-gray" className="font-bold">
+              Offres récentes
+            </Typography>
             <Link to="/student/offers">
               <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
                 Voir tout
@@ -281,45 +459,18 @@ export function StudentDashboard() {
           </CardHeader>
 
           <CardBody className="p-6 space-y-4">
-            {filteredOffers.slice(0, 4).length === 0 ? (
-              <Typography className="text-center text-blue-gray-500 py-4">Aucune offre disponible</Typography>
+            {topOffers.length === 0 ? (
+              <Typography className="text-center text-blue-gray-500 py-4">
+                Aucune offre disponible
+              </Typography>
             ) : (
-              filteredOffers.slice(0, 4).map((offer) => (
-                <div key={offer.id} className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-                  <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
-                    {offer.title}
-                  </Typography>
-                  <Typography className="text-sm text-blue-500 font-medium mb-2">
-                    {offer.enterprise?.name || "Entreprise"}
-                  </Typography>
-
-                  {/* ✅ snake_case */}
-                  <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
-                    <span className="flex items-center gap-1">
-                      <MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      📅 {formatDate(offer.start_date)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}
-                    </span>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    color={hasApplied(offer.id) ? "green" : "blue"}
-                    variant="outlined"
-                    className="text-xs"
-                    onClick={() => handleOpenDetails(offer)}
-                    disabled={hasApplied(offer.id)}
-                  >
-                    {hasApplied(offer.id) ? "✓ Déjà postulé" : "Postuler"}
-                  </Button>
-                </div>
+              topOffers.map((offer) => (
+                <OfferCard
+                  key={offer.id}
+                  offer={offer}
+                  applied={hasApplied(offer.id)}
+                  onOpen={handleOpenDetails}
+                />
               ))
             )}
           </CardBody>
@@ -327,8 +478,15 @@ export function StudentDashboard() {
 
         {/* Mes candidatures */}
         <Card className="border border-blue-gray-100 shadow-sm">
-          <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
-            <Typography variant="h6" color="blue-gray" className="font-bold">Mes candidatures</Typography>
+          <CardHeader
+            floated={false}
+            shadow={false}
+            color="transparent"
+            className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100"
+          >
+            <Typography variant="h6" color="blue-gray" className="font-bold">
+              Mes candidatures
+            </Typography>
             <Link to="/student/applications">
               <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
                 Voir tout
@@ -337,37 +495,13 @@ export function StudentDashboard() {
           </CardHeader>
 
           <CardBody className="p-6 space-y-4">
-            {applications.slice(0, 4).length === 0 ? (
-              <Typography className="text-center text-blue-gray-500 py-4">Aucune candidature encore</Typography>
+            {topApplications.length === 0 ? (
+              <Typography className="text-center text-blue-gray-500 py-4">
+                Aucune candidature encore
+              </Typography>
             ) : (
-              applications.slice(0, 4).map((app) => (
-                <div key={app.id} className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-                  <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">
-                    {app.offer?.title || "Offre inconnue"}
-                  </Typography>
-                  <Typography className="text-sm text-blue-500 font-medium mb-1">
-                    {app.offer?.enterprise?.name || "Entreprise"}
-                  </Typography>
-
-                  {/* ✅ snake_case */}
-                  <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
-                    <span>📍 {app.offer?.location || "N/A"}</span>
-                    <span>⏱️ {app.offer?.duration || "N/A"}</span>
-                    <span>📅 Début : {formatDate(app.offer?.start_date)}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Typography className="text-xs text-blue-gray-500">
-                      Postulé le {formatDate(app.created_at)}
-                    </Typography>
-                    <Chip
-                      value={statusLabel(app.status)}
-                      color={statusColor(app.status)}
-                      size="sm"
-                      variant="ghost"
-                    />
-                  </div>
-                </div>
+              topApplications.map((app) => (
+                <ApplicationCard key={app.id} app={app} />
               ))
             )}
           </CardBody>
@@ -377,7 +511,9 @@ export function StudentDashboard() {
       {/* Modal Détails Offre */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
         <DialogHeader className="flex justify-between items-center">
-          <Typography variant="h5" className="font-bold">{selectedOffer?.title}</Typography>
+          <Typography variant="h5" className="font-bold">
+            {selectedOffer?.title}
+          </Typography>
           <IconButton variant="text" color="blue-gray" onClick={handleCloseModal}>
             <XMarkIcon className="w-6 h-6" />
           </IconButton>
@@ -386,7 +522,6 @@ export function StudentDashboard() {
         <DialogBody divider className="max-h-[70vh] overflow-y-auto">
           {selectedOffer && (
             <div className="space-y-6">
-              {/* ✅ Badges avec snake_case */}
               <div className="flex flex-wrap gap-2">
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
                   🏢 {selectedOffer.enterprise?.name || "Non spécifiée"}
@@ -408,13 +543,13 @@ export function StudentDashboard() {
                 </span>
               </div>
 
-              {/* Tabs */}
               <Tabs value={activeTab}>
                 <TabsHeader>
-                  <Tab value="description" onClick={() => setActiveTab("description")} className="cursor-pointer">Description</Tab>
-                  <Tab value="requirements" onClick={() => setActiveTab("requirements")} className="cursor-pointer">Exigences</Tab>
-                  <Tab value="advantages" onClick={() => setActiveTab("advantages")} className="cursor-pointer">Avantages</Tab>
-                  <Tab value="company" onClick={() => setActiveTab("company")} className="cursor-pointer">Entreprise</Tab>
+                  {["description", "requirements", "advantages", "company"].map((tab) => (
+                    <Tab key={tab} value={tab} onClick={() => setActiveTab(tab)} className="cursor-pointer">
+                      {{ description: "Description", requirements: "Exigences", advantages: "Avantages", company: "Entreprise" }[tab]}
+                    </Tab>
+                  ))}
                 </TabsHeader>
               </Tabs>
 
@@ -478,14 +613,12 @@ export function StudentDashboard() {
                   </div>
                 )}
               </div>
-              
             </div>
-            
           )}
         </DialogBody>
 
         <DialogFooter className="space-x-3">
-          <Button color="blue" variant="outlined" onClick={() => setIsSaved(!isSaved)}>
+          <Button color="blue" variant="outlined" onClick={toggleSaved}>
             {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
           </Button>
           <Button
@@ -497,15 +630,14 @@ export function StudentDashboard() {
             {hasApplied(selectedOffer?.id)
               ? "✓ Déjà postulé"
               : loading
-                ? "Envoi en cours..."
-                : "✅ Postuler"}
+              ? "Envoi en cours..."
+              : "✅ Postuler"}
           </Button>
-          
         </DialogFooter>
       </Dialog>
-      <ChatBox/>
+
+      <ChatBox />
     </BaseLayout>
-    
   );
 }
 

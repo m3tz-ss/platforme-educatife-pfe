@@ -84,8 +84,8 @@ export default function Offertable() {
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/offers");
-      setOffers(Array.isArray(res.data) ? res.data : res.data.data || []);
+      const res = await api.get("/offers?per_page=10&page=1");
+setOffers(res.data.data);
     } catch (err) {
       console.error(err);
     } finally {

@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Resources\OfferResource;
 
+
+
 class OfferController extends Controller
 {
     // ✅ Détail d'une offre publique (étudiants)
@@ -19,12 +21,11 @@ class OfferController extends Controller
     // ✅ Offres publiques pour les étudiants
     public function publicIndex()
     {
-        $perPage = request()->integer('per_page', 0);
-        $query   = Offer::with(['user'])->latest();
+        $perPage = request()->integer('per_page', 50); // default 10
 
-        $offers = $perPage && $perPage > 0
-            ? $query->paginate($perPage)
-            : $query->get();
+$query = Offer::with(['user'])->latest();
+
+$offers = $query->paginate($perPage);
 
         return OfferResource::collection($offers);
     }
@@ -121,4 +122,7 @@ class OfferController extends Controller
         $offer->delete();
         return response()->json(['message' => 'Offre supprimée']);
     }
+    
 }
+
+

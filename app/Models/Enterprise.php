@@ -12,6 +12,7 @@ class Enterprise extends Model
         'phone',
         'description',
         'manager_id',
+        'sector',
     ];
 
     // ✅ Le manager de l'entreprise

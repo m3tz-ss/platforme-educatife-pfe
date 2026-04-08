@@ -33,4 +33,5 @@ class Offer extends Model
 {
     return $this->belongsTo(User::class, 'enterprise_id');
 }
+
 }

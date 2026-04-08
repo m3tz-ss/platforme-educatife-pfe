@@ -1,4 +1,5 @@
 import {
+  ShieldCheckIcon,
   HomeIcon,
   BriefcaseIcon,
   BookmarkIcon,
@@ -40,5 +41,16 @@ export function getEnterpriseMenuItems(counts = {}, role = "rh") {
   if (role === "manager") {
     base.splice(2, 0, { icon: UsersIcon, label: "Gestion équipe", path: "/enterprise/manager", badge: null });
   }
-  return base;
+  return base;  
+}
+export function getAdminMenuItems(counts = {}) {
+  return [
+    { icon: ShieldCheckIcon, label: "Dashboard Admin", path: "/admin", badge: null },
+    { icon: UsersIcon, label: "Utilisateurs", path: "/admin/users", badge: counts.users ?? null },
+    { icon: BriefcaseIcon, label: "Offres", path: "/admin/offers", badge: counts.offers ?? null },
+    { icon: CheckCircleIcon, label: "entreprises", path: "/admin/enterprise", badge: counts.enterprises ?? null },
+    { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/admin/interviews", badge: counts.interviews ?? null },
+    { icon: ChatBubbleLeftIcon, label: "Messages", path: "/message", badge: null },
+    { icon: UserCircleIcon, label: "Profil Admin", path: "/admin/profile", badge: null },
+  ];
 }
