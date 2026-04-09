@@ -27,6 +27,7 @@ const EspaceEntreprise = lazy(() => import("./pages/entreprise/EspaceEntreprise"
 const ManagerDashboard = lazy(() => import("./pages/entreprise/ManagerDashboard"));
 const ManagerApplications = lazy(() => import("./pages/entreprise/ManagerApplications"));
 const AdminDashboard = lazy(() => import("./pages/Admindashboard"));
+const AdminStatistics = lazy(() => import("./pages/AdminStatistics"));
 const Manager = lazy(() => import("./pages/entreprise/CreateManager"));
 const EncadrantDashboard = lazy(() => import("./pages/entreprise/Encadrantdashboard"));
 const EncadrantStudentDetail = lazy(() => import("./pages/entreprise/EncadrantStudentDetail"));
@@ -98,6 +99,7 @@ function App() {
 
         {/* Admin uniquement */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/statistics" element={<ProtectedRoute allowedRoles={["admin"]}><AdminStatistics /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
         <Route path="/admin/enterprise" element={<ProtectedRoute allowedRoles={["admin"]}><AdminEnterprise /></ProtectedRoute>} />
         <Route path="/admin/offers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOffers /></ProtectedRoute>} />

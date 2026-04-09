@@ -135,6 +135,7 @@ Route::get('/public/offers', [OfferController::class, 'publicIndex']);
 Route::get('/public/offers/{offer}', [OfferController::class, 'publicShow']);
 
 Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+Route::get('/admin/statistics', [AdminController::class, 'statistics']);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/users', [AdminController::class, 'users']);
     Route::post('/admin/users', [AdminController::class, 'createUser']);
