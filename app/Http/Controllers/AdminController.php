@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Offer;
 use App\Models\Application;
 use App\Models\Interview;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -43,19 +44,86 @@ class AdminController extends Controller
                 ->get(['id', 'status', 'student_id', 'offer_id', 'created_at']),
         ]);
     }
-    public function users() {
-    return User::with('roles')->latest()->get();
-}
+    // ── Liste des utilisateurs avec is_blocked ────────────────────────────────
+    public function users()
+    {
+        return User::with('roles')->latest()->get()->map(function ($user) {
+            $data = $user->toArray();
+            $data['is_blocked'] = ($user->remember_token === 'BLOCKED');
+            return $data;
+        });
+    }
 
-public function updateRole(User $user, Request $request) {
-    $user->type = $request->role;
-    $user->save();
+    // ── Modifier le rôle ──────────────────────────────────────────────────────
+    public function updateRole(User $user, Request $request)
+    {
+        $request->validate([
+            'role' => 'required|in:admin,manager,rh,encadrant,student',
+        ]);
 
-    return response()->json(['message' => 'Rôle mis à jour']);
-}
+        // Si student : type = student, role = null
+        if ($request->role === 'student') {
+            $user->type = 'student';
+            $user->role = null;
+        } else {
+            $user->type = 'enterprise';
+            $user->role = $request->role;
+        }
+        $user->save();
 
-public function deleteUser(User $user) {
-    $user->delete();
-    return response()->json(['message' => 'Supprimé']);
-}
+        return response()->json(['message' => 'Rôle mis à jour', 'user' => $user]);
+    }
+
+    // ── Supprimer un utilisateur ──────────────────────────────────────────────
+    public function deleteUser(User $user)
+    {
+        $user->tokens()->delete();
+        $user->delete();
+        return response()->json(['message' => 'Utilisateur supprimé']);
+    }
+
+    // ── Bloquer un utilisateur ────────────────────────────────────────────────
+    public function blockUser(User $user)
+    {
+        $user->remember_token = 'BLOCKED';
+        $user->save();
+        // Révoquer tous les tokens actifs
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Utilisateur bloqué']);
+    }
+
+    // ── Débloquer un utilisateur ──────────────────────────────────────────────
+    public function unblockUser(User $user)
+    {
+        $user->remember_token = null;
+        $user->save();
+
+        return response()->json(['message' => 'Utilisateur débloqué']);
+    }
+
+    // ── Créer un utilisateur (par l'admin) ────────────────────────────────────
+    public function createUser(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'type'     => 'required|in:student,enterprise',
+            'role'     => 'nullable|in:manager,rh,encadrant',
+        ]);
+
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+            'type'     => $request->type,
+            'role'     => $request->type === 'enterprise' ? $request->role : null,
+        ]);
+
+        return response()->json([
+            'message' => 'Utilisateur créé avec succès',
+            'user'    => array_merge($user->toArray(), ['is_blocked' => false]),
+        ], 201);
+    }
 }

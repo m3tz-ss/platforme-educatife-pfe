@@ -25,6 +25,7 @@ use App\Http\Controllers\Student\StudentTaskCreateController;
 use App\Http\Controllers\AdminEnterpriseController;
 use App\Http\Controllers\AdminOfferController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\RHNotificationController;
 
 
 
@@ -135,8 +136,11 @@ Route::get('/public/offers/{offer}', [OfferController::class, 'publicShow']);
 Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/users', [AdminController::class, 'users']);
+    Route::post('/admin/users', [AdminController::class, 'createUser']);
     Route::put('/admin/users/{user}/role', [AdminController::class, 'updateRole']);
     Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
+    Route::patch('/admin/users/{user}/block', [AdminController::class, 'blockUser']);
+    Route::patch('/admin/users/{user}/unblock', [AdminController::class, 'unblockUser']);
 });
 
 Route::middleware(['auth:sanctum'])->group(function() {
@@ -150,3 +154,11 @@ Route::post('/enterprise/login', [AuthController::class, 'enterpriseLogin']);
 
 
 Route::post('/enterprise', [EnterpriseController::class, 'store']);
+
+// 🔔 Notifications RH / Manager / Enterprise
+Route::middleware('auth:sanctum')->prefix('rh')->group(function () {
+    Route::get('/notifications', [RHNotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [RHNotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [RHNotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read', [RHNotificationController::class, 'markAsRead']);
+});

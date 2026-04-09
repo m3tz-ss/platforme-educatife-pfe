@@ -35,7 +35,7 @@ import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
 import { getStudentMenuItems } from "../../config/sidebarConfig";
-import StudentNotificationBell from "../../components/student/StudentNotificationBell";
+import NotificationBell from "../../components/layout/NotificationBell";
 
 // ─── Format date (en dehors du composant → ne se recrée jamais) ───────────────
 const formatDate = (dateStr) => {
@@ -385,7 +385,7 @@ export function StudentDashboard() {
   const headerActions = useMemo(
     () => (
       <>
-        <StudentNotificationBell />
+        <NotificationBell apiPrefix="student" />
         <IconButton variant="text" color="blue-gray">
           <ChatBubbleLeftIcon className="w-5 h-5" />
         </IconButton>

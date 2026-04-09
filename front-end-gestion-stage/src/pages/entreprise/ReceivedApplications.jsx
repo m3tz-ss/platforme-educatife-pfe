@@ -42,6 +42,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
 import PlanInterviewModal from "../../components/interviews/PlanInterviewModal";
 import InterviewHistoryModal from "../../components/interviews/InterviewHistoryModal";
+import NotificationBell from "../../components/layout/NotificationBell";
 
 export default function ReceivedApplications() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -250,7 +251,10 @@ export default function ReceivedApplications() {
               {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
             </button>
             <Typography variant="h5" className="font-bold text-blue-gray-900">Candidatures reçues</Typography>
-            <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
+            <div className="flex items-center gap-2">
+              <NotificationBell apiPrefix="rh" />
+              <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
+            </div>
           </div>
         </header>
 

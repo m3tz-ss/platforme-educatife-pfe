@@ -16,19 +16,20 @@ import {
   BuildingOfficeIcon,
   PlusIcon,
   FunnelIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import AdminLayout from "../components/layout/AdminLayout";
 
 // ── Domain color config ──────────────────────────────────────────────────────
 const DOMAIN_COLORS = {
-   "informatique": { bg: "bg-indigo-100",  text: "text-indigo-700",  dot: "bg-indigo-500" },
-  "design":          { bg: "bg-purple-100",  text: "text-purple-700",  dot: "bg-purple-500" },
-  "marketing":       { bg: "bg-teal-100",    text: "text-teal-700",    dot: "bg-teal-500" },
-  "ventes":         { bg: "bg-yellow-100",  text: "text-yellow-700",  dot: "bg-yellow-500" },
-  "Ressources Humaines":       { bg: "bg-green-100",   text: "text-green-700",   dot: "bg-green-500" },
-  "finance":     { bg: "bg-rose-100",    text: "text-rose-700",    dot: "bg-rose-500" },
-  "cloud":        { bg: "bg-blue-100",    text: "text-blue-700",    dot: "bg-blue-500" },
-  "default":      { bg: "bg-zinc-100",    text: "text-zinc-600",    dot: "bg-zinc-400" },
+  informatique:         { bg: "bg-indigo-100",  text: "text-indigo-700",  dot: "bg-indigo-500" },
+  design:               { bg: "bg-purple-100",  text: "text-purple-700",  dot: "bg-purple-500" },
+  marketing:            { bg: "bg-teal-100",    text: "text-teal-700",    dot: "bg-teal-500" },
+  ventes:               { bg: "bg-yellow-100",  text: "text-yellow-700",  dot: "bg-yellow-500" },
+  "ressources humaines":{ bg: "bg-green-100",   text: "text-green-700",   dot: "bg-green-500" },
+  finance:              { bg: "bg-rose-100",    text: "text-rose-700",    dot: "bg-rose-500" },
+  cloud:                { bg: "bg-blue-100",    text: "text-blue-700",    dot: "bg-blue-500" },
+  default:              { bg: "bg-zinc-100",    text: "text-zinc-600",    dot: "bg-zinc-400" },
 };
 const getDomainColor = (domain) => {
   if (!domain) return DOMAIN_COLORS.default;
@@ -77,9 +78,7 @@ function StatCard({ label, value, icon: Icon, gradient, sub }) {
             <Icon className="w-5 h-5 text-white" />
           </div>
         </div>
-        <p className="text-2xl font-bold text-gray-900 tabular-nums leading-none mb-1">
-          {value}
-        </p>
+        <p className="text-2xl font-bold text-gray-900 tabular-nums leading-none mb-1">{value}</p>
         <p className="text-sm text-gray-500 font-medium">{label}</p>
         {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
@@ -104,8 +103,8 @@ function SkeletonRow() {
 function ConfirmDialog({ offer, onConfirm, onCancel }) {
   if (!offer) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 w-full max-w-sm mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 w-full max-w-sm mx-4">
         <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
           <TrashIcon className="w-5 h-5 text-red-500" />
         </div>
@@ -116,16 +115,10 @@ function ConfirmDialog({ offer, onConfirm, onCancel }) {
           Cette action est irréversible.
         </p>
         <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors"
-          >
+          <button onClick={onCancel} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
             Annuler
           </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors active:scale-95"
-          >
+          <button onClick={onConfirm} className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors active:scale-95">
             Supprimer
           </button>
         </div>
@@ -134,65 +127,119 @@ function ConfirmDialog({ offer, onConfirm, onCancel }) {
   );
 }
 
+// ── Shared Offer Form Fields ──────────────────────────────────────────────────
+function OfferFormFields({ form, setForm }) {
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const DOMAIN_SUGGESTIONS = [
+    "Informatique", "Design", "Marketing", "Finance", "Cloud",
+    "Ressources Humaines", "Ventes", "Gestion", "Électronique",
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Title */}
+      <div>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">
+          Titre de l'offre <span className="text-red-400">*</span>
+        </label>
+        <input
+          value={form.title}
+          onChange={set("title")}
+          placeholder="Ex: Développeur React/Laravel"
+          className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300"
+        />
+      </div>
+
+      {/* Domain */}
+      <div>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">Domaine</label>
+        <input
+          list="domain-list"
+          value={form.domain}
+          onChange={set("domain")}
+          placeholder="Ex: Informatique, Web, Design..."
+          className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300"
+        />
+        <datalist id="domain-list">
+          {DOMAIN_SUGGESTIONS.map((d) => <option key={d} value={d} />)}
+        </datalist>
+      </div>
+
+      {/* Location */}
+      <div>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">
+          Lieu <span className="text-red-400">*</span>
+        </label>
+        <input
+          value={form.location}
+          onChange={set("location")}
+          placeholder="Ex: Tunis, Sfax, Sousse..."
+          className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300"
+        />
+      </div>
+
+      {/* Duration */}
+      <div>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">
+          Durée <span className="text-red-400">*</span>
+        </label>
+        <input
+          list="duration-list"
+          value={form.duration}
+          onChange={set("duration")}
+          placeholder="Ex: 3 mois, 6 semaines..."
+          className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300"
+        />
+        <datalist id="duration-list">
+          {["1 mois", "2 mois", "3 mois", "4 mois", "6 mois", "1 an"].map((d) => <option key={d} value={d} />)}
+        </datalist>
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">Description</label>
+        <textarea
+          value={form.description}
+          onChange={set("description")}
+          placeholder="Description du poste, missions, profil recherché..."
+          rows={3}
+          className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 resize-none"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Edit Modal ───────────────────────────────────────────────────────────────
 function EditOfferModal({ offer, onSave, onClose, saving }) {
   const [form, setForm] = useState({
-    title: offer?.title ?? "",
-    company: offer?.company ?? offer?.enterprise?.name ?? "",
-    location: offer?.location ?? "",
-    duration: offer?.duration ?? "",
-    domain: offer?.domain ?? "",
+    title:       offer?.title ?? "",
+    domain:      offer?.domain ?? "",
+    location:    offer?.location ?? "",
+    duration:    offer?.duration ?? "",
+    description: offer?.description ?? "",
   });
 
   if (!offer) return null;
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const fields = [
-    { key: "title",    label: "Titre de l'offre",  placeholder: "Ex: Développeur React/Laravel" },
-    { key: "company",  label: "RH",         placeholder: "Ex: TechTunisie" },
-    { key: "location", label: "Lieu",               placeholder: "Ex: Tunis, Sfax..." },
-    { key: "duration", label: "Durée",              placeholder: "Ex: 3 mois, 6 semaines..." },
-    { key: "domain",   label: "Domaine",            placeholder: "Ex: Informatique, Web..." },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-base font-bold text-gray-900">Modifier l'offre</h3>
             <p className="text-xs text-gray-400 mt-0.5">ID #{offer.id}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-          >
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
             <XMarkIcon className="w-4 h-4 text-gray-400" />
           </button>
         </div>
 
-        <div className="flex flex-col gap-3 mb-6">
-          {fields.map(({ key, label, placeholder }) => (
-            <div key={key}>
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">
-                {label}
-              </label>
-              <input
-                value={form[key]}
-                onChange={set(key)}
-                placeholder={placeholder}
-                className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300"
-              />
-            </div>
-          ))}
-        </div>
+        <OfferFormFields form={form} setForm={setForm} />
 
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors"
-          >
+        <div className="flex gap-3 mt-5">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
             Annuler
           </button>
           <button
@@ -209,24 +256,86 @@ function EditOfferModal({ offer, onSave, onClose, saving }) {
   );
 }
 
+// ── Add Offer Modal ───────────────────────────────────────────────────────────
+function AddOfferModal({ onSave, onClose, saving }) {
+  const [form, setForm] = useState({ title: "", domain: "", location: "", duration: "", description: "" });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (!form.title.trim()) errs.title = "Titre requis";
+    if (!form.location.trim()) errs.location = "Lieu requis";
+    if (!form.duration.trim()) errs.duration = "Durée requise";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validate()) onSave(form);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-base font-bold text-gray-900">Nouvelle offre de stage</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Créée par l'administrateur</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+            <XMarkIcon className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+
+        <OfferFormFields form={form} setForm={setForm} />
+
+        {/* Inline errors */}
+        {Object.values(errors).length > 0 && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+            {Object.values(errors).map((e, i) => (
+              <p key={i} className="text-xs text-red-600">{e}</p>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-5">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
+            Annuler
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {saving && <ArrowPathIcon className="w-4 h-4 animate-spin" />}
+            <PlusIcon className="w-4 h-4" />
+            Créer l'offre
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 const PER_PAGE = 10;
 
 export default function AdminOffers() {
-  const [offers, setOffers]       = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch]       = useState("");
+  const [offers, setOffers]           = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [refreshing, setRefreshing]   = useState(false);
+  const [search, setSearch]           = useState("");
   const [domainFilter, setDomainFilter] = useState("Tous");
-  const [page, setPage]           = useState(1);
-  const [editOffer, setEditOffer] = useState(null);
+  const [page, setPage]               = useState(1);
+  const [editOffer, setEditOffer]     = useState(null);
   const [deleteOffer, setDeleteOffer] = useState(null);
-  const [saving, setSaving]       = useState(false);
-  const [toast, setToast]         = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [toast, setToast]             = useState(null);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   };
 
   const fetchOffers = useCallback(async (silent = false) => {
@@ -263,16 +372,16 @@ export default function AdminOffers() {
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  // Stats
   const uniqueCompanies = new Set(offers.map((o) => o.company ?? o.enterprise?.name).filter(Boolean)).size;
   const uniqueDomains   = new Set(offers.map((o) => o.domain).filter(Boolean)).size;
+  const totalApplications = offers.reduce((acc, o) => acc + (o.applications_count ?? 0), 0);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleSave = async (id, data) => {
     setSaving(true);
     try {
-      await api.put(`/admin/offers/${id}`, data);
-      setOffers((prev) => prev.map((o) => (o.id === id ? { ...o, ...data } : o)));
+      const res = await api.put(`/admin/offers/${id}`, data);
+      setOffers((prev) => prev.map((o) => (o.id === id ? { ...o, ...data, ...res.data } : o)));
       showToast("Offre mise à jour");
       setEditOffer(null);
     } catch (err) {
@@ -296,6 +405,24 @@ export default function AdminOffers() {
     }
   };
 
+  const handleCreate = async (form) => {
+    setSaving(true);
+    try {
+      const res = await api.post("/admin/offers", form);
+      setOffers((prev) => [res.data, ...prev]);
+      showToast("Offre créée avec succès");
+      setShowAddModal(false);
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.errors
+        ? Object.values(err.response.data.errors).flat().join(" ")
+        : "Erreur lors de la création";
+      showToast(msg, "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AdminLayout menuItems={[]}>
       <div className="min-h-screen bg-gray-50/80">
@@ -304,9 +431,7 @@ export default function AdminOffers() {
           {/* ── Header ── */}
           <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Offres de stage
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Offres de stage</h1>
               <p className="text-sm text-gray-400 mt-1">
                 {offers.length} offre{offers.length !== 1 ? "s" : ""} enregistrée{offers.length !== 1 ? "s" : ""}
               </p>
@@ -319,7 +444,10 @@ export default function AdminOffers() {
                 <ArrowPathIcon className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-blue-500" : ""}`} />
                 Actualiser
               </button>
-              <button className="flex items-center gap-2 text-xs font-medium text-white bg-blue-500 rounded-xl px-3.5 py-2 hover:bg-blue-600 transition-all active:scale-95 shadow-sm shadow-blue-100">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 text-xs font-medium text-white bg-blue-500 rounded-xl px-3.5 py-2 hover:bg-blue-600 transition-all active:scale-95 shadow-sm shadow-blue-100"
+              >
                 <PlusIcon className="w-3.5 h-3.5" />
                 Nouvelle offre
               </button>
@@ -327,7 +455,7 @@ export default function AdminOffers() {
           </div>
 
           {/* ── Stat cards ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
             <StatCard
               label="Offres totales"
               value={offers.length}
@@ -336,7 +464,7 @@ export default function AdminOffers() {
               sub="Toutes entreprises confondues"
             />
             <StatCard
-              label="RH"
+              label="Entreprises"
               value={uniqueCompanies}
               icon={BuildingOfficeIcon}
               gradient="from-emerald-400 to-teal-500"
@@ -348,6 +476,13 @@ export default function AdminOffers() {
               icon={TagIcon}
               gradient="from-violet-400 to-purple-500"
               sub="Secteurs représentés"
+            />
+            <StatCard
+              label="Candidatures"
+              value={totalApplications}
+              icon={DocumentTextIcon}
+              gradient="from-amber-400 to-orange-500"
+              sub="Total reçues"
             />
           </div>
 
@@ -377,9 +512,7 @@ export default function AdminOffers() {
                       key={d}
                       onClick={() => { setDomainFilter(d); setPage(1); }}
                       className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-                        domainFilter === d
-                          ? "bg-blue-500 text-white shadow-sm"
-                          : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                        domainFilter === d ? "bg-blue-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                       }`}
                     >
                       {d}
@@ -396,10 +529,10 @@ export default function AdminOffers() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
-                    {["#", "Offre", "RH", "Domaine", "Lieu", "Durée","Candidatures","Actions", ].map((h, i) => (
+                    {["#", "Offre", "Entreprise", "Domaine", "Lieu", "Durée", "Candidatures", "Actions"].map((h, i) => (
                       <th
                         key={h}
-                        className={`px-4 py-3 text-xs font-semibold text-gray-400 ${i === 6 ? "text-right" : "text-left"} ${i === 0 ? "w-10" : ""}`}
+                        className={`px-4 py-3 text-xs font-semibold text-gray-400 ${i === 7 ? "text-right" : "text-left"} ${i === 0 ? "w-10" : ""}`}
                       >
                         {h}
                       </th>
@@ -473,13 +606,11 @@ export default function AdminOffers() {
                             </div>
                           </td>
                           <td className="px-4 py-4">
-  <div className="flex items-center gap-1.5">
-    <span className="text-sm font-semibold text-blue-600">
-      {o.applications_count ?? 0}
-    </span>
-    <span className="text-xs text-gray-400">candidatures</span>
-  </div>
-</td>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-semibold text-blue-600">{o.applications_count ?? 0}</span>
+                              <span className="text-xs text-gray-400">candidatures</span>
+                            </div>
+                          </td>
                           <td className="px-4 py-4">
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <button
@@ -535,9 +666,7 @@ export default function AdminOffers() {
                           key={p}
                           onClick={() => setPage(p)}
                           className={`w-8 h-8 text-xs font-medium rounded-lg transition-colors ${
-                            page === p
-                              ? "bg-blue-500 text-white shadow-sm"
-                              : "border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                            page === p ? "bg-blue-500 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
                           }`}
                         >
                           {p}
@@ -561,17 +690,16 @@ export default function AdminOffers() {
       {/* ── Modals ── */}
       <EditOfferModal offer={editOffer} onSave={handleSave} onClose={() => setEditOffer(null)} saving={saving} />
       <ConfirmDialog offer={deleteOffer} onConfirm={handleDelete} onCancel={() => setDeleteOffer(null)} />
+      {showAddModal && (
+        <AddOfferModal onSave={handleCreate} onClose={() => setShowAddModal(false)} saving={saving} />
+      )}
 
       {/* ── Toast ── */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium border ${
-          toast.type === "error"
-            ? "bg-red-50 text-red-700 border-red-200"
-            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+          toast.type === "error" ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
         }`}>
-          {toast.type === "error"
-            ? <XMarkIcon className="w-4 h-4 shrink-0" />
-            : <CheckIcon className="w-4 h-4 shrink-0" />}
+          {toast.type === "error" ? <XMarkIcon className="w-4 h-4 shrink-0" /> : <CheckIcon className="w-4 h-4 shrink-0" />}
           {toast.msg}
         </div>
       )}

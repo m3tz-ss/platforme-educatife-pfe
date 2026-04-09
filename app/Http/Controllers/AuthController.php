@@ -87,6 +87,14 @@ class AuthController extends Controller
             );
         }
 
+        // ✅ Vérification du blocage par l'admin
+        if ($user->remember_token === 'BLOCKED') {
+            return response()->json(
+                ['message' => 'Votre compte a été bloqué. Contactez l\'administrateur.'],
+                403
+            );
+        }
+
         // ✅ Résolution du manager en une seule requête conditionnelle
         //    Uniquement pour rh/encadrant, et seulement si manager_id existe
         $manager = null;
