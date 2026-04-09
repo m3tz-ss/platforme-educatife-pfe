@@ -25,6 +25,7 @@ const ReceivedApplications = lazy(() => import("./pages/entreprise/ReceivedAppli
 const InterviewsHistoryPage = lazy(() => import("./pages/entreprise/InterviewsHistoryPage"));
 const EspaceEntreprise = lazy(() => import("./pages/entreprise/EspaceEntreprise"));
 const ManagerDashboard = lazy(() => import("./pages/entreprise/ManagerDashboard"));
+const ManagerApplications = lazy(() => import("./pages/entreprise/ManagerApplications"));
 const AdminDashboard = lazy(() => import("./pages/Admindashboard"));
 const Manager = lazy(() => import("./pages/entreprise/CreateManager"));
 const EncadrantDashboard = lazy(() => import("./pages/entreprise/Encadrantdashboard"));
@@ -88,6 +89,7 @@ function App() {
 
         {/* Manager uniquement - gestion des utilisateurs internes */}
         <Route path="/enterprise/manager" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerDashboard /></ProtectedRoute>} />
+        <Route path="/enterprise/manager/applications" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerApplications /></ProtectedRoute>} />
         <Route path="/enterprise/addmanager" element={<ProtectedRoute allowedRoles={["manager"]}><Manager /></ProtectedRoute>} />
 
         {/* Encadrant uniquement */}

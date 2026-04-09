@@ -103,14 +103,54 @@ export function ManagerDashboard() {
     { label: "Encadrants",    value: accounts.filter((u) => u.role === "encadrant").length, color: "emerald" },
   ];
 
+  const menuItems = [
+    { icon: UsersIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager", badge: null },
+    { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications", badge: null }
+  ];
+
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container flex h-screen overflow-hidden bg-gray-50">
+      {/* ── Sidebar ── */}
+      <aside className="w-64 bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col z-10 flex-shrink-0 border-r border-blue-gray-100">
+        <div className="p-6 border-b border-blue-gray-100 flex flex-col items-start gap-1">
+          <p className="font-bold text-blue-600 text-xl flex items-center gap-2">🏢 Espace Manager</p>
+          <p className="text-xs text-blue-gray-500 font-medium">Administration</p>
+        </div>
 
-      {/* ── Background blobs ── */}
-      <div className="blob-top-right" />
-      <div className="blob-bottom-left" />
+        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const active = window.location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group cursor-pointer ${
+                  active ? "bg-blue-50 text-blue-600 font-bold" : "text-blue-gray-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                }`}>
+                  <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${active ? "text-blue-600" : "text-blue-gray-400 group-hover:text-blue-gray-600"}`} />
+                  <span className="text-sm truncate">{item.label}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="dashboard-wrapper">
+        <div className="p-6 border-t border-blue-gray-100">
+          <Link to="/auth/sign-in">
+            <Button fullWidth color="red" variant="text" size="sm" className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 active:bg-red-200">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Déconnexion
+            </Button>
+          </Link>
+        </div>
+      </aside>
+
+      {/* ── Main content area ── */}
+      <div className="flex-1 relative overflow-y-auto w-full">
+        {/* ── Background blobs ── */}
+        <div className="blob-top-right fixed pointer-events-none" />
+        <div className="blob-bottom-left fixed pointer-events-none" />
+
+        <div className="dashboard-wrapper min-h-screen relative z-10 w-full p-4 sm:p-6 lg:p-8">
 
         {/* ── Back link ── */}
         <Link to="/auth/sign-in" className="back-link">
@@ -128,14 +168,18 @@ export function ManagerDashboard() {
                 <p className="dashboard-title">🏢 Dashboard Manager</p>
                 <p className="dashboard-subtitle">Gérez les comptes internes de la plateforme</p>
               </div>
-              <Button
-                color="blue"
-                className="flex items-center gap-2"
-                onClick={() => setOpenModal(true)}
-              >
-                <UserPlusIcon className="w-4 h-4" />
-                Nouveau compte
-              </Button>
+              <div className="flex gap-3">
+                <Link to="/enterprise/manager/applications">
+                  <Button color="green" variant="outlined" className="flex items-center gap-2 bg-white">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Candidatures & Validations
+                  </Button>
+                </Link>
+                <Button color="blue" className="flex items-center gap-2" onClick={() => setOpenModal(true)}>
+                  <UserPlusIcon className="w-4 h-4" />
+                  Nouveau compte
+                </Button>
+              </div>
             </div>
 
             {/* ── Stat Cards ── */}
@@ -289,6 +333,7 @@ export function ManagerDashboard() {
         </DialogFooter>
       </Dialog>
 
+      </div>{/* End flex-1 */}
     </div>
   );
 }

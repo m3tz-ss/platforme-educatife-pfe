@@ -430,7 +430,7 @@ function EvaluationSection({ evaluation }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
           </div>
-          <span className="font-bold text-slate-800 text-sm">Évaluation de fin de stage</span>
+          <span className="font-bold text-slate-800 text-sm">Évaluation de fin de stage ({evaluation.encadrant?.role === 'manager' || evaluation.encadrant?.role === 'rh' ? 'Manager/RH' : 'Encadrant'})</span>
         </div>
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${decisionStyle(evaluation.final_decision)}`}>
           {encDecisionLabel(evaluation.final_decision)}
@@ -648,9 +648,9 @@ export default function MyApplications() {
       );
     }
 
-    const tasks     = supervision.tasks    || [];
-    const comments  = supervision.comments || [];
-    const evaluation= supervision.evaluation || null;
+    const tasks       = supervision.tasks      || [];
+    const comments    = supervision.comments   || [];
+    const evaluations = supervision.evaluations|| [];
 
     return (
       <div className="space-y-8 p-6">
@@ -709,13 +709,21 @@ export default function MyApplications() {
           <EncadrantComments comments={comments} />
         </div>
 
-        {/* ── Évaluation finale ── */}
+        {/* ── Évaluations finales ── */}
         <div>
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-2">
             <div className="w-1 h-4 bg-emerald-500 rounded-full" />
-            Évaluation finale
+            Évaluations finales
           </h3>
-          <EvaluationSection evaluation={evaluation} />
+          <div className="space-y-4">
+            {evaluations.length > 0 ? (
+                evaluations.map((ev, index) => (
+                    <EvaluationSection key={index} evaluation={ev} />
+                ))
+            ) : (
+                <EvaluationSection evaluation={null} />
+            )}
+          </div>
         </div>
 
       </div>

@@ -59,6 +59,11 @@ export default function ReceivedApplications() {
   const [selectedEncadrant, setSelectedEncadrant] = useState("");
   const [assignLoading, setAssignLoading] = useState(false);
 
+  // Manager evaluation state
+  const [evaluation, setEvaluation] = useState(null);
+  const [evalForm, setEvalForm] = useState({ score: "", final_decision: "pending", notes: "" });
+  const [evalLoading, setEvalLoading] = useState(false);
+
   useEffect(() => {
     fetchApplications();
     fetchEncadrants();
@@ -147,6 +152,43 @@ export default function ReceivedApplications() {
       Swal.fire({ icon: "error", title: "Erreur", text: "Impossible d'affecter l'encadrant.", confirmButtonColor: "#ef4444" });
     } finally {
       setAssignLoading(false);
+    }
+  };
+
+  // ✅ Load and Save Manager Evaluation
+  const fetchEvaluation = async (appId) => {
+    try {
+      const res = await api.get(`/rh/applications/${appId}/evaluation`);
+      const ev = res.data;
+      setEvaluation(ev);
+      if (ev) {
+        setEvalForm({
+          score: ev.score != null ? String(ev.score) : "",
+          final_decision: ev.final_decision || "pending",
+          notes: ev.notes || "",
+        });
+      } else {
+        setEvalForm({ score: "", final_decision: "pending", notes: "" });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const saveEvaluation = async (applicationId) => {
+    try {
+      setEvalLoading(true);
+      const res = await api.put(`/rh/applications/${applicationId}/evaluation`, {
+        score: evalForm.score === "" ? null : Number(evalForm.score),
+        final_decision: evalForm.final_decision,
+        notes: evalForm.notes || null,
+      });
+      setEvaluation(res.data);
+      Swal.fire({ icon: "success", title: "Validation enregistrée", timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Erreur", text: "Impossible d'enregistrer la validation." });
+    } finally {
+      setEvalLoading(false);
     }
   };
 
@@ -379,7 +421,7 @@ export default function ReceivedApplications() {
                             </span>
                             <div className="flex gap-1">
                               <IconButton variant="text" size="sm" color="blue"
-                                onClick={() => { setSelectedApplication(app); setSelectedEncadrant(""); setOpenModal(true); }}
+                                onClick={() => { setSelectedApplication(app); setSelectedEncadrant(""); fetchEvaluation(app.id); setOpenModal(true); }}
                                 title="Voir détails">
                                 <EyeIcon className="w-4 h-4" />
                               </IconButton>
@@ -564,6 +606,55 @@ export default function ReceivedApplications() {
                   </Button>
                 </div>
               </div>
+
+              {/* 📋 Validation du Stage (Manager/RH) - Uniquement si accepté */}
+              {selectedApplication.status === "acceptee" && (
+                <>
+                  <div className="border-t border-blue-gray-100"></div>
+                  <div>
+                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">
+                      ✅ Validation du stage (Manager / RH)
+                    </Typography>
+                    <div className="bg-white rounded-2xl border border-blue-gray-100 p-5 shadow-sm space-y-4">
+                      <p className="text-xs text-blue-gray-500 bg-blue-gray-50 border border-blue-gray-100 rounded-xl px-4 py-2.5">
+                        Vous pouvez évaluer la fin du stage du candidat. Ces informations seront sauvegardées en tant qu'évaluation entreprise.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-blue-gray-600 mb-1.5 uppercase tracking-wide">Note /20</label>
+                          <input type="number" min={0} max={20} step={0.5}
+                            value={evalForm.score}
+                            onChange={(e) => setEvalForm(f => ({ ...f, score: e.target.value }))}
+                            className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-blue-gray-600 mb-1.5 uppercase tracking-wide">Décision Finale</label>
+                          <select
+                            value={evalForm.final_decision}
+                            onChange={(e) => setEvalForm(f => ({ ...f, final_decision: e.target.value }))}
+                            className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="pending">En attente</option>
+                            <option value="valide">Validé</option>
+                            <option value="a_ameliorer">À améliorer</option>
+                            <option value="non_conforme">Non conforme</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-blue-gray-600 mb-1.5 uppercase tracking-wide">Appréciation / Notes internes</label>
+                        <textarea
+                          value={evalForm.notes}
+                          onChange={(e) => setEvalForm(f => ({ ...f, notes: e.target.value }))}
+                          rows={3}
+                          className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
+                      </div>
+                      <Button onClick={() => saveEvaluation(selectedApplication.id)} disabled={evalLoading} color="green" className="w-full mt-2">
+                        {evalLoading ? "Enregistrement..." : (evaluation ? "Mettre à jour l'évaluation" : "Valider le stage")}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </DialogBody>

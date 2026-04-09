@@ -37,6 +37,11 @@ class Application extends Model
         return $this->hasMany(EncadrantComment::class);
     }
 
+    public function evaluations()
+    {
+        return $this->hasMany(EncadrantEvaluation::class, 'application_id')->with('encadrant'); // "encadrant" being the encadrant or manager
+    }
+
     public function encadrantEvaluation()
     {
         return $this->hasOne(EncadrantEvaluation::class);

@@ -26,6 +26,7 @@ use App\Http\Controllers\AdminEnterpriseController;
 use App\Http\Controllers\AdminOfferController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\RHNotificationController;
+use App\Http\Controllers\Enterprise\EnterpriseEvaluationController;
 
 
 
@@ -161,4 +162,8 @@ Route::middleware('auth:sanctum')->prefix('rh')->group(function () {
     Route::get('/notifications/unread-count', [RHNotificationController::class, 'unreadCount']);
     Route::post('/notifications/read-all', [RHNotificationController::class, 'markAllRead']);
     Route::post('/notifications/{id}/read', [RHNotificationController::class, 'markAsRead']);
+
+    // 📋 Validation Manager
+    Route::get('/applications/{applicationId}/evaluation', [EnterpriseEvaluationController::class, 'show']);
+    Route::put('/applications/{applicationId}/evaluation', [EnterpriseEvaluationController::class, 'upsert']);
 });
