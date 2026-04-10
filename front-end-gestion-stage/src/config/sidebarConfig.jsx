@@ -46,7 +46,6 @@ export function getEnterpriseMenuItems(counts = {}, role = "rh") {
 export function getAdminMenuItems(counts = {}) {
   return [
     { icon: ShieldCheckIcon, label: "Dashboard Admin", path: "/admin", badge: null },
-    { icon: ClipboardDocumentListIcon, label: "Statistiques Avancées", path: "/admin/statistics", badge: null },
     { icon: UsersIcon, label: "Utilisateurs", path: "/admin/users", badge: counts.users ?? null },
     { icon: BriefcaseIcon, label: "Offres", path: "/admin/offers", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "entreprises", path: "/admin/enterprise", badge: counts.enterprises ?? null },
