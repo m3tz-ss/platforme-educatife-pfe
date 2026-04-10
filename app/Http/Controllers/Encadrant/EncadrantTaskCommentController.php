@@ -40,32 +40,36 @@ class EncadrantTaskCommentController extends Controller
      * Créer un commentaire sur une tâche (encadrant)
      */
     public function store(Request $request, int $taskId)
-    {
-        $user = $request->user();
-        $this->supervision->ensureEncadrant($user);
+{
+    $user = $request->user();
+    $this->supervision->ensureEncadrant($user);
 
-        $task = EncadrantTask::where('id', $taskId)
-            ->where('encadrant_id', $user->id)
-            ->firstOrFail();
+    $task = EncadrantTask::where('id', $taskId)
+        ->where('encadrant_id', $user->id)
+        ->firstOrFail();
 
-        $data = $request->validate([
-            'body' => 'required|string|max:10000',
-        ]);
+    $data = $request->validate([
+        'body' => 'required|string|max:10000',
+        'attachment' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,zip|max:4096'
+    ]);
 
-        $comment = EncadrantTaskComment::create([
-            'encadrant_task_id' => $taskId,
-            'user_id'           => $user->id,
-            'body'              => $data['body'],
-        ]);
+    $filePath = null;
 
-        $comment->load('user:id,name');
-
-        return response()->json($comment, 201);
+    if ($request->hasFile('attachment')) {
+        $filePath = $request->file('attachment')->store('task_comments', 'public');
     }
 
-    /**
-     * Supprimer un commentaire de tâche (encadrant)
-     */
+    $comment = EncadrantTaskComment::create([
+        'encadrant_task_id' => $taskId,
+        'user_id'           => $user->id,
+        'body'              => $data['body'],
+        'attachment'        => $filePath
+    ]);
+
+    $comment->load('user:id,name');
+
+    return response()->json($comment, 201);
+}
     public function destroy(Request $request, int $taskId, int $commentId)
     {
         $user = $request->user();

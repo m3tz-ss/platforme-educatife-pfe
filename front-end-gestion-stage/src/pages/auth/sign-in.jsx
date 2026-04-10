@@ -57,7 +57,8 @@ const FEATURES = [
 const DEMO_ACCOUNTS = [
   { role: "Étudiant", email: "student@example.com", password: "password" },
   { role: "RH",       email: "rh@demo.com",         password: "demo123"  },
-  { role: "Manager",  email: "manager@demo.com",     password: "demo123"  },
+  { role: "Manager",  email: "Manager@demo.com",     password: "demo123"  },
+  { role: "Encadrant",  email: "encadrant@demo.com",     password: "demo123"  },
 ];
 
 export function SignIn() {

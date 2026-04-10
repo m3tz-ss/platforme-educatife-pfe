@@ -88,11 +88,14 @@ class MessageController extends Controller
         $user = $request->user();
         $contacts = collect();
 
-        // ✅ RH → tous les utilisateurs sauf RH
+        // ✅ RH → tous les utilisateurs sauf RH (inclut admin, managers, encadrants, étudiants)
         if ($user->role === 'rh') {
 
             $contacts = User::where('id', '!=', $user->id)
-                ->where('role', '!=', 'rh')
+                ->where(function($query) {
+                    $query->where('role', '!=', 'rh')
+                          ->orWhereNull('role');
+                })
                 ->select('id', 'name', 'role', 'type')
                 ->get();
         }

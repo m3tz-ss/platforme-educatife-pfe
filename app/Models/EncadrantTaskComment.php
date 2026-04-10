@@ -13,6 +13,7 @@ class EncadrantTaskComment extends Model
         'encadrant_task_id',
         'user_id',
         'body',
+        'attachment',
     ];
 
     public function task(): BelongsTo

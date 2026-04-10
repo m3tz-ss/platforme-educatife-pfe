@@ -65,12 +65,17 @@ function Toast({ error, success }) {
 
 // ── TaskModal ─────────────────────────────────────────────────────────────────
 function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onCommentsUpdated }) {
-  const overlayRef  = useRef(null);
-  const inputRef    = useRef(null);
-  const [comments, setComments]   = useState(null);
-  const [loading,  setLoading]    = useState(false);
-  const [draft,    setDraft]      = useState("");
-  const [sending,  setSending]    = useState(false);
+  const overlayRef    = useRef(null);
+  const inputRef      = useRef(null);
+  const imageInputRef = useRef(null);
+  const fileInputRef  = useRef(null);
+
+  const [comments,    setComments]    = useState(null);
+  const [loading,     setLoading]     = useState(false);
+  const [draft,       setDraft]       = useState("");
+  const [sending,     setSending]     = useState(false);
+  const [showEmoji,   setShowEmoji]   = useState(false);
+  const [attachment, setAttachments] = useState([]);
 
   // Fermeture Escape
   useEffect(() => {
@@ -78,6 +83,16 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
+
+  // Fermeture emoji picker au clic extérieur
+  useEffect(() => {
+    if (!showEmoji) return;
+    const h = (e) => {
+      if (!e.target.closest("[data-emoji-picker]")) setShowEmoji(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [showEmoji]);
 
   // Chargement des commentaires à l'ouverture
   useEffect(() => {
@@ -107,12 +122,61 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
     } catch {}
   };
 
+  // ── Helpers éditeur ──────────────────────────────────────────────────────
+  const insertAtCursor = (text) => {
+    const el = inputRef.current;
+    if (!el) { setDraft(p => p + text); return; }
+    const start  = el.selectionStart;
+    const end    = el.selectionEnd;
+    const newVal = draft.substring(0, start) + text + draft.substring(end);
+    setDraft(newVal);
+    setTimeout(() => {
+      el.selectionStart = el.selectionEnd = start + text.length;
+      el.focus();
+    }, 0);
+  };
+
+  const wrapSelection = (before, after) => {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end   = el.selectionEnd;
+    const sel   = draft.substring(start, end) || "texte";
+    const newVal = draft.substring(0, start) + before + sel + after + draft.substring(end);
+    setDraft(newVal);
+    setTimeout(() => {
+      el.selectionStart = start + before.length;
+      el.selectionEnd   = start + before.length + sel.length;
+      el.focus();
+    }, 0);
+  };
+
+  const handleFileAttach = (file, type) => {
+    setAttachments(p => [...p, { name: file.name, file, type }]);
+  };
+
+  // ── Envoi ────────────────────────────────────────────────────────────────
   const sendComment = async () => {
-    if (!draft.trim() || sending) return;
+    if ((!draft.trim() && attachment.length === 0) || sending) return;
     setSending(true);
     try {
-      await api.post(`/encadrant/tasks/${task.id}/comments`, { body: draft.trim() });
+      if (attachment.length > 0) {
+       const formData = new FormData();
+
+formData.append("body", draft.trim() || " ");
+
+attachment.forEach(att => {
+  formData.append("attachment[0]", att.file);
+});
+
+await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
+  headers: { "Content-Type": "multipart/form-data" },
+});
+      } else {
+        await api.post(`/encadrant/tasks/${task.id}/comments`, { body: draft.trim() });
+      }
       setDraft("");
+      setAttachments([]);
       reloadComments();
     } catch (e) { console.error(e); }
     finally { setSending(false); }
@@ -126,6 +190,42 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
       onCommentsUpdated?.();
     } catch {}
   };
+
+  const TOOLBAR_BTNS = [
+    {
+      title: "Gras",
+      action: () => wrapSelection("**", "**"),
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 4h8a4 4 0 010 8H6zm0 8h9a4 4 0 010 8H6z"/>
+        </svg>
+      ),
+    },
+    {
+      title: "Italique",
+      action: () => wrapSelection("_", "_"),
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 4h-9M14 20H5M15 4L9 20"/>
+        </svg>
+      ),
+    },
+    {
+      title: "Code",
+      action: () => wrapSelection("`", "`"),
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+        </svg>
+      ),
+    },
+  ];
+
+  const EMOJIS = [
+    "😀","😂","😍","🤔","👍","👏","🙏","🔥",
+    "✅","❌","⚠️","💡","📌","🎯","🚀","💬",
+    "😎","🤝","💪","🎉","📎","🗂️","📋","⏰",
+  ];
 
   return (
     <div
@@ -263,6 +363,16 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
                         </button>
                       </div>
                       <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{body}</p>
+                      {/* Pièces jointes du commentaire */}
+                      {c.attachment?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {c.attachment && (
+  <a href={storageUrl(c.attachment)} target="_blank">
+    📎 fichier
+  </a>
+)}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -270,31 +380,166 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
             )}
           </div>
 
-          {/* Ajouter commentaire */}
+          {/* ── Ajouter commentaire — barre enrichie ── */}
           <div className="border-t border-slate-100 pt-4">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ajouter un commentaire</p>
-            <div className="flex gap-2">
-              <input
+
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white focus-within:ring-2 focus-within:ring-indigo-200 focus-within:border-indigo-400 transition">
+
+              {/* Toolbar */}
+              <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-slate-100 bg-slate-50/70 flex-wrap">
+
+                {/* Gras / Italique / Code */}
+                {TOOLBAR_BTNS.map(btn => (
+                  <button key={btn.title} type="button" title={btn.title}
+                    onClick={btn.action}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
+                    {btn.icon}
+                  </button>
+                ))}
+
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+
+                {/* Lien */}
+                <button type="button" title="Insérer un lien"
+                  onClick={() => {
+                    const url = window.prompt("URL du lien :");
+                    if (!url) return;
+                    const el  = inputRef.current;
+                    const sel = el ? draft.substring(el.selectionStart, el.selectionEnd) || "texte" : "texte";
+                    insertAtCursor(`[${sel}](${url})`);
+                  }}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                  </svg>
+                </button>
+
+                {/* Image */}
+                <button type="button" title="Insérer une image"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileAttach(f, "image"); e.target.value = ""; }}
+                />
+
+                {/* Fichier */}
+                <button type="button" title="Joindre un fichier"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                  </svg>
+                </button>
+                <input ref={fileInputRef} type="file" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileAttach(f, "file"); e.target.value = ""; }}
+                />
+
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+
+                {/* Emoji picker */}
+                <div className="relative" data-emoji-picker>
+                  <button type="button" title="Emoji"
+                    onClick={() => setShowEmoji(p => !p)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </button>
+                  {showEmoji && (
+                    <div className="absolute left-0 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-2 grid grid-cols-8 gap-0.5 w-56">
+                      {EMOJIS.map(em => (
+                        <button key={em} type="button"
+                          onClick={() => { insertAtCursor(em); setShowEmoji(false); }}
+                          className="p-1 rounded hover:bg-slate-100 text-base leading-none transition">
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Mention */}
+                <button type="button" title="Mentionner quelqu'un"
+                  onClick={() => insertAtCursor("@")}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition text-xs font-bold">
+                  @
+                </button>
+              </div>
+
+              {/* Pièces jointes en attente */}
+              {attachment.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-3 pt-2">
+                  {attachment.map((att, i) => (
+                    <div key={i}
+                      className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1 text-xs text-indigo-700 font-medium">
+                      {att.type === "image" ? (
+                        <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                        </svg>
+                      )}
+                      <span className="max-w-[120px] truncate">{att.name}</span>
+                      <button type="button"
+                        onClick={() => setAttachments(p => p.filter((_, j) => j !== i))}
+                        className="text-indigo-400 hover:text-indigo-700 transition ml-0.5">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Zone de texte */}
+              <textarea
                 ref={inputRef}
-                type="text"
-                placeholder="Écrire un commentaire sur cette tâche…"
+                placeholder="Écrire un commentaire… (Entrée pour envoyer, Shift+Entrée pour aller à la ligne)"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendComment()}
-                className="flex-1 text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition placeholder-slate-300"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendComment(); }
+                }}
+                rows={3}
+                className="w-full text-sm px-3.5 py-2.5 bg-transparent focus:outline-none resize-none placeholder-slate-300 text-slate-800"
               />
-              <button
-                onClick={sendComment}
-                disabled={sending || !draft.trim()}
-                className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex-shrink-0 active:scale-95"
-              >
-                {sending ? (
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                ) : "Envoyer"}
-              </button>
+
+              {/* Footer toolbar */}
+              <div className="flex items-center justify-between px-3 py-2 border-t border-slate-100 bg-slate-50/50">
+                <span className="text-xs text-slate-300 hidden sm:inline">Shift+Entrée pour aller à la ligne</span>
+                <button
+                  type="button"
+                  onClick={sendComment}
+                  disabled={sending || (!draft.trim() && attachment.length === 0)}
+                  className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 flex items-center gap-1.5 ml-auto"
+                >
+                  {sending ? (
+                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                  )}
+                  Envoyer
+                </button>
+              </div>
             </div>
           </div>
 
@@ -338,7 +583,6 @@ function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
       <div className="h-0.5 rounded-t-xl" style={{ background: col.headerGrad }} />
 
       <div className="p-3.5 space-y-2">
-        {/* Title row */}
         <div className="flex items-start gap-2">
           <div className="flex-shrink-0 text-slate-300 mt-0.5">
             <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
@@ -355,7 +599,6 @@ function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
           )}
         </div>
 
-        {/* Metadata */}
         <div className="flex flex-wrap items-center gap-1.5">
           {task.due_date && (
             <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border
@@ -458,13 +701,11 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
     setDragOverCol(null);
   };
 
-  // Colonne de la tâche modale (suivre les changements optimistes)
   const syncedModalTask = modalTask ? tasks.find(t => t.id === modalTask.id) || modalTask : null;
   const modalCol = syncedModalTask ? TASK_COLUMNS.find(c => c.key === syncedModalTask.status) : null;
 
   return (
     <section className="space-y-5">
-      {/* Modal */}
       {syncedModalTask && (
         <TaskModal
           task={syncedModalTask}
@@ -611,7 +852,6 @@ export default function EncadrantStudentDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ── Charge UNIQUEMENT les tâches (pas toute la page) ──────────────────────
   const loadTasks = useCallback(() => {
     if (!id) return;
     api.get(`/encadrant/applications/${id}/tasks?per_page=50`)
@@ -653,24 +893,21 @@ export default function EncadrantStudentDetail() {
   const handleAddTask = (data) => {
     setBusy(true);
     api.post(`/encadrant/applications/${id}/tasks`, data)
-      .then(() => loadTasks())           // ← recharge seulement les tâches
+      .then(() => loadTasks())
       .finally(() => setBusy(false));
   };
 
-  // ── Mise à jour optimiste du statut d'une tâche ───────────────────────────
   const handleUpdateTaskStatus = (taskId, status) => {
-    // 1. Mise à jour immédiate dans le state (zéro flash)
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
-    // 2. Appel API en arrière-plan, resync si erreur
     api.put(`/encadrant/tasks/${taskId}`, { status })
-      .catch(() => loadTasks());         // rollback silencieux si l'API échoue
+      .catch(() => loadTasks());
   };
 
   const handleDeleteTask = (taskId) => {
     if (!window.confirm("Supprimer cette tâche ?")) return;
     setBusy(true);
     api.delete(`/encadrant/tasks/${taskId}`)
-      .then(() => loadTasks())           // ← recharge seulement les tâches
+      .then(() => loadTasks())
       .finally(() => setBusy(false));
   };
 

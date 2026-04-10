@@ -24,20 +24,28 @@ class EncadrantTaskController extends Controller
     }
 
     public function store(Request $request, int $applicationId)
-    {
-        $user = $request->user();
-        $this->supervision->ensureEncadrant($user);
+{
+    $user = $request->user();
+    $this->supervision->ensureEncadrant($user);
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status'      => 'nullable|string|in:todo,in_progress,done',
-            'due_date'    => 'nullable|date',
-            'sort_order'  => 'nullable|integer',
-        ]);
+    $data = $request->validate([
+        'title'       => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'status'      => 'nullable|string|in:todo,in_progress,done',
+        'due_date'    => 'nullable|date',
+        'sort_order'  => 'nullable|integer',
+        'attachment'  => 'nullable|file|mimes:pdf,doc,docx,png,jpg,zip|max:4096'
+    ]);
 
-        return response()->json($this->tasks->store($user->id, $applicationId, $data), 201);
+    if ($request->hasFile('attachment')) {
+        $data['attachment'] = $request->file('attachment')->store('tasks','public');
     }
+
+    return response()->json(
+        $this->tasks->store($user->id, $applicationId, $data),
+        201
+    );
+}
 
     public function update(Request $request, int $taskId)
     {
