@@ -7,11 +7,11 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api")
 function storageUrl(path) { return path ? `${API_ORIGIN}/storage/${path}` : null; }
 
 const APP_STATUSES = [
-  { value: "nouveau",         label: "Nouveau",      color: "bg-slate-100 text-slate-600 border-slate-200" },
-  { value: "preselectionnee", label: "Présélection",  color: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: "entretien",       label: "Entretien",    color: "bg-amber-50 text-amber-700 border-amber-200" },
-  { value: "acceptee",        label: "Accepté",      color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { value: "refusee",         label: "Refusé",       color: "bg-rose-50 text-rose-700 border-rose-200" },
+  { value: "nouveau", label: "Nouveau", color: "bg-slate-100 text-slate-600 border-slate-200" },
+  { value: "preselectionnee", label: "Présélection", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "entretien", label: "Entretien", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: "acceptee", label: "Accepté", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: "refusee", label: "Refusé", color: "bg-rose-50 text-rose-700 border-rose-200" },
 ];
 
 const TASK_COLUMNS = [
@@ -39,15 +39,15 @@ const TASK_COLUMNS = [
 ];
 
 const TASK_STATUS_OPTS = [
-  { value: "todo",        label: "À faire"  },
+  { value: "todo", label: "À faire" },
   { value: "in_progress", label: "En cours" },
-  { value: "done",        label: "Terminé"  },
+  { value: "done", label: "Terminé" },
 ];
 
 const DECISIONS = [
-  { value: "pending",      label: "En attente"   },
-  { value: "valide",       label: "Validé"       },
-  { value: "a_ameliorer",  label: "À améliorer"  },
+  { value: "pending", label: "En attente" },
+  { value: "valide", label: "Validé" },
+  { value: "a_ameliorer", label: "À améliorer" },
   { value: "non_conforme", label: "Non conforme" },
 ];
 
@@ -63,19 +63,147 @@ function Toast({ error, success }) {
   );
 }
 
-// ── TaskModal ─────────────────────────────────────────────────────────────────
-function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onCommentsUpdated }) {
-  const overlayRef    = useRef(null);
-  const inputRef      = useRef(null);
-  const imageInputRef = useRef(null);
-  const fileInputRef  = useRef(null);
+// ── CommentInlineEdit ─────────────────────────────────────────────────────────
+function CommentInlineEdit({ commentId, body, taskId, onUpdated }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(body);
+  const [saving, setSaving] = useState(false);
 
-  const [comments,    setComments]    = useState(null);
-  const [loading,     setLoading]     = useState(false);
-  const [draft,       setDraft]       = useState("");
-  const [sending,     setSending]     = useState(false);
-  const [showEmoji,   setShowEmoji]   = useState(false);
+  const save = async () => {
+    if (!val.trim() || saving) return;
+    setSaving(true);
+    try {
+      await api.put(`/encadrant/tasks/${taskId}/comments/${commentId}`, { body: val.trim() });
+      onUpdated(val.trim());
+      setEditing(false);
+    } catch { }
+    finally { setSaving(false); }
+  };
+
+  if (editing) return (
+    <div className="flex-1 flex items-center gap-1.5">
+      <input
+        autoFocus
+        className="flex-1 text-xs border border-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+      />
+      <button onClick={save} disabled={saving}
+        className="text-xs px-2 py-0.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition disabled:opacity-40">
+        {saving ? "…" : "OK"}
+      </button>
+      <button onClick={() => setEditing(false)}
+        className="text-xs px-2 py-0.5 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 transition">✕</button>
+    </div>
+  );
+
+  return (
+    <button onClick={() => { setVal(body); setEditing(true); }}
+      title="Modifier ce commentaire"
+      className="text-indigo-300 hover:text-indigo-600 transition flex-shrink-0">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+    </button>
+  );
+}
+
+// ── EditTaskForm ──────────────────────────────────────────────────────────────
+function EditTaskForm({ task, onUpdated, onCancel }) {
+  const [title, setTitle] = useState(task.title || "");
+  const [description, setDescription] = useState(task.description || "");
+  const [dueDate, setDueDate] = useState(task.due_date ? task.due_date.substring(0, 10) : "");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const imgRef = useRef(null);
+
+  const handleImageSelect = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImageFile(f);
+    setImagePreview(URL.createObjectURL(f));
+    e.target.value = "";
+  };
+
+  const save = async () => {
+    if (!title.trim() || saving) return;
+    setSaving(true);
+    try {
+      const payload = { title: title.trim(), description: description.trim() || null, due_date: dueDate || null };
+      const r = await api.put(`/encadrant/tasks/${task.id}`, payload);
+      onUpdated(r.data);
+    } catch { }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="border border-indigo-200 rounded-xl bg-indigo-50/40 p-4 space-y-3">
+      <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Modifier la tâche</p>
+      <input
+        placeholder="Titre *"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
+      />
+      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+        <div className="flex items-center gap-1 px-2 py-1 border-b border-slate-100 bg-slate-50/70">
+          <button type="button" title="Ajouter une image"
+            onClick={() => imgRef.current?.click()}
+            className="p-1.5 rounded text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+          <span className="text-xs text-slate-400 ml-1">Image dans description</span>
+        </div>
+        {imagePreview && (
+          <div className="px-3 pt-2 flex items-center gap-2">
+            <img src={imagePreview} alt="preview" className="h-12 w-auto rounded border border-slate-200 object-cover" />
+            <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }}
+              className="text-xs text-rose-400 hover:text-rose-600">✕ Supprimer</button>
+          </div>
+        )}
+        <textarea
+          placeholder="Description (optionnel)"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows={2}
+          className="w-full px-3 py-2 text-sm bg-transparent focus:outline-none resize-none placeholder-slate-300 text-slate-800"
+        />
+      </div>
+      <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white text-slate-600" />
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving || !title.trim()}
+          className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition">
+          {saving ? "Enregistrement…" : "✓ Enregistrer"}
+        </button>
+        <button onClick={onCancel}
+          className="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition">Annuler</button>
+      </div>
+    </div>
+  );
+}
+
+// ── TaskModal ─────────────────────────────────────────────────────────────────
+function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask, busy, onCommentsUpdated }) {
+  const overlayRef = useRef(null);
+  const inputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const [comments, setComments] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [attachment, setAttachments] = useState([]);
+  const [showEditTask, setShowEditTask] = useState(false);
 
   // Fermeture Escape
   useEffect(() => {
@@ -119,15 +247,15 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
       const raw = r.data?.data ?? r.data ?? [];
       setComments(Array.isArray(raw) ? raw : []);
       onCommentsUpdated?.();
-    } catch {}
+    } catch { }
   };
 
   // ── Helpers éditeur ──────────────────────────────────────────────────────
   const insertAtCursor = (text) => {
     const el = inputRef.current;
     if (!el) { setDraft(p => p + text); return; }
-    const start  = el.selectionStart;
-    const end    = el.selectionEnd;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
     const newVal = draft.substring(0, start) + text + draft.substring(end);
     setDraft(newVal);
     setTimeout(() => {
@@ -140,13 +268,13 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
     const el = inputRef.current;
     if (!el) return;
     const start = el.selectionStart;
-    const end   = el.selectionEnd;
-    const sel   = draft.substring(start, end) || "texte";
+    const end = el.selectionEnd;
+    const sel = draft.substring(start, end) || "texte";
     const newVal = draft.substring(0, start) + before + sel + after + draft.substring(end);
     setDraft(newVal);
     setTimeout(() => {
       el.selectionStart = start + before.length;
-      el.selectionEnd   = start + before.length + sel.length;
+      el.selectionEnd = start + before.length + sel.length;
       el.focus();
     }, 0);
   };
@@ -161,17 +289,17 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
     setSending(true);
     try {
       if (attachment.length > 0) {
-       const formData = new FormData();
+        const formData = new FormData();
 
-formData.append("body", draft.trim() || " ");
+        formData.append("body", draft.trim() || " ");
 
-attachment.forEach(att => {
-  formData.append("attachment[]", att.file);
-});
+        attachment.forEach(att => {
+          formData.append("attachment[]", att.file);
+        });
 
-await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
-  headers: { "Content-Type": "multipart/form-data" },
-});
+        await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       } else {
         await api.post(`/encadrant/tasks/${task.id}/comments`, { body: draft.trim() });
       }
@@ -188,7 +316,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
       await api.delete(`/encadrant/tasks/${task.id}/comments/${cId}`);
       setComments(prev => prev.filter(c => c.id !== cId));
       onCommentsUpdated?.();
-    } catch {}
+    } catch { }
   };
 
   const TOOLBAR_BTNS = [
@@ -197,7 +325,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
       action: () => wrapSelection("**", "**"),
       icon: (
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 4h8a4 4 0 010 8H6zm0 8h9a4 4 0 010 8H6z"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 4h8a4 4 0 010 8H6zm0 8h9a4 4 0 010 8H6z" />
         </svg>
       ),
     },
@@ -206,7 +334,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
       action: () => wrapSelection("_", "_"),
       icon: (
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 4h-9M14 20H5M15 4L9 20"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 4h-9M14 20H5M15 4L9 20" />
         </svg>
       ),
     },
@@ -215,16 +343,16 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
       action: () => wrapSelection("`", "`"),
       icon: (
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
         </svg>
       ),
     },
   ];
 
   const EMOJIS = [
-    "😀","😂","😍","🤔","👍","👏","🙏","🔥",
-    "✅","❌","⚠️","💡","📌","🎯","🚀","💬",
-    "😎","🤝","💪","🎉","📎","🗂️","📋","⏰",
+    "😀", "😂", "😍", "🤔", "👍", "👏", "🙏", "🔥",
+    "✅", "❌", "⚠️", "💡", "📌", "🎯", "🚀", "💬",
+    "😎", "🤝", "💪", "🎉", "📎", "🗂️", "📋", "⏰",
   ];
 
   return (
@@ -264,17 +392,28 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                   {isOverdue && <span>⚠</span>}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}
                 </span>
               )}
             </div>
           </div>
+          {/* Bouton modifier tâche */}
+          <button
+            onClick={() => setShowEditTask(v => !v)}
+            title="Modifier la tâche"
+            className={`w-8 h-8 flex-shrink-0 rounded-xl border flex items-center justify-center transition
+              ${showEditTask ? "border-indigo-400 bg-indigo-50 text-indigo-600" : "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
           <button onClick={onClose}
             className="w-8 h-8 flex-shrink-0 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -282,8 +421,17 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
         {/* Body */}
         <div className="px-5 py-5 space-y-5 flex-1">
 
+          {/* Edit Task Form */}
+          {showEditTask && (
+            <EditTaskForm
+              task={task}
+              onUpdated={(updated) => { onUpdateTask?.(updated); setShowEditTask(false); }}
+              onCancel={() => setShowEditTask(false)}
+            />
+          )}
+
           {/* Description */}
-          {task.description ? (
+          {!showEditTask && (task.description ? (
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</p>
               <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
@@ -294,7 +442,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
             <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 italic">
               Aucune description pour cette tâche.
             </div>
-          )}
+          ))}
 
           {/* Changer le statut */}
           <div>
@@ -330,8 +478,8 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
             {loading ? (
               <div className="flex items-center gap-2 text-xs text-slate-400 py-3">
                 <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
                 Chargement…
               </div>
@@ -355,10 +503,18 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                         </div>
                         <span className="text-xs font-black text-indigo-900 flex-1">{name}</span>
                         <span className="text-xs text-slate-400">{date}</span>
+                        <CommentInlineEdit
+                          commentId={c.id}
+                          body={body}
+                          taskId={task.id}
+                          onUpdated={(newBody) =>
+                            setComments(prev => prev.map(x => x.id === c.id ? { ...x, body: newBody } : x))
+                          }
+                        />
                         <button onClick={() => deleteComment(c.id)}
                           className="text-rose-300 hover:text-rose-600 transition-colors ml-1 flex-shrink-0">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
@@ -371,7 +527,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                             const isImage = typeof att === 'string' && att.match(/\.(jpeg|jpg|gif|png)$/i);
                             return isImage ? (
                               <a key={i} href={storageUrl(att)} target="_blank" rel="noreferrer">
-                                <img src={storageUrl(att)} alt="attachment" className="h-16 w-auto rounded border object-cover hover:opacity-90"/>
+                                <img src={storageUrl(att)} alt="attachment" className="h-16 w-auto rounded border object-cover hover:opacity-90" />
                               </a>
                             ) : (
                               <a key={i} href={storageUrl(att)} target="_blank" rel="noreferrer" className="text-blue-600 text-xs hover:underline flex items-center gap-1 bg-white px-2 py-1 rounded border">
@@ -413,14 +569,14 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                   onClick={() => {
                     const url = window.prompt("URL du lien :");
                     if (!url) return;
-                    const el  = inputRef.current;
+                    const el = inputRef.current;
                     const sel = el ? draft.substring(el.selectionStart, el.selectionEnd) || "texte" : "texte";
                     insertAtCursor(`[${sel}](${url})`);
                   }}
                   className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                 </button>
 
@@ -430,7 +586,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                   className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </button>
                 <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
@@ -443,7 +599,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                   className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
                 </button>
                 <input ref={fileInputRef} type="file" className="hidden"
@@ -459,7 +615,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                     className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </button>
                   {showEmoji && (
@@ -492,12 +648,12 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                       {att.type === "image" ? (
                         <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01"/>
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01" />
                         </svg>
                       ) : (
                         <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                         </svg>
                       )}
                       <span className="max-w-[120px] truncate">{att.name}</span>
@@ -505,7 +661,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                         onClick={() => setAttachments(p => p.filter((_, j) => j !== i))}
                         className="text-indigo-400 hover:text-indigo-700 transition ml-0.5">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
@@ -537,12 +693,12 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                 >
                   {sending ? (
                     <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                     </svg>
                   ) : (
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                   )}
                   Envoyer
@@ -560,7 +716,7 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Supprimer cette tâche
             </button>
@@ -594,9 +750,9 @@ function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
         <div className="flex items-start gap-2">
           <div className="flex-shrink-0 text-slate-300 mt-0.5">
             <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-              <circle cx="2.5" cy="2.5"  r="1.5"/> <circle cx="7.5" cy="2.5"  r="1.5"/>
-              <circle cx="2.5" cy="8"    r="1.5"/> <circle cx="7.5" cy="8"    r="1.5"/>
-              <circle cx="2.5" cy="13.5" r="1.5"/> <circle cx="7.5" cy="13.5" r="1.5"/>
+              <circle cx="2.5" cy="2.5" r="1.5" /> <circle cx="7.5" cy="2.5" r="1.5" />
+              <circle cx="2.5" cy="8" r="1.5" /> <circle cx="7.5" cy="8" r="1.5" />
+              <circle cx="2.5" cy="13.5" r="1.5" /> <circle cx="7.5" cy="13.5" r="1.5" />
             </svg>
           </div>
           <p className="flex-1 font-semibold text-sm text-slate-900 leading-snug break-words">{task.title}</p>
@@ -614,7 +770,7 @@ function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
               {isOverdue && <span>⚠</span>}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
             </span>
@@ -630,16 +786,35 @@ function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
 
 // ── AddTaskInline ─────────────────────────────────────────────────────────────
 function AddTaskInline({ onAdd, busy }) {
-  const [open,  setOpen]  = useState(false);
+  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [desc,  setDesc]  = useState("");
-  const [due,   setDue]   = useState("");
+  const [desc, setDesc] = useState("");
+  const [due, setDue] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const imgInputRef = useRef(null);
+
+  const reset = () => {
+    setTitle(""); setDesc(""); setDue("");
+    setImageFile(null); setImagePreview(null);
+    setOpen(false);
+  };
+
+  const handleImageSelect = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImageFile(f);
+    setImagePreview(URL.createObjectURL(f));
+    e.target.value = "";
+  };
 
   const submit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), description: desc.trim() || null, due_date: due || null, status: "todo" });
-    setTitle(""); setDesc(""); setDue(""); setOpen(false);
+    const payload = { title: title.trim(), description: desc.trim() || null, due_date: due || null, status: "todo" };
+    if (imageFile) payload._imageFile = imageFile;
+    onAdd(payload);
+    reset();
   };
 
   if (!open) return (
@@ -648,7 +823,7 @@ function AddTaskInline({ onAdd, busy }) {
       className="w-full mt-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 text-xs text-slate-400 hover:text-indigo-600 transition-all"
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
       </svg>
       Ajouter une tâche
     </button>
@@ -657,18 +832,44 @@ function AddTaskInline({ onAdd, busy }) {
   return (
     <form onSubmit={submit} className="mt-1 rounded-xl border-2 border-indigo-300 bg-white p-3 space-y-2 shadow-md">
       <input autoFocus placeholder="Titre *" value={title} onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"/>
-      <input placeholder="Description" value={desc} onChange={(e) => setDesc(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"/>
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition" />
+
+      {/* Description avec support image */}
+      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white focus-within:ring-1 focus-within:ring-indigo-200">
+        <div className="flex items-center gap-1 px-2 py-1 border-b border-slate-100 bg-slate-50/60">
+          <button type="button" title="Joindre une image à la description"
+            onClick={() => imgInputRef.current?.click()}
+            className="p-1 rounded text-slate-400 hover:bg-slate-200 hover:text-indigo-600 transition">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+          <span className="text-xs text-slate-400">Ajouter une image (optionnel)</span>
+        </div>
+        {imagePreview && (
+          <div className="px-3 pt-2 flex items-center gap-2">
+            <img src={imagePreview} alt="preview" className="h-10 w-auto rounded border border-slate-200 object-cover" />
+            <span className="text-xs text-slate-500 truncate flex-1">{imageFile?.name}</span>
+            <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }}
+              className="text-rose-400 hover:text-rose-600 text-xs">✕</button>
+          </div>
+        )}
+        <textarea placeholder="Description (optionnel)" value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          rows={2}
+          className="w-full px-3 py-2 text-sm bg-transparent focus:outline-none resize-none placeholder-slate-300 text-slate-800" />
+      </div>
+
       <input type="date" value={due} onChange={(e) => setDue(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-slate-600"/>
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition text-slate-600" />
       <div className="flex gap-2">
         <button type="submit" disabled={busy || !title.trim()}
           className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition">
           ✚ Ajouter
         </button>
-        <button type="button"
-          onClick={() => { setOpen(false); setTitle(""); setDesc(""); setDue(""); }}
+        <button type="button" onClick={reset}
           className="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition">
           Annuler
         </button>
@@ -678,10 +879,10 @@ function AddTaskInline({ onAdd, busy }) {
 }
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
-function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
+function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask }) {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
-  const [modalTask, setModalTask]   = useState(null);
+  const [modalTask, setModalTask] = useState(null);
 
   const grouped = TASK_COLUMNS.reduce((acc, col) => {
     acc[col.key] = (tasks || [])
@@ -722,7 +923,13 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
           onClose={() => setModalTask(null)}
           onDelete={onDelete}
           onUpdateStatus={onUpdateStatus}
-          onCommentsUpdated={() => {}}
+          onUpdateTask={(updated) => {
+            // Update modal's local task view immediately
+            setModalTask(prev => prev ? { ...prev, ...updated } : null);
+            // Propagate to parent to update the tasks list
+            onUpdateTask?.(updated);
+          }}
+          onCommentsUpdated={() => { }}
         />
       )}
 
@@ -732,7 +939,7 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
           <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
             <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
             </svg>
           </div>
           Tableau de tâches
@@ -744,7 +951,7 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
           <div className="flex items-center gap-3">
             <div className="w-36 h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
               <div className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#10b981,#0d9488)" }}/>
+                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#10b981,#0d9488)" }} />
             </div>
             <span className="text-sm font-black text-slate-600">{pct}%</span>
           </div>
@@ -754,10 +961,10 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-2.5">
         {[
-          { label: "Total",    value: stats.total,       cls: "bg-white border-slate-200 text-slate-700" },
-          { label: "À faire",  value: stats.todo,        cls: "bg-slate-50 border-slate-200 text-slate-600" },
+          { label: "Total", value: stats.total, cls: "bg-white border-slate-200 text-slate-700" },
+          { label: "À faire", value: stats.todo, cls: "bg-slate-50 border-slate-200 text-slate-600" },
           { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
-          { label: "Terminé",  value: stats.done,        cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+          { label: "Terminé", value: stats.done, cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border px-4 py-3 ${s.cls} shadow-sm`}>
             <p className="text-2xl font-black">{s.value}</p>
@@ -770,7 +977,7 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {TASK_COLUMNS.map(col => {
           const colTasks = grouped[col.key] || [];
-          const isOver   = dragOverCol === col.key;
+          const isOver = dragOverCol === col.key;
 
           return (
             <div
@@ -830,15 +1037,15 @@ export default function EncadrantStudentDetail() {
   const { applicationId } = useParams();
   const id = Number(applicationId);
 
-  const [detail,      setDetail]      = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [tasks,       setTasks]       = useState([]);
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState([]);
   const [commentsRes, setCommentsRes] = useState({ data: [] });
-  const [evaluation,  setEvaluation]  = useState(null);
+  const [evaluation, setEvaluation] = useState(null);
   const [commentBody, setCommentBody] = useState("");
-  const [busy,        setBusy]        = useState(false);
-  const [evalForm,    setEvalForm]    = useState({ score: "", final_decision: "pending", notes: "" });
-  const [formError,   setFormError]   = useState("");
+  const [busy, setBusy] = useState(false);
+  const [evalForm, setEvalForm] = useState({ score: "", final_decision: "pending", notes: "" });
+  const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
 
   const flash = (type, msg) => {
@@ -899,10 +1106,24 @@ export default function EncadrantStudentDetail() {
   };
 
   const handleAddTask = (data) => {
+    if (!data) return; // called with null from onUpdateTask signal, ignore
     setBusy(true);
-    api.post(`/encadrant/applications/${id}/tasks`, data)
-      .then(() => loadTasks())
-      .finally(() => setBusy(false));
+    // Support image file in description
+    const { _imageFile, ...rest } = data;
+    if (_imageFile) {
+      const fd = new FormData();
+      Object.entries(rest).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v); });
+      fd.append("attachment", _imageFile);
+      api.post(`/encadrant/applications/${id}/tasks`, fd, { headers: { "Content-Type": "multipart/form-data" } })
+        .then(r => setTasks(prev => [...prev, r.data]))
+        .catch(() => loadTasks())
+        .finally(() => setBusy(false));
+    } else {
+      api.post(`/encadrant/applications/${id}/tasks`, rest)
+        .then(r => setTasks(prev => [...prev, r.data]))
+        .catch(() => loadTasks())
+        .finally(() => setBusy(false));
+    }
   };
 
   const handleUpdateTaskStatus = (taskId, status) => {
@@ -911,12 +1132,16 @@ export default function EncadrantStudentDetail() {
       .catch(() => loadTasks());
   };
 
+  const handleUpdateTask = (updated) => {
+    setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+  };
+
   const handleDeleteTask = (taskId) => {
     if (!window.confirm("Supprimer cette tâche ?")) return;
-    setBusy(true);
+    // Optimistic removal
+    setTasks(prev => prev.filter(t => t.id !== taskId));
     api.delete(`/encadrant/tasks/${taskId}`)
-      .then(() => loadTasks())
-      .finally(() => setBusy(false));
+      .catch(() => loadTasks());
   };
 
   const addComment = (e) => {
@@ -924,17 +1149,23 @@ export default function EncadrantStudentDetail() {
     if (!commentBody.trim()) { flash("error", "Saisissez un commentaire avant d'enregistrer."); return; }
     setBusy(true);
     api.post(`/encadrant/applications/${id}/comments`, { body: commentBody.trim() })
-      .then(() => { setCommentBody(""); loadComments(); flash("success", "Commentaire enregistré."); })
+      .then(r => {
+        const newComment = r.data;
+        setCommentBody("");
+        // Optimistic insert — add to list directly
+        setCommentsRes(prev => ({ ...prev, data: [...(prev.data || []), newComment] }));
+        flash("success", "Commentaire enregistré.");
+      })
       .catch(err => flash("error", err.response?.data?.message || "Impossible d'enregistrer le commentaire."))
       .finally(() => setBusy(false));
   };
 
   const deleteComment = (commentId) => {
     if (!window.confirm("Supprimer ce commentaire ?")) return;
-    setBusy(true);
+    // Optimistic removal
+    setCommentsRes(prev => ({ ...prev, data: (prev.data || []).filter(c => c.id !== commentId) }));
     api.delete(`/encadrant/comments/${commentId}`)
-      .then(() => loadComments())
-      .finally(() => setBusy(false));
+      .catch(() => loadComments());
   };
 
   const saveEvaluation = (e) => {
@@ -968,11 +1199,11 @@ export default function EncadrantStudentDetail() {
     </div>
   );
 
-  const s          = detail.student;
-  const offer      = detail.offer;
+  const s = detail.student;
+  const offer = detail.offer;
   const interviews = detail.interviews || [];
-  const cv         = storageUrl(s?.cv_path || detail.cv);
-  const comments   = commentsRes.data || [];
+  const cv = storageUrl(s?.cv_path || detail.cv);
+  const comments = commentsRes.data || [];
   const currentStatus = APP_STATUSES.find(a => a.value === detail.status);
 
   return (
@@ -985,7 +1216,7 @@ export default function EncadrantStudentDetail() {
           <Link to="/enterprise/encadrant"
             className="text-sm text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1 mb-3 group">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Retour au tableau de bord
           </Link>
@@ -1020,7 +1251,7 @@ export default function EncadrantStudentDetail() {
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition border border-indigo-200">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   CV
                 </a>
@@ -1032,7 +1263,7 @@ export default function EncadrantStudentDetail() {
             <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl px-4 py-2">
               <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span className="font-bold text-sm text-indigo-900">{offer.title}</span>
               {(offer.domain || offer.location) && (
@@ -1055,6 +1286,7 @@ export default function EncadrantStudentDetail() {
           onUpdateStatus={handleUpdateTaskStatus}
           onDelete={handleDeleteTask}
           onAdd={handleAddTask}
+          onUpdateTask={handleUpdateTask}
         />
 
         {/* ── GENERAL COMMENTS ── */}
@@ -1063,7 +1295,7 @@ export default function EncadrantStudentDetail() {
             <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
               <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
             Feedback général du stagiaire
@@ -1099,7 +1331,7 @@ export default function EncadrantStudentDetail() {
                     <button onClick={() => deleteComment(c.id)} disabled={busy}
                       className="text-rose-300 hover:text-rose-600 transition-colors disabled:opacity-40">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
@@ -1116,7 +1348,7 @@ export default function EncadrantStudentDetail() {
             <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
               <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
             </div>
             Évaluation de fin de stage
@@ -1133,7 +1365,7 @@ export default function EncadrantStudentDetail() {
                 <input type="number" min={0} max={20} step={0.5}
                   value={evalForm.score}
                   onChange={(e) => setEvalForm(f => ({ ...f, score: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"/>
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Décision</label>
@@ -1151,7 +1383,7 @@ export default function EncadrantStudentDetail() {
                 value={evalForm.notes}
                 onChange={(e) => setEvalForm(f => ({ ...f, notes: e.target.value }))}
                 rows={4}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-none"/>
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-none" />
             </div>
             <button type="submit" disabled={busy}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 text-white text-sm font-black hover:bg-emerald-700 disabled:opacity-50 transition shadow-md">
@@ -1166,7 +1398,7 @@ export default function EncadrantStudentDetail() {
             <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
               <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             Historique des entretiens
@@ -1177,7 +1409,7 @@ export default function EncadrantStudentDetail() {
             <ol className="relative border-l border-slate-200 ml-3 space-y-5 pl-6">
               {interviews.map(it => (
                 <li key={it.id} className="relative">
-                  <span className="absolute -left-[1.36rem] top-2 h-3 w-3 rounded-full bg-indigo-500 ring-4 ring-white"/>
+                  <span className="absolute -left-[1.36rem] top-2 h-3 w-3 rounded-full bg-indigo-500 ring-4 ring-white" />
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <p className="font-bold text-slate-900">{it.date} · {it.time}</p>
                     {(it.location || it.meeting_link) && <p className="text-sm text-slate-600 mt-1">{it.location || it.meeting_link}</p>}

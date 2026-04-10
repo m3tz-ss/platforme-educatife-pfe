@@ -59,6 +59,10 @@ export default function Message() {
   const [sending, setSending]             = useState(false);
   const messagesEndRef                    = useRef(null);
   const inputRef                          = useRef(null);
+  // Track latest values for polling without re-creating intervals
+  const activeConvIdRef = useRef(null);
+  const receiverIdRef   = useRef(null);
+  const receiverNameRef = useRef(null);
 
   const scrollToBottom = () =>
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -81,8 +85,11 @@ export default function Message() {
 
   const fetchMessages = async (conversationId, otherUserId, otherName) => {
     setActiveConvId(conversationId);
+    activeConvIdRef.current = conversationId;
     setReceiverId(otherUserId);
+    receiverIdRef.current = otherUserId;
     setReceiverName(otherName || "");
+    receiverNameRef.current = otherName || "";
     try {
       const res  = await api.get(`/messages/conversations/${conversationId}`);
       const raw  = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
@@ -95,13 +102,53 @@ export default function Message() {
     } catch { /* silent */ }
   };
 
+  // Silent poll for new messages (keeps non-temp messages in sync)
+  const pollMessages = async () => {
+    const convId = activeConvIdRef.current;
+    if (!convId) return;
+    try {
+      const res = await api.get(`/messages/conversations/${convId}`);
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const clean = raw.map((m, i) => ({
+        ...m,
+        _key: `${m.id ?? "m"}-${i}`,
+        body: typeof m.body === "string" ? m.body : JSON.stringify(m.body),
+      }));
+      setMessages(prev => {
+        // Only update if server has more messages than local non-temp messages
+        const localReal = prev.filter(m => !String(m.id).startsWith("temp-")).length;
+        if (clean.length > localReal) return clean;
+        return prev;
+      });
+    } catch { /* silent */ }
+  };
+
   const startWithContact = (c) => {
-    setReceiverId(c.id);
-    setReceiverName(c.name);
-    setMessages([]);
-    setActiveConvId(null);
+    // Check if an existing conversation with this contact exists
+    setContacts(prev => prev); // keep contacts
     setTab("convs");
     inputRef.current?.focus();
+
+    // Try to find existing conversation
+    setConversations(prev => {
+      const existing = prev.find(conv => {
+        const other = conv.other_user ?? conv.user;
+        return other?.id === c.id;
+      });
+      if (existing) {
+        fetchMessages(existing.id, c.id, c.name);
+      } else {
+        // No existing conversation — set up a blank chat
+        setReceiverId(c.id);
+        receiverIdRef.current = c.id;
+        setReceiverName(c.name);
+        receiverNameRef.current = c.name;
+        setMessages([]);
+        setActiveConvId(null);
+        activeConvIdRef.current = null;
+      }
+      return prev;
+    });
   };
 
   const handleSend = async () => {
@@ -119,12 +166,26 @@ export default function Message() {
     setSending(true);
     try {
       const res = await api.post("/messages/send", { receiver_id: receiverId, body: text });
+      const savedMsg = res.data?.message ?? res.data;
       setMessages((prev) =>
         prev.map((m) =>
-          m._key === tempKey ? { ...res.data.message, _key: tempKey, is_mine: true } : m
+          m._key === tempKey ? { ...savedMsg, _key: tempKey, is_mine: true } : m
         )
       );
-      fetchConversations();
+      // Refresh conversation list and update activeConvId if it was a new conversation
+      const convRes = await api.get("/messages/conversations");
+      const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
+      setConversations(convData);
+      if (!activeConvIdRef.current && receiverIdRef.current) {
+        const newConv = convData.find(conv => {
+          const other = conv.other_user ?? conv.user;
+          return other?.id === receiverIdRef.current;
+        });
+        if (newConv) {
+          setActiveConvId(newConv.id);
+          activeConvIdRef.current = newConv.id;
+        }
+      }
     } catch {
       setMessages((prev) =>
         prev.map((m) =>
@@ -137,7 +198,15 @@ export default function Message() {
   useEffect(() => { fetchConversations(); fetchContacts(); }, []);
   useEffect(() => { scrollToBottom(); }, [messages]);
 
+  // Polling: every 3s refresh messages and every 10s refresh conversation list
+  useEffect(() => {
+    const msgInterval  = setInterval(pollMessages, 3000);
+    const convInterval = setInterval(fetchConversations, 10000);
+    return () => { clearInterval(msgInterval); clearInterval(convInterval); };
+  }, []);
+
   const hasConversation = receiverId || activeConvId;
+
 
   // ─── Styles ────────────────────────────────────────────────────────────────
   const s = {

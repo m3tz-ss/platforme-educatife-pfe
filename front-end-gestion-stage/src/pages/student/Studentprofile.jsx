@@ -45,6 +45,7 @@ export default function StudentProfile() {
   const [applications, setApplications] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [cvUploadProgress, setCvUploadProgress] = useState(null); // 0-100 or null
   const photoInputRef = useRef(null);
   const cvInputRef = useRef(null);
 
@@ -118,10 +119,21 @@ export default function StudentProfile() {
         }
       });
 
+      // Show CV upload progress if a new CV file is included
+      const hasCvFile = profile.cv instanceof File;
+      if (hasCvFile) setCvUploadProgress(0);
+
       await api.post("/user/profile", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: hasCvFile ? (e) => {
+          if (e.total) setCvUploadProgress(Math.round((e.loaded / e.total) * 100));
+        } : undefined,
       });
 
+      if (hasCvFile) {
+        setCvUploadProgress(100);
+        setTimeout(() => setCvUploadProgress(null), 1800);
+      }
       // Update localStorage
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...user, name: profile.name, email: profile.email }));
@@ -492,6 +504,30 @@ export default function StudentProfile() {
                       </div>
                     )}
                     <input ref={cvInputRef} type="file" accept=".pdf" className="hidden" onChange={handleCvChange} />
+
+                    {/* Upload progress bar */}
+                    {cvUploadProgress !== null && (
+                      <div className="mt-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-semibold text-blue-700">Upload en cours…</span>
+                          <span className="text-xs font-bold text-blue-700">{cvUploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-blue-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${cvUploadProgress}%`,
+                              background: cvUploadProgress === 100
+                                ? "linear-gradient(90deg,#10b981,#059669)"
+                                : "linear-gradient(90deg,#3b82f6,#6366f1)",
+                            }}
+                          />
+                        </div>
+                        {cvUploadProgress === 100 && (
+                          <p className="text-xs text-emerald-600 font-semibold mt-1">✅ CV uploadé avec succès !</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {profile.cv && (

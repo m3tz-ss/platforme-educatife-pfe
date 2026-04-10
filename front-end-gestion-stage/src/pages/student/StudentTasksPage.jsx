@@ -172,7 +172,7 @@ function RichCommentInput({ value, onChange, onSend, busy, placeholder = "Votre 
           className={`w-7 h-7 rounded flex items-center justify-center transition ${showFormatBar ? "bg-blue-100 text-blue-600" : "text-slate-400 hover:bg-slate-200 hover:text-slate-600"}`}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10M4 18h7"/>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10M4 18h7" />
           </svg>
         </button>
 
@@ -184,7 +184,7 @@ function RichCommentInput({ value, onChange, onSend, busy, placeholder = "Votre 
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
         </button>
 
@@ -196,7 +196,7 @@ function RichCommentInput({ value, onChange, onSend, busy, placeholder = "Votre 
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </button>
 
@@ -218,7 +218,7 @@ function RichCommentInput({ value, onChange, onSend, busy, placeholder = "Votre 
           className="ml-auto px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 flex items-center gap-1.5"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
           </svg>
           Envoyer
         </button>
@@ -236,9 +236,9 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
   const name = comment.user?.name || (isEncadrant ? "Encadrant" : "Moi");
   const date = comment.created_at
     ? new Date(comment.created_at).toLocaleString("fr-FR", {
-        day: "2-digit", month: "short",
-        hour: "2-digit", minute: "2-digit",
-      })
+      day: "2-digit", month: "short",
+      hour: "2-digit", minute: "2-digit",
+    })
     : "";
 
   const isTemp = String(comment.id).startsWith("temp-");
@@ -256,10 +256,10 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
   const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
   const attachments = Array.isArray(rawAtts)
     ? rawAtts.map(a => typeof a === 'string' ? {
-        url: a.startsWith('http') ? a : `${API_ORIGIN}/storage/${a}`,
-        name: a.split('/').pop(),
-        type: a.match(/\.(jpeg|jpg|gif|png)$/i) ? 'image/jpeg' : 'application/octet-stream'
-      } : a)
+      url: a.startsWith('http') ? a : `${API_ORIGIN}/storage/${a}`,
+      name: a.split('/').pop(),
+      type: a.match(/\.(jpeg|jpg|gif|png)$/i) ? 'image/jpeg' : 'application/octet-stream'
+    } : a)
     : [];
 
   const handleSaveEdit = () => {
@@ -292,7 +292,7 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </button>
             {!confirmDelete ? (
@@ -304,7 +304,7 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
             ) : (
@@ -357,7 +357,7 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
                     className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-blue-600 hover:bg-slate-50 transition">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                     </svg>
                     {att.name || "Fichier joint"}
                   </a>
@@ -389,8 +389,8 @@ function TaskModal({
 
   const taskComments = task.comments || task.taskComments || [];
   const encComments = taskComments.filter(c => encadrantId && c.user?.id === encadrantId);
-  const myComments  = taskComments.filter(c => (encadrantId ? c.user?.id !== encadrantId : true));
-  const isOverdue   = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
+  const myComments = taskComments.filter(c => (encadrantId ? c.user?.id !== encadrantId : true));
+  const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
 
   const handleSend = (attachments) => {
     sendComment(task.id, attachments);
@@ -431,7 +431,7 @@ function TaskModal({
                   {isOverdue && <span>⚠</span>}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}
                 </span>
@@ -441,7 +441,7 @@ function TaskModal({
           <button onClick={onClose}
             className="w-8 h-8 flex-shrink-0 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -468,7 +468,7 @@ function TaskModal({
               <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 Feedback de l&apos;encadrant
               </p>
@@ -534,7 +534,7 @@ function StudentTaskCard({ task, col, encadrantId, onDragStart, onDragEnd, onOpe
   const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
   const taskComments = task.comments || task.taskComments || [];
   const encComments = taskComments.filter(c => encadrantId && c.user?.id === encadrantId);
-  const totalCount  = taskComments.length;
+  const totalCount = taskComments.length;
 
   return (
     <div
@@ -551,9 +551,9 @@ function StudentTaskCard({ task, col, encadrantId, onDragStart, onDragEnd, onOpe
         <div className="flex items-start gap-2">
           <div className="flex-shrink-0 text-slate-300 mt-0.5">
             <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-              <circle cx="2.5" cy="2.5" r="1.5"/> <circle cx="7.5" cy="2.5" r="1.5"/>
-              <circle cx="2.5" cy="8" r="1.5"/> <circle cx="7.5" cy="8" r="1.5"/>
-              <circle cx="2.5" cy="13.5" r="1.5"/> <circle cx="7.5" cy="13.5" r="1.5"/>
+              <circle cx="2.5" cy="2.5" r="1.5" /> <circle cx="7.5" cy="2.5" r="1.5" />
+              <circle cx="2.5" cy="8" r="1.5" /> <circle cx="7.5" cy="8" r="1.5" />
+              <circle cx="2.5" cy="13.5" r="1.5" /> <circle cx="7.5" cy="13.5" r="1.5" />
             </svg>
           </div>
           <p className="flex-1 font-semibold text-sm text-slate-900 leading-snug">{task.title}</p>
@@ -570,7 +570,7 @@ function StudentTaskCard({ task, col, encadrantId, onDragStart, onDragEnd, onOpe
               {isOverdue && <span>⚠</span>}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               {new Date(task.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
             </span>
@@ -579,7 +579,7 @@ function StudentTaskCard({ task, col, encadrantId, onDragStart, onDragEnd, onOpe
             ${totalCount > 0 ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-slate-50 text-slate-400 border-slate-200"}`}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             {totalCount}
           </span>
@@ -650,7 +650,7 @@ function StudentKanbanBoard({ tasks, encadrantId, currentUserId, busy, applicati
             >
               <div className="rounded-t-2xl px-4 py-3 flex items-center justify-between" style={{ background: col.headerGrad }}>
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${col.dot}`}/>
+                  <span className={`w-2 h-2 rounded-full ${col.dot}`} />
                   <span className="text-white font-bold text-sm tracking-wide">{col.label}</span>
                 </div>
                 <span className="bg-white/25 text-white text-xs font-black px-2.5 py-0.5 rounded-full">{colTasks.length}</span>
@@ -731,7 +731,7 @@ function RichTaskForm({ newTask, setNewTask, onCreate, onCancel, creating }) {
         <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
           <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
         </div>
         <h4 className="font-bold text-blue-900 text-sm">Nouvelle tâche</h4>
@@ -804,7 +804,7 @@ function RichTaskForm({ newTask, setNewTask, onCreate, onCancel, creating }) {
             <div className="flex flex-col items-center gap-1.5">
               <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <p className="text-xs text-blue-600 font-semibold">Cliquez pour ajouter des fichiers</p>
               <p className="text-xs text-blue-400">Images, PDF, documents…</p>
@@ -840,15 +840,15 @@ function RichTaskForm({ newTask, setNewTask, onCreate, onCancel, creating }) {
           {creating ? (
             <>
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
               Création…
             </>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               Créer la tâche
             </>
@@ -865,16 +865,16 @@ function RichTaskForm({ newTask, setNewTask, onCreate, onCancel, creating }) {
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function StudentTasksPage() {
-  const [applications,   setApplications]   = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [selectedId,     setSelectedId]     = useState(null);
-  const [supervision,    setSupervision]    = useState(null);
-  const [loadingSup,     setLoadingSup]     = useState(false);
-  const [commentDrafts,  setCommentDrafts]  = useState({});
-  const [busy,           setBusy]           = useState(false);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
+  const [supervision, setSupervision] = useState(null);
+  const [loadingSup, setLoadingSup] = useState(false);
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [busy, setBusy] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
-  const [newTask,        setNewTask]        = useState({ title: "", description: "", due_date: "" });
-  const [creating,       setCreating]       = useState(false);
+  const [newTask, setNewTask] = useState({ title: "", description: "", due_date: "" });
+  const [creating, setCreating] = useState(false);
 
   // Load candidatures
   useEffect(() => {
@@ -1053,11 +1053,11 @@ export default function StudentTasksPage() {
         tasks: prev.tasks.map(t =>
           t.id === taskId
             ? {
-                ...t,
-                comments: (t.comments || []).map(c =>
-                  c.id === commentId ? { ...c, body } : c
-                ),
-              }
+              ...t,
+              comments: (t.comments || []).map(c =>
+                c.id === commentId ? { ...c, body } : c
+              ),
+            }
             : t
         ),
       };
@@ -1076,19 +1076,19 @@ export default function StudentTasksPage() {
     [applications]
   );
 
-  const tasks        = supervision?.tasks || [];
-  const encadrantId  = supervision?.encadrant?.id ?? null;
+  const tasks = supervision?.tasks || [];
+  const encadrantId = supervision?.encadrant?.id ?? null;
   const currentUserId = supervision?.student?.id ?? null;
 
   const stats = useMemo(() => ({
-    total:       tasks.length,
-    todo:        tasks.filter(t => t.status === "todo").length,
+    total: tasks.length,
+    todo: tasks.filter(t => t.status === "todo").length,
     in_progress: tasks.filter(t => t.status === "in_progress").length,
-    done:        tasks.filter(t => t.status === "done").length,
+    done: tasks.filter(t => t.status === "done").length,
   }), [tasks]);
 
-  const pct      = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-  const encName  = supervision?.encadrant?.name  || "—";
+  const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+  const encName = supervision?.encadrant?.name || "—";
   const encEmail = supervision?.encadrant?.email || null;
 
   const sidebarExtra = (
@@ -1114,8 +1114,8 @@ export default function StudentTasksPage() {
         {loading ? (
           <div className="flex items-center gap-3 text-slate-500">
             <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
             Chargement…
           </div>
@@ -1124,7 +1124,7 @@ export default function StudentTasksPage() {
             <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
             <p className="font-semibold text-slate-700 mb-1">Aucune candidature avec encadrant</p>
@@ -1161,10 +1161,10 @@ export default function StudentTasksPage() {
             {!loadingSup && supervision && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Total",    value: stats.total,       cls: "bg-white border-slate-200 text-slate-700" },
-                  { label: "À faire",  value: stats.todo,        cls: "bg-slate-50 border-slate-200 text-slate-600" },
+                  { label: "Total", value: stats.total, cls: "bg-white border-slate-200 text-slate-700" },
+                  { label: "À faire", value: stats.todo, cls: "bg-slate-50 border-slate-200 text-slate-600" },
                   { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
-                  { label: "Terminé",  value: stats.done,        cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                  { label: "Terminé", value: stats.done, cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
                 ].map(s => (
                   <div key={s.label} className={`rounded-2xl border px-4 py-3 shadow-sm ${s.cls}`}>
                     <p className="text-2xl font-black">{s.value}</p>
@@ -1190,8 +1190,8 @@ export default function StudentTasksPage() {
             {loadingSup ? (
               <div className="flex items-center gap-3 text-slate-500 py-8 justify-center">
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
                 Chargement des tâches…
               </div>
@@ -1202,7 +1202,7 @@ export default function StudentTasksPage() {
                   <button onClick={() => setShowCreateTask(true)}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 active:scale-95 transition-all shadow-sm">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Créer une nouvelle tâche
                   </button>
@@ -1223,7 +1223,7 @@ export default function StudentTasksPage() {
                 <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
                   <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
                   <span>
                     <strong>Cliquez</strong> sur une carte pour voir ses détails et commentaires.{" "}
@@ -1266,7 +1266,7 @@ export default function StudentTasksPage() {
                       <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shadow-sm">
                         <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </div>
                       <div>
@@ -1281,8 +1281,8 @@ export default function StudentTasksPage() {
                         const name = c.encadrant?.name || c.user?.name || "Encadrant";
                         const date = c.created_at
                           ? new Date(c.created_at).toLocaleString("fr-FR", {
-                              day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit",
-                            })
+                            day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit",
+                          })
                           : "";
                         return (
                           <div key={c.id ?? idx} className="rounded-xl bg-white border border-amber-100 px-4 py-3.5 shadow-sm">
@@ -1311,9 +1311,9 @@ export default function StudentTasksPage() {
                   const score = ev.score ?? ev.note ?? null;
                   const decision = ev.final_decision || "pending";
                   const decisionMap = {
-                    pending:      { label: "En attente",   cls: "bg-slate-100 text-slate-600 border-slate-300" },
-                    valide:       { label: "Validé ✓",     cls: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-                    a_ameliorer:  { label: "À améliorer",  cls: "bg-amber-100 text-amber-700 border-amber-300" },
+                    pending: { label: "En attente", cls: "bg-slate-100 text-slate-600 border-slate-300" },
+                    valide: { label: "Validé ✓", cls: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+                    a_ameliorer: { label: "À améliorer", cls: "bg-amber-100 text-amber-700 border-amber-300" },
                     non_conforme: { label: "Non conforme", cls: "bg-rose-100 text-rose-700 border-rose-300" },
                   };
                   const dec = decisionMap[decision] || decisionMap.pending;
@@ -1328,7 +1328,7 @@ export default function StudentTasksPage() {
                           <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shadow-sm">
                             <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                             </svg>
                           </div>
                           <div>
@@ -1343,10 +1343,10 @@ export default function StudentTasksPage() {
                           <div className="flex items-center gap-5">
                             <div className="relative w-20 h-20 flex-shrink-0">
                               <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
-                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="2.5"/>
+                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="2.5" />
                                 <circle cx="18" cy="18" r="15.9" fill="none" stroke={scoreColor} strokeWidth="2.5"
                                   strokeDasharray={`${pctScore} 100`} strokeLinecap="round"
-                                  style={{ transition: "stroke-dasharray 1s ease" }}/>
+                                  style={{ transition: "stroke-dasharray 1s ease" }} />
                               </svg>
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <span className="text-base font-black text-slate-800">{score}</span>
@@ -1357,7 +1357,7 @@ export default function StudentTasksPage() {
                               <p className="text-xs text-slate-500 font-semibold mt-0.5">Note finale</p>
                               <div className="mt-2 w-40 h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div className="h-full rounded-full transition-all duration-1000"
-                                  style={{ width: `${pctScore}%`, background: scoreColor }}/>
+                                  style={{ width: `${pctScore}%`, background: scoreColor }} />
                               </div>
                             </div>
                           </div>

@@ -46,22 +46,22 @@ function TimeLabel({ ts }) {
 }
 
 export default function ChatBox() {
-  const [open,          setOpen]         = useState(false);
-  const [tab,           setTab]          = useState("convs");
-  const [conversations, setConvs]        = useState([]);
-  const [contacts,      setContacts]     = useState([]);
-  const [messages,      setMessages]     = useState([]);
-  const [activeConvId,  setActiveConvId] = useState(null);
-  const [receiverId,    setReceiverId]   = useState(null);
-  const [receiverName,  setReceiverName] = useState("");
-  const [newMessage,    setNewMessage]   = useState("");
-  const [unreadTotal,   setUnread]       = useState(0);
-  const [sending,       setSending]      = useState(false);
-  const [view,          setView]         = useState("list"); // "list" | "chat"
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("convs");
+  const [conversations, setConvs] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [activeConvId, setActiveConvId] = useState(null);
+  const [receiverId, setReceiverId] = useState(null);
+  const [receiverName, setReceiverName] = useState("");
+  const [newMessage, setNewMessage] = useState("");
+  const [unreadTotal, setUnread] = useState(0);
+  const [sending, setSending] = useState(false);
+  const [view, setView] = useState("list"); // "list" | "chat"
 
   const messagesEndRef = useRef(null);
-  const inputRef       = useRef(null);
-  const panelRef       = useRef(null);
+  const inputRef = useRef(null);
+  const panelRef = useRef(null);
 
   // Close on outside click
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function ChatBox() {
 
   const fetchConversations = async () => {
     try {
-      const res  = await api.get("/messages/conversations");
+      const res = await api.get("/messages/conversations");
       const data = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
       setConvs(data);
       setUnread(data.reduce((acc, c) => acc + (c.unread_count || 0), 0));
@@ -100,8 +100,8 @@ export default function ChatBox() {
     setReceiverName(name || "");
     setView("chat");
     try {
-      const res   = await api.get(`/messages/conversations/${convId}`);
-      const raw   = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const res = await api.get(`/messages/conversations/${convId}`);
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
       const clean = raw.map((m, i) => ({
         ...m,
         _key: `${m.id ?? "m"}-${i}`,
@@ -136,9 +136,9 @@ export default function ChatBox() {
 
   const handleSend = async () => {
     if (!newMessage.trim() || !receiverId || sending) return;
-    const text    = newMessage.trim();
+    const text = newMessage.trim();
     const tempKey = `temp-${Date.now()}`;
-    const temp    = {
+    const temp = {
       _key: tempKey, id: tempKey, body: text,
       is_mine: true, created_at: new Date().toISOString(), sending: true,
     };
@@ -263,7 +263,7 @@ export default function ChatBox() {
       borderRadius: mine ? "16px 16px 3px 16px" : "16px 16px 16px 3px",
       background: err ? "#fee2e2"
         : mine ? "linear-gradient(135deg,#6366f1,#818cf8)"
-        : "#f1f4fb",
+          : "#f1f4fb",
       color: mine && !err ? "#fff" : "#1e1e2e",
       fontSize: 13, lineHeight: 1.55,
       boxShadow: mine ? "0 3px 12px rgba(99,102,241,0.22)" : "0 1px 4px rgba(0,0,0,0.06)",
@@ -323,11 +323,11 @@ export default function ChatBox() {
   };
 
   // Hover helpers via state
-  const [hovConv, setHovConv]       = useState(null);
+  const [hovConv, setHovConv] = useState(null);
   const [hovContact, setHovContact] = useState(null);
-  const [hovClose, setHovClose]     = useState(false);
-  const [hovBack, setHovBack]       = useState(false);
-  const [hovFab, setHovFab]         = useState(false);
+  const [hovClose, setHovClose] = useState(false);
+  const [hovBack, setHovBack] = useState(false);
+  const [hovFab, setHovFab] = useState(false);
 
   return (
     <>
@@ -362,7 +362,7 @@ export default function ChatBox() {
                     onClick={() => setOpen(false)}
                   >
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
@@ -382,7 +382,7 @@ export default function ChatBox() {
                         <div style={css.empty}>
                           <div style={css.emptyIcon}>
                             <svg width="26" height="26" fill="none" stroke="#a5b4fc" strokeWidth={1.8} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                           </div>
                           <p style={{ fontSize: 13, fontWeight: 700, color: "#64748b", margin: 0 }}>Aucune conversation</p>
@@ -390,29 +390,29 @@ export default function ChatBox() {
                         </div>
                       )
                       : conversations.map((conv, idx) => {
-                          const other   = conv.other_user ?? conv.user ?? { id: null, name: "Utilisateur" };
-                          const lastMsg = conv.last_message?.body ?? "Aucun message";
-                          const active  = activeConvId === conv.id;
-                          const hov     = hovConv === conv.id;
-                          return (
-                            <div
-                              key={`conv-${conv.id ?? idx}-${idx}`}
-                              style={{ ...css.convRow(active), background: active ? "#eef2ff" : hov ? "#f8faff" : "transparent" }}
-                              onClick={() => openConversation(conv.id, other.id, other.name)}
-                              onMouseEnter={() => setHovConv(conv.id)}
-                              onMouseLeave={() => setHovConv(null)}
-                            >
-                              <Avatar name={other.name || "U"} id={other.id} size={38} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={css.convName}>{other.name || "Utilisateur"}</p>
-                                <p style={css.convSnip}>{lastMsg}</p>
-                              </div>
-                              {conv.unread_count > 0 && (
-                                <span style={css.unread}>{conv.unread_count > 9 ? "9+" : conv.unread_count}</span>
-                              )}
+                        const other = conv.other_user ?? conv.user ?? { id: null, name: "Utilisateur" };
+                        const lastMsg = conv.last_message?.body ?? "Aucun message";
+                        const active = activeConvId === conv.id;
+                        const hov = hovConv === conv.id;
+                        return (
+                          <div
+                            key={`conv-${conv.id ?? idx}-${idx}`}
+                            style={{ ...css.convRow(active), background: active ? "#eef2ff" : hov ? "#f8faff" : "transparent" }}
+                            onClick={() => openConversation(conv.id, other.id, other.name)}
+                            onMouseEnter={() => setHovConv(conv.id)}
+                            onMouseLeave={() => setHovConv(null)}
+                          >
+                            <Avatar name={other.name || "U"} id={other.id} size={38} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={css.convName}>{other.name || "Utilisateur"}</p>
+                              <p style={css.convSnip}>{lastMsg}</p>
                             </div>
-                          );
-                        })
+                            {conv.unread_count > 0 && (
+                              <span style={css.unread}>{conv.unread_count > 9 ? "9+" : conv.unread_count}</span>
+                            )}
+                          </div>
+                        );
+                      })
                   )}
 
                   {tab === "contacts" && (
@@ -421,7 +421,7 @@ export default function ChatBox() {
                         <div style={css.empty}>
                           <div style={css.emptyIcon}>
                             <svg width="26" height="26" fill="none" stroke="#a5b4fc" strokeWidth={1.8} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                           </div>
                           <p style={{ fontSize: 13, fontWeight: 700, color: "#64748b", margin: 0 }}>Aucun contact</p>
@@ -464,7 +464,7 @@ export default function ChatBox() {
                     onClick={goBack}
                   >
                     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
                   </button>
                   <Avatar name={receiverName || "U"} id={receiverId} size={34} />
@@ -479,7 +479,7 @@ export default function ChatBox() {
                     onClick={() => setOpen(false)}
                   >
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
@@ -498,7 +498,7 @@ export default function ChatBox() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         {m.sending && <span style={{ fontSize: 10, color: "#94a3b8" }}>Envoi…</span>}
-                        {m.error   && <span style={{ fontSize: 10, color: "#ef4444" }}>Échec ✕</span>}
+                        {m.error && <span style={{ fontSize: 10, color: "#ef4444" }}>Échec ✕</span>}
                         {!m.sending && !m.error && <TimeLabel ts={m.created_at} />}
                       </div>
                     </div>
@@ -515,7 +515,7 @@ export default function ChatBox() {
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                     onFocus={(e) => { e.target.style.borderColor = "#818cf8"; e.target.style.boxShadow = "0 0 0 3px rgba(129,140,248,0.15)"; }}
-                    onBlur={(e)  => { e.target.style.borderColor = "#e0e5f2"; e.target.style.boxShadow = "none"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "#e0e5f2"; e.target.style.boxShadow = "none"; }}
                     placeholder="Écrire un message…"
                   />
                   <button
@@ -526,7 +526,7 @@ export default function ChatBox() {
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                   >
                     <svg width="17" height="17" fill="none" stroke="#fff" strokeWidth={2.2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                     </svg>
                   </button>
                 </div>
@@ -551,7 +551,7 @@ export default function ChatBox() {
         >
           <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth={1.7} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round"
-              d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
+              d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
           </svg>
           {unreadTotal > 0 && (
             <span style={css.fabBadge}>{unreadTotal > 9 ? "9+" : unreadTotal}</span>
