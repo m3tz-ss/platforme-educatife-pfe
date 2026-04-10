@@ -166,7 +166,7 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, busy, onComme
 formData.append("body", draft.trim() || " ");
 
 attachment.forEach(att => {
-  formData.append("attachment[0]", att.file);
+  formData.append("attachment[]", att.file);
 });
 
 await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
@@ -366,11 +366,19 @@ await api.post(`/encadrant/tasks/${task.id}/comments`, formData, {
                       {/* Pièces jointes du commentaire */}
                       {c.attachment?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          {c.attachment && (
-  <a href={storageUrl(c.attachment)} target="_blank">
-    📎 fichier
-  </a>
-)}
+                          {(Array.isArray(c.attachment) ? c.attachment : [c.attachment]).map((att, i) => {
+                            if (!att) return null;
+                            const isImage = typeof att === 'string' && att.match(/\.(jpeg|jpg|gif|png)$/i);
+                            return isImage ? (
+                              <a key={i} href={storageUrl(att)} target="_blank" rel="noreferrer">
+                                <img src={storageUrl(att)} alt="attachment" className="h-16 w-auto rounded border object-cover hover:opacity-90"/>
+                              </a>
+                            ) : (
+                              <a key={i} href={storageUrl(att)} target="_blank" rel="noreferrer" className="text-blue-600 text-xs hover:underline flex items-center gap-1 bg-white px-2 py-1 rounded border">
+                                📎 fichier
+                              </a>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

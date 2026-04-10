@@ -49,27 +49,57 @@ class EncadrantTaskCommentController extends Controller
         ->firstOrFail();
 
     $data = $request->validate([
-        'body' => 'required|string|max:10000',
-        'attachment' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,zip|max:4096'
+        'body' => 'nullable|string|max:10000',
+        'attachment' => 'nullable|array|max:5',
+        'attachment.*' => 'file|max:10240'
     ]);
 
-    $filePath = null;
+    $paths = [];
 
     if ($request->hasFile('attachment')) {
-        $filePath = $request->file('attachment')->store('task_comments', 'public');
+        foreach ($request->file('attachment') as $file) {
+            $paths[] = $file->store('task_comments', 'public');
+        }
+    }
+
+    if (empty($data['body']) && empty($paths)) {
+        abort(422, 'Le commentaire ne peut pas être vide.');
     }
 
     $comment = EncadrantTaskComment::create([
         'encadrant_task_id' => $taskId,
         'user_id'           => $user->id,
-        'body'              => $data['body'],
-        'attachment'        => $filePath
+        'body'              => $data['body'] ?? null,
+        'attachment'        => count($paths) > 0 ? $paths : null
+
     ]);
 
     $comment->load('user:id,name');
 
     return response()->json($comment, 201);
 }
+
+    public function update(Request $request, int $taskId, int $commentId)
+    {
+        $user = $request->user();
+        $this->supervision->ensureEncadrant($user);
+
+        $task = EncadrantTask::where('id', $taskId)
+            ->where('encadrant_id', $user->id)
+            ->firstOrFail();
+
+        $comment = EncadrantTaskComment::where('id', $commentId)
+            ->where('encadrant_task_id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $data = $request->validate([
+            'body' => 'required|string|max:10000',
+        ]);
+
+        $comment->update(['body' => $data['body']]);
+        return response()->json($comment);
+    }
     public function destroy(Request $request, int $taskId, int $commentId)
     {
         $user = $request->user();

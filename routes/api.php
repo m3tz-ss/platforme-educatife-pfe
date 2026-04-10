@@ -62,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/applications/{applicationId}/tasks/{taskId}/status', [StudentTaskController::class, 'updateStatus']);
         Route::get('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'comments']);
         Route::post('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'storeComment']);
+        Route::put('/applications/{applicationId}/tasks/{taskId}/comments/{commentId}', [StudentTaskController::class, 'updateComment']);
+        Route::delete('/applications/{applicationId}/tasks/{taskId}/comments/{commentId}', [StudentTaskController::class, 'destroyComment']);
         Route::post('/applications/{applicationId}/tasks', [StudentTaskCreateController::class, 'store']);
 
         Route::get('/notifications', [StudentNotificationController::class, 'index']);
@@ -97,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Commentaires sur une tâche spécifique (encadrant)
         Route::get('/tasks/{taskId}/comments', [EncadrantTaskCommentController::class, 'index']);
         Route::post('/tasks/{taskId}/comments', [EncadrantTaskCommentController::class, 'store']);
+        Route::put('/tasks/{taskId}/comments/{commentId}', [EncadrantTaskCommentController::class, 'update']);
         Route::delete('/tasks/{taskId}/comments/{commentId}', [EncadrantTaskCommentController::class, 'destroy']);
 
         Route::get('/applications/{applicationId}/comments', [EncadrantCommentController::class, 'index']);

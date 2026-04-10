@@ -62,7 +62,7 @@ class StudentTaskService
             ->paginate($perPage);
     }
 
-    public function storeTaskComment(User $user, int $applicationId, int $taskId, string $body): EncadrantTaskComment
+    public function storeTaskComment(User $user, int $applicationId, int $taskId, ?string $body, array $attachments = []): EncadrantTaskComment
     {
         $this->access->ensureStudent($user);
 
@@ -72,6 +72,7 @@ class StudentTaskService
             'encadrant_task_id' => $taskId,
             'user_id'           => $user->id,
             'body'              => $body,
+            'attachment'        => count($attachments) > 0 ? $attachments : null,
         ]);
 
         $comment->load('user:id,name');
@@ -84,6 +85,36 @@ class StudentTaskService
         }
 
         return $comment;
+    }
+
+    public function updateTaskComment(User $user, int $applicationId, int $taskId, int $commentId, string $body): EncadrantTaskComment
+    {
+        $this->access->ensureStudent($user);
+        $this->findStudentTaskOrAbort($user, $applicationId, $taskId);
+
+        $comment = EncadrantTaskComment::query()
+            ->where('id', $commentId)
+            ->where('encadrant_task_id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $comment->update(['body' => $body]);
+
+        return $comment;
+    }
+
+    public function destroyTaskComment(User $user, int $applicationId, int $taskId, int $commentId): void
+    {
+        $this->access->ensureStudent($user);
+        $this->findStudentTaskOrAbort($user, $applicationId, $taskId);
+
+        $comment = EncadrantTaskComment::query()
+            ->where('id', $commentId)
+            ->where('encadrant_task_id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $comment->delete();
     }
 
     private function findStudentTaskOrAbort(User $user, int $applicationId, int $taskId): EncadrantTask

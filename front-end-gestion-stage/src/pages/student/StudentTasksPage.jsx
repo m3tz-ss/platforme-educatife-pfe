@@ -252,7 +252,15 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
   const nameClass = isEncadrant ? "text-indigo-900" : "text-blue-900";
 
   // Render attachments
-  const attachments = comment.attachments || [];
+  const rawAtts = comment.attachment || comment.attachments || [];
+  const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
+  const attachments = Array.isArray(rawAtts)
+    ? rawAtts.map(a => typeof a === 'string' ? {
+        url: a.startsWith('http') ? a : `${API_ORIGIN}/storage/${a}`,
+        name: a.split('/').pop(),
+        type: a.match(/\.(jpeg|jpg|gif|png)$/i) ? 'image/jpeg' : 'application/octet-stream'
+      } : a)
+    : [];
 
   const handleSaveEdit = () => {
     if (editVal.trim()) {

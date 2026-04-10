@@ -16,6 +16,10 @@ class EncadrantTaskComment extends Model
         'attachment',
     ];
 
+    protected $casts = [
+        'attachment' => 'array',
+    ];
+
     public function task(): BelongsTo
     {
         return $this->belongsTo(EncadrantTask::class, 'encadrant_task_id');
