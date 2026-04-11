@@ -630,6 +630,210 @@ export function StudentDashboard() {
             {hasApplied(selectedOffer?.id)
               ? "✓ Déjà postulé"
               : loading
+                ? "Envoi en cours..."
+                : "✅ Postuler"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      <ChatBox />
+    </BaseLayout>
+  );
+}
+
+export default StudentDashboard;
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+  {/* Offres récentes */}
+  <Card className="border border-blue-gray-100 shadow-sm">
+    <CardHeader
+      floated={false}
+      shadow={false}
+      color="transparent"
+      className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100"
+    >
+      <Typography variant="h6" color="blue-gray" className="font-bold">
+        Offres récentes
+      </Typography>
+      <Link to="/student/offers">
+        <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
+          Voir tout
+        </Typography>
+      </Link>
+    </CardHeader>
+
+    <CardBody className="p-6 space-y-4">
+      {topOffers.length === 0 ? (
+        <Typography className="text-center text-blue-gray-500 py-4">
+          Aucune offre disponible
+        </Typography>
+      ) : (
+        topOffers.map((offer) => (
+          <OfferCard
+            key={offer.id}
+            offer={offer}
+            applied={hasApplied(offer.id)}
+            onOpen={handleOpenDetails}
+          />
+        ))
+      )}
+    </CardBody>
+  </Card>
+
+  {/* Mes candidatures */}
+  <Card className="border border-blue-gray-100 shadow-sm">
+    <CardHeader
+      floated={false}
+      shadow={false}
+      color="transparent"
+      className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100"
+    >
+      <Typography variant="h6" color="blue-gray" className="font-bold">
+        Mes candidatures
+      </Typography>
+      <Link to="/student/applications">
+        <Typography variant="small" className="text-blue-500 hover:text-blue-700 font-medium cursor-pointer">
+          Voir tout
+        </Typography>
+      </Link>
+    </CardHeader>
+
+    <CardBody className="p-6 space-y-4">
+      {topApplications.length === 0 ? (
+        <Typography className="text-center text-blue-gray-500 py-4">
+          Aucune candidature encore
+        </Typography>
+      ) : (
+        topApplications.map((app) => (
+          <ApplicationCard key={app.id} app={app} />
+        ))
+      )}
+    </CardBody>
+  </Card>
+</div>
+
+{/* Modal Détails Offre */ }
+      <Dialog open={openModal} handler={handleCloseModal} size="lg">
+        <DialogHeader className="flex justify-between items-center">
+          <Typography variant="h5" className="font-bold">
+            {selectedOffer?.title}
+          </Typography>
+          <IconButton variant="text" color="blue-gray" onClick={handleCloseModal}>
+            <XMarkIcon className="w-6 h-6" />
+          </IconButton>
+        </DialogHeader>
+
+        <DialogBody divider className="max-h-[70vh] overflow-y-auto">
+          {selectedOffer && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap gap-2">
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+                  🏢 {selectedOffer.enterprise?.name || "Non spécifiée"}
+                </span>
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
+                  📍 {selectedOffer.location || "N/A"}
+                </span>
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                  ⏱️ {selectedOffer.duration || "N/A"}
+                </span>
+                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">
+                  📅 Début : {formatDate(selectedOffer.start_date)}
+                </span>
+                <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium">
+                  👥 {selectedOffer.available_places ? `${selectedOffer.available_places} place(s)` : "N/A"}
+                </span>
+                <span className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-medium">
+                  💼 {selectedOffer.domain || "N/A"}
+                </span>
+              </div>
+
+              <Tabs value={activeTab}>
+                <TabsHeader>
+                  {["description", "requirements", "advantages", "company"].map((tab) => (
+                    <Tab key={tab} value={tab} onClick={() => setActiveTab(tab)} className="cursor-pointer">
+                      {{ description: "Description", requirements: "Exigences", advantages: "Avantages", company: "Entreprise" }[tab]}
+                    </Tab>
+                  ))}
+                </TabsHeader>
+              </Tabs>
+
+              <div>
+                {activeTab === "description" && (
+                  <div>
+                    <Typography variant="h6" className="mb-3 font-semibold">À propos de cette offre</Typography>
+                    <Typography className="text-blue-gray-700 leading-relaxed">
+                      {selectedOffer.description || "Description non disponible"}
+                    </Typography>
+                  </div>
+                )}
+                {activeTab === "requirements" && (
+                  <div>
+                    <Typography variant="h6" className="mb-3 font-semibold">Compétences requises</Typography>
+                    <ul className="space-y-2">
+                      {selectedOffer.requirements ? (
+                        selectedOffer.requirements.split(",").map((req, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <CheckCircleIcon className="w-5 h-5 text-green-500 mt-0.5" />
+                            <span className="text-blue-gray-700">{req.trim()}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <Typography className="text-blue-gray-500">Aucune exigence spécifiée</Typography>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                {activeTab === "advantages" && (
+                  <div>
+                    <Typography variant="h6" className="mb-3 font-semibold">Avantages</Typography>
+                    <ul className="space-y-2">
+                      {selectedOffer.advantages ? (
+                        selectedOffer.advantages.split(",").map((adv, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-yellow-500">⭐</span>
+                            <span className="text-blue-gray-700">{adv.trim()}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <Typography className="text-blue-gray-500">Aucun avantage spécifié</Typography>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                {activeTab === "company" && (
+                  <div>
+                    <Typography variant="h6" className="mb-3 font-semibold">À propos de l'entreprise</Typography>
+                    <Typography className="text-blue-gray-700 leading-relaxed mb-4">
+                      {selectedOffer.enterprise?.description || "Information non disponible"}
+                    </Typography>
+                    <div className="space-y-2">
+                      <Typography variant="small" className="text-blue-gray-600">
+                        <strong>Email :</strong> {selectedOffer.enterprise?.email || "N/A"}
+                      </Typography>
+                      <Typography variant="small" className="text-blue-gray-600">
+                        <strong>Téléphone :</strong> {selectedOffer.enterprise?.phone || "N/A"}
+                      </Typography>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogBody>
+
+        <DialogFooter className="space-x-3">
+          <Button color="blue" variant="outlined" onClick={toggleSaved}>
+            {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
+          </Button>
+          <Button
+            size="sm"
+            color={hasApplied(selectedOffer?.id) ? "green" : "blue"}
+            onClick={() => applyToOffer(selectedOffer?.id)}
+            disabled={loading || hasApplied(selectedOffer?.id)}
+          >
+            {hasApplied(selectedOffer?.id)
+              ? "✓ Déjà postulé"
+              : loading
               ? "Envoi en cours..."
               : "✅ Postuler"}
           </Button>
@@ -637,7 +841,7 @@ export function StudentDashboard() {
       </Dialog>
 
       <ChatBox />
-    </BaseLayout>
+    </BaseLayout >
   );
 }
 
