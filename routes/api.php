@@ -60,11 +60,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('student')->group(function () {
         Route::patch('/applications/{applicationId}/tasks/{taskId}/status', [StudentTaskController::class, 'updateStatus']);
+        Route::put('/applications/{applicationId}/tasks/{taskId}', [StudentTaskController::class, 'updateTask']);
         Route::get('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'comments']);
         Route::post('/applications/{applicationId}/tasks/{taskId}/comments', [StudentTaskController::class, 'storeComment']);
         Route::put('/applications/{applicationId}/tasks/{taskId}/comments/{commentId}', [StudentTaskController::class, 'updateComment']);
         Route::delete('/applications/{applicationId}/tasks/{taskId}/comments/{commentId}', [StudentTaskController::class, 'destroyComment']);
         Route::post('/applications/{applicationId}/tasks', [StudentTaskCreateController::class, 'store']);
+
 
         Route::get('/notifications', [StudentNotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [StudentNotificationController::class, 'unreadCount']);

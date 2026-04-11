@@ -74,4 +74,23 @@ class StudentTaskController extends Controller
         $this->tasks->destroyTaskComment($request->user(), $applicationId, $taskId, $commentId);
         return response()->json(null, 204);
     }
+
+    /**
+     * Permettre à l'étudiant de modifier la description (et le titre) d'une tâche.
+     */
+    public function updateTask(Request $request, int $applicationId, int $taskId)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'description' => 'nullable|string|max:10000',
+            'title'       => 'sometimes|string|max:255',
+            'due_date'    => 'nullable|date',
+        ]);
+
+        // Récupérer la tâche via le service (vérifie la propriété)
+        $task = $this->tasks->updateTask($user, $applicationId, $taskId, $data);
+
+        return response()->json($task);
+    }
 }

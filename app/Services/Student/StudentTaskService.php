@@ -133,4 +133,32 @@ class StudentTaskService
 
         return $task;
     }
+
+    public function updateTask(User $user, int $applicationId, int $taskId, array $data): EncadrantTask
+    {
+        $this->access->ensureStudent($user);
+
+        $task = $this->findStudentTaskOrAbort($user, $applicationId, $taskId);
+
+        $fillable = array_filter([
+            'description' => $data['description'] ?? null,
+            'title'       => $data['title'] ?? null,
+            'due_date'    => $data['due_date'] ?? null,
+        ], fn($v) => array_key_exists('description', $data)
+              || array_key_exists('title', $data)
+              || array_key_exists('due_date', $data)
+        );
+
+        // Merge only keys present in $data
+        $toUpdate = [];
+        if (array_key_exists('description', $data)) $toUpdate['description'] = $data['description'];
+        if (array_key_exists('title', $data))       $toUpdate['title']       = $data['title'];
+        if (array_key_exists('due_date', $data))    $toUpdate['due_date']    = $data['due_date'];
+
+        if (!empty($toUpdate)) {
+            $task->update($toUpdate);
+        }
+
+        return $task->fresh();
+    }
 }

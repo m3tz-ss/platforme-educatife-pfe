@@ -78,6 +78,30 @@ export default function ChatBox() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Polling: check for new messages every 3s
+  useEffect(() => {
+    const poll = async () => {
+      const convId = activeConvIdRef.current;
+      if (!convId) return;
+      try {
+        const res = await api.get(`/messages/conversations/${convId}`);
+        const raw = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+        const clean = raw.map((m, i) => ({
+          ...m,
+          _key: `${m.id ?? "m"}-${i}`,
+          body: typeof m.body === "string" ? m.body : JSON.stringify(m.body),
+        }));
+        setMessages(prev => {
+          const localReal = prev.filter(m => !String(m.id).startsWith("temp-")).length;
+          if (clean.length > localReal) return clean;
+          return prev;
+        });
+      } catch { /* silent */ }
+    };
+    const id = setInterval(poll, 3000);
+    return () => clearInterval(id);
+  }, []);
+
   const fetchConversations = async () => {
     try {
       const res = await api.get("/messages/conversations");
@@ -94,8 +118,12 @@ export default function ChatBox() {
     } catch { /* silent */ }
   };
 
+  // Refs for polling (avoid stale closure issues)
+  const activeConvIdRef = useRef(null);
+
   const openConversation = async (convId, userId, name) => {
     setActiveConvId(convId);
+    activeConvIdRef.current = convId;
     setReceiverId(userId);
     setReceiverName(name || "");
     setView("chat");
@@ -118,13 +146,29 @@ export default function ChatBox() {
   };
 
   const openContact = (c) => {
-    setReceiverId(c.id);
-    setReceiverName(c.name);
-    setMessages([]);
-    setActiveConvId(null);
     setView("chat");
-    setTimeout(() => inputRef.current?.focus(), 60);
+    // Look for an existing conversation with this contact in the current list
+    setConvs((prev) => {
+      const existing = prev.find((conv) => {
+        const other = conv.other_user ?? conv.user;
+        return other?.id === c.id;
+      });
+      if (existing) {
+        // Load existing conversation history
+        openConversation(existing.id, c.id, c.name);
+      } else {
+        // New conversation — blank chat
+        setReceiverId(c.id);
+        setReceiverName(c.name);
+        setMessages([]);
+        setActiveConvId(null);
+        activeConvIdRef.current = null;
+        setTimeout(() => inputRef.current?.focus(), 60);
+      }
+      return prev;
+    });
   };
+
 
   const goBack = () => {
     setView("list");
@@ -147,12 +191,27 @@ export default function ChatBox() {
     setSending(true);
     try {
       const res = await api.post("/messages/send", { receiver_id: receiverId, body: text });
+      const savedMsg = res.data?.message ?? res.data;
       setMessages((prev) =>
         prev.map((m) =>
-          m._key === tempKey ? { ...res.data.message, _key: tempKey, is_mine: true } : m
+          m._key === tempKey ? { ...savedMsg, _key: tempKey, is_mine: true } : m
         )
       );
-      fetchConversations();
+      // Refresh conversations and update activeConvId for new chats
+      const convRes = await api.get("/messages/conversations");
+      const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
+      setConvs(convData);
+      setUnread(convData.reduce((acc, c) => acc + (c.unread_count || 0), 0));
+      if (!activeConvIdRef.current && receiverId) {
+        const newConv = convData.find(conv => {
+          const other = conv.other_user ?? conv.user;
+          return other?.id === receiverId;
+        });
+        if (newConv) {
+          setActiveConvId(newConv.id);
+          activeConvIdRef.current = newConv.id;
+        }
+      }
     } catch {
       setMessages((prev) =>
         prev.map((m) =>

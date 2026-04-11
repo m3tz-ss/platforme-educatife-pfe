@@ -373,11 +373,14 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
 
 // ── TaskModal ─────────────────────────────────────────────────────────────────
 function TaskModal({
-  task, col, encadrantId, currentUserId,
+  task, col, encadrantId, currentUserId, applicationId,
   onClose, commentDrafts, setCommentDrafts,
-  sendComment, deleteComment, editComment, busy,
+  sendComment, deleteComment, editComment, onUpdateTask, busy,
 }) {
   const overlayRef = useRef(null);
+  const [showEditDesc, setShowEditDesc] = useState(false);
+  const [editDescription, setEditDescription] = useState(task.description || "");
+  const [savingDesc, setSavingDesc] = useState(false);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -438,6 +441,19 @@ function TaskModal({
               )}
             </div>
           </div>
+          {/* Bouton éditer description */}
+          {applicationId && onUpdateTask && (
+            <button
+              onClick={() => { setShowEditDesc(v => !v); setEditDescription(task.description || ""); }}
+              title="Modifier la description"
+              className={`w-8 h-8 flex-shrink-0 rounded-xl border flex items-center justify-center transition
+                ${showEditDesc ? "border-blue-400 bg-blue-50 text-blue-600" : "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
           <button onClick={onClose}
             className="w-8 h-8 flex-shrink-0 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -448,8 +464,44 @@ function TaskModal({
 
         {/* Body */}
         <div className="px-5 py-5 space-y-5 flex-1">
-          {/* Description */}
-          {task.description ? (
+
+          {/* Edit description form */}
+          {showEditDesc && applicationId && (
+            <div className="border border-blue-200 rounded-xl bg-blue-50/40 p-4 space-y-3">
+              <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Modifier la description</p>
+              <textarea
+                value={editDescription}
+                onChange={e => setEditDescription(e.target.value)}
+                rows={4}
+                placeholder="Description de la tâche..."
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white resize-none text-slate-700"
+              />
+              <div className="flex gap-2">
+                <button
+                  disabled={savingDesc}
+                  onClick={async () => {
+                    setSavingDesc(true);
+                    try {
+                      const r = await api.put(
+                        `/student/applications/${applicationId}/tasks/${task.id}`,
+                        { description: editDescription.trim() || null }
+                      );
+                      onUpdateTask?.(r.data);
+                      setShowEditDesc(false);
+                    } catch { }
+                    finally { setSavingDesc(false); }
+                  }}
+                  className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-40 transition">
+                  {savingDesc ? "Enregistrement…" : "✓ Enregistrer"}
+                </button>
+                <button onClick={() => setShowEditDesc(false)}
+                  className="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition">Annuler</button>
+              </div>
+            </div>
+          )}
+
+          {/* Description (read-only when not editing) */}
+          {!showEditDesc && (task.description ? (
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</p>
               <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
@@ -460,7 +512,7 @@ function TaskModal({
             <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 italic">
               Aucune description pour cette tâche.
             </div>
-          )}
+          ))}
 
           {/* Feedback encadrant */}
           {encComments.length > 0 && (
@@ -594,7 +646,7 @@ function StudentTaskCard({ task, col, encadrantId, onDragStart, onDragEnd, onOpe
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
 function StudentKanbanBoard({ tasks, encadrantId, currentUserId, busy, applicationId,
-  commentDrafts, setCommentDrafts, sendComment, deleteComment, editComment, onPatchStatus }) {
+  commentDrafts, setCommentDrafts, sendComment, deleteComment, editComment, onPatchStatus, onUpdateTask }) {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   const [modalTask, setModalTask] = useState(null);
@@ -625,12 +677,17 @@ function StudentKanbanBoard({ tasks, encadrantId, currentUserId, busy, applicati
           col={modalCol}
           encadrantId={encadrantId}
           currentUserId={currentUserId}
+          applicationId={applicationId}
           onClose={() => setModalTask(null)}
           commentDrafts={commentDrafts}
           setCommentDrafts={setCommentDrafts}
           sendComment={sendComment}
           deleteComment={deleteComment}
           editComment={editComment}
+          onUpdateTask={(updated) => {
+            setModalTask(prev => prev ? { ...prev, ...updated } : null);
+            onUpdateTask?.(updated);
+          }}
           busy={busy}
         />
       )}
@@ -1251,6 +1308,15 @@ export default function StudentTasksPage() {
                     deleteComment={deleteComment}
                     editComment={editComment}
                     onPatchStatus={patchStatus}
+                    onUpdateTask={(updated) => {
+                      setSupervision(prev => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          tasks: prev.tasks.map(t => t.id === updated.id ? { ...t, ...updated } : t),
+                        };
+                      });
+                    }}
                   />
                 )}
 
