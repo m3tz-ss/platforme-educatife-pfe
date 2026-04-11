@@ -576,14 +576,20 @@ function TaskModal({
                 {task.description}
               </div>
               {task.attachment && (
-                <div className="mt-3 inline-block">
-                  <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-sm">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
-                    Pièce jointe
-                  </a>
+                <div className="mt-3">
+                  {task.attachment.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                    <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer">
+                      <img src={`http://localhost:8000/storage/${task.attachment}`} alt="Pièce jointe" className="max-w-full h-auto max-h-56 rounded-lg border border-slate-200 object-cover hover:opacity-90 transition shadow-sm" />
+                    </a>
+                  ) : (
+                    <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-sm">
+                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      Consulter la pièce jointe
+                    </a>
+                  )}
                 </div>
               )}
             </div>
@@ -1028,9 +1034,9 @@ export default function StudentTasksPage() {
     if (withEnc.length && selectedId == null) setSelectedId(withEnc[0].id);
   }, [applications, selectedId]);
 
-  const loadSupervision = useCallback(() => {
+  const loadSupervision = useCallback((silent = false) => {
     if (!selectedId) return;
-    setLoadingSup(true);
+    if (!silent) setLoadingSup(true);
     api.get(`/student/applications/${selectedId}/supervision`)
       .then(res => {
         const data = res.data;
@@ -1043,7 +1049,9 @@ export default function StudentTasksPage() {
         setSupervision(data);
       })
       .catch(() => setSupervision(null))
-      .finally(() => setLoadingSup(false));
+      .finally(() => {
+        if (!silent) setLoadingSup(false);
+      });
   }, [selectedId]);
 
   useEffect(() => { loadSupervision(); }, [loadSupervision]);
@@ -1087,7 +1095,7 @@ export default function StudentTasksPage() {
       await api.patch(`/student/applications/${selectedId}/tasks/${taskId}/status`, { status });
     } catch (e) {
       console.error(e);
-      loadSupervision();
+      loadSupervision(true);
     }
   };
 
@@ -1132,7 +1140,7 @@ export default function StudentTasksPage() {
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
-      loadSupervision();
+      loadSupervision(true);
     } catch (e) {
       console.error(e);
       setSupervision(prev => {
@@ -1173,7 +1181,7 @@ export default function StudentTasksPage() {
       await api.delete(`/student/applications/${selectedId}/tasks/${taskId}/comments/${commentId}`);
     } catch (e) {
       console.error(e);
-      loadSupervision(); // rollback
+      loadSupervision(true); // rollback
     }
   };
 
