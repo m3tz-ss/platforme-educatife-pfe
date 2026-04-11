@@ -86,7 +86,12 @@ class StudentTaskController extends Controller
             'description' => 'nullable|string|max:10000',
             'title'       => 'sometimes|string|max:255',
             'due_date'    => 'nullable|date',
+            'attachment'  => 'nullable|file|mimes:pdf,doc,docx,png,jpg,zip|max:4096'
         ]);
+
+        if ($request->hasFile('attachment')) {
+            $data['attachment'] = $request->file('attachment')->store('tasks', 'public');
+        }
 
         // Récupérer la tâche via le service (vérifie la propriété)
         $task = $this->tasks->updateTask($user, $applicationId, $taskId, $data);

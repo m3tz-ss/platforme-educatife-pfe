@@ -132,12 +132,21 @@ function EditTaskForm({ task, onUpdated, onCancel }) {
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
-      const payload = { title: title.trim(), description: description.trim() || null, due_date: dueDate || null };
-      const r = await api.put(`/encadrant/tasks/${task.id}`, payload);
+      const fd = new FormData();
+      fd.append("_method", "PUT");
+      fd.append("title", title.trim());
+      if (description.trim()) fd.append("description", description.trim());
+      if (dueDate) fd.append("due_date", dueDate);
+      if (imageFile) fd.append("attachment", imageFile);
+
+      const r = await api.post(`/encadrant/tasks/${task.id}`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       onUpdated(r.data);
     } catch { }
     finally { setSaving(false); }
   };
+
 
   return (
     <div className="border border-indigo-200 rounded-xl bg-indigo-50/40 p-4 space-y-3">
@@ -431,16 +440,27 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask,
           )}
 
           {/* Description */}
-          {!showEditTask && (task.description ? (
+          {!showEditTask && ((task.description || task.attachment) ? (
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</p>
               <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {task.description}
+                {task.description || <span className="italic text-slate-400">Aucune description texte.</span>}
               </div>
+              {task.attachment && (
+                <div className="mt-3 inline-block">
+                  <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition shadow-sm">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    Pièce jointe
+                  </a>
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 italic">
-              Aucune description pour cette tâche.
+              Aucune description ni pièce jointe pour cette tâche.
             </div>
           ))}
 

@@ -58,7 +58,12 @@ class EncadrantTaskController extends Controller
             'status'      => 'sometimes|string|in:todo,in_progress,done',
             'due_date'    => 'nullable|date',
             'sort_order'  => 'nullable|integer',
+            'attachment'  => 'nullable|file|mimes:pdf,doc,docx,png,jpg,zip|max:4096'
         ]);
+
+        if ($request->hasFile('attachment')) {
+            $data['attachment'] = $request->file('attachment')->store('tasks', 'public');
+        }
 
         return response()->json($this->tasks->update($user->id, $taskId, $data));
     }

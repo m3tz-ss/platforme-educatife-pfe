@@ -52,7 +52,7 @@ class EncadrantTaskService
         if (!$task) {
             abort(404);
         }
-        $allowed = ['title', 'description', 'status', 'due_date', 'sort_order'];
+        $allowed = ['title', 'description', 'status', 'due_date', 'sort_order', 'attachment'];
         $payload = [];
         foreach ($allowed as $key) {
             if (array_key_exists($key, $data)) {

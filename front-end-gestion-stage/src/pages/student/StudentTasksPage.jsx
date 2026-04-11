@@ -378,9 +378,22 @@ function TaskModal({
   sendComment, deleteComment, editComment, onUpdateTask, busy,
 }) {
   const overlayRef = useRef(null);
-  const [showEditDesc, setShowEditDesc] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title || "");
   const [editDescription, setEditDescription] = useState(task.description || "");
-  const [savingDesc, setSavingDesc] = useState(false);
+  const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.substring(0, 10) : "");
+  const [editImageFile, setEditImageFile] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const imgRef = useRef(null);
+
+  const handleImageSelect = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setEditImageFile(f);
+    setEditImagePreview(URL.createObjectURL(f));
+    e.target.value = "";
+  };
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -441,13 +454,20 @@ function TaskModal({
               )}
             </div>
           </div>
-          {/* Bouton éditer description */}
+          {/* Bouton éditer tâche */}
           {applicationId && onUpdateTask && (
             <button
-              onClick={() => { setShowEditDesc(v => !v); setEditDescription(task.description || ""); }}
-              title="Modifier la description"
+              onClick={() => {
+                setShowEdit(v => !v);
+                setEditTitle(task.title || "");
+                setEditDescription(task.description || "");
+                setEditDueDate(task.due_date ? task.due_date.substring(0, 10) : "");
+                setEditImageFile(null);
+                setEditImagePreview(null);
+              }}
+              title="Modifier la tâche"
               className={`w-8 h-8 flex-shrink-0 rounded-xl border flex items-center justify-center transition
-                ${showEditDesc ? "border-blue-400 bg-blue-50 text-blue-600" : "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
+                ${showEdit ? "border-blue-400 bg-blue-50 text-blue-600" : "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -465,52 +485,111 @@ function TaskModal({
         {/* Body */}
         <div className="px-5 py-5 space-y-5 flex-1">
 
-          {/* Edit description form */}
-          {showEditDesc && applicationId && (
+          {/* Edit form */}
+          {showEdit && applicationId && (
             <div className="border border-blue-200 rounded-xl bg-blue-50/40 p-4 space-y-3">
-              <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Modifier la description</p>
+              <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Modifier la tâche</p>
+              <input
+                type="text"
+                placeholder="Titre de la tâche"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
+              />
               <textarea
                 value={editDescription}
                 onChange={e => setEditDescription(e.target.value)}
-                rows={4}
+                rows={3}
                 placeholder="Description de la tâche..."
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white resize-none text-slate-700"
               />
+              <div className="flex gap-3 items-center">
+                <div className="flex-1">
+                  <input
+                    type="date"
+                    value={editDueDate}
+                    onChange={e => setEditDueDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white text-slate-600"
+                  />
+                </div>
+                <div className="flex-1 relative">
+                  <button type="button" onClick={() => imgRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 border border-slate-200 bg-white rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 transition">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Joindre image / pdf
+                  </button>
+                  <input ref={imgRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleImageSelect} />
+                </div>
+              </div>
+
+              {editImagePreview && (
+                <div className="relative inline-block mt-2 border border-slate-200 rounded-lg overflow-hidden bg-white p-1">
+                  <img src={editImagePreview} alt="Preview" className="h-16 w-auto object-cover rounded" />
+                  <button type="button" onClick={() => { setEditImageFile(null); setEditImagePreview(null); }}
+                    className="absolute top-1 right-1 bg-white rounded-full p-0.5 text-red-500 shadow-sm hover:bg-red-50 border border-red-100">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <button
-                  disabled={savingDesc}
+                  disabled={savingEdit || !editTitle.trim()}
                   onClick={async () => {
-                    setSavingDesc(true);
+                    setSavingEdit(true);
                     try {
-                      const r = await api.put(
+                      const fd = new FormData();
+                      fd.append("_method", "PUT");
+                      fd.append("title", editTitle.trim());
+                      if (editDescription.trim()) fd.append("description", editDescription.trim());
+                      if (editDueDate) fd.append("due_date", editDueDate);
+                      if (editImageFile) fd.append("attachment", editImageFile);
+
+                      const r = await api.post(
                         `/student/applications/${applicationId}/tasks/${task.id}`,
-                        { description: editDescription.trim() || null }
+                        fd,
+                        { headers: { "Content-Type": "multipart/form-data" } }
                       );
                       onUpdateTask?.(r.data);
-                      setShowEditDesc(false);
-                    } catch { }
-                    finally { setSavingDesc(false); }
+                      setShowEdit(false);
+                    } catch { } // Error handled by interceptor ideally
+                    finally { setSavingEdit(false); }
                   }}
                   className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-40 transition">
-                  {savingDesc ? "Enregistrement…" : "✓ Enregistrer"}
+                  {savingEdit ? "Enregistrement…" : "✓ Enregistrer"}
                 </button>
-                <button onClick={() => setShowEditDesc(false)}
+                <button onClick={() => setShowEdit(false)}
                   className="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition">Annuler</button>
               </div>
             </div>
           )}
 
-          {/* Description (read-only when not editing) */}
-          {!showEditDesc && (task.description ? (
+          {/* Description & Attachment (read-only when not editing) */}
+          {!showEdit && ((task.description || task.attachment) ? (
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</p>
               <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                 {task.description}
               </div>
+              {task.attachment && (
+                <div className="mt-3 inline-block">
+                  <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-sm">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    Pièce jointe
+                  </a>
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 italic">
-              Aucune description pour cette tâche.
+              Aucune description ni pièce jointe pour cette tâche.
             </div>
           ))}
 

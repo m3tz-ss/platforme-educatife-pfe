@@ -144,9 +144,11 @@ class StudentTaskService
             'description' => $data['description'] ?? null,
             'title'       => $data['title'] ?? null,
             'due_date'    => $data['due_date'] ?? null,
+            'attachment'  => $data['attachment'] ?? null,
         ], fn($v) => array_key_exists('description', $data)
               || array_key_exists('title', $data)
               || array_key_exists('due_date', $data)
+              || array_key_exists('attachment', $data)
         );
 
         // Merge only keys present in $data
@@ -154,6 +156,7 @@ class StudentTaskService
         if (array_key_exists('description', $data)) $toUpdate['description'] = $data['description'];
         if (array_key_exists('title', $data))       $toUpdate['title']       = $data['title'];
         if (array_key_exists('due_date', $data))    $toUpdate['due_date']    = $data['due_date'];
+        if (array_key_exists('attachment', $data))  $toUpdate['attachment']  = $data['attachment'];
 
         if (!empty($toUpdate)) {
             $task->update($toUpdate);

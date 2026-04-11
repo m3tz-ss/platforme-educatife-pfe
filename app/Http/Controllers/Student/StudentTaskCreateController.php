@@ -34,7 +34,14 @@ class StudentTaskCreateController extends Controller
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date'    => 'nullable|date|after:today',
+            'attachments' => 'nullable|array|max:1',
+            'attachments.*' => 'file|max:10240',
         ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachments') && count($request->file('attachments')) > 0) {
+            $attachmentPath = $request->file('attachments')[0]->store('tasks', 'public');
+        }
 
         // Créer la tâche
         $task = EncadrantTask::create([
@@ -44,6 +51,7 @@ class StudentTaskCreateController extends Controller
             'description'    => $data['description'] ?? null,
             'status'         => 'todo',  // Les tâches de l'étudiant commencent en "todo"
             'due_date'       => $data['due_date'] ?? null,
+            'attachment'     => $attachmentPath,
             'sort_order'     => 0,
         ]);
 
