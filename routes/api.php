@@ -26,6 +26,7 @@ use App\Http\Controllers\AdminEnterpriseController;
 use App\Http\Controllers\AdminOfferController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\RHNotificationController;
+use App\Http\Controllers\AI\RecommendationController;
 use App\Http\Controllers\Enterprise\EnterpriseEvaluationController;
 
 
@@ -132,7 +133,11 @@ Route::middleware('auth:sanctum')->prefix('messages')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile', [ProfileController::class, 'show']);
     Route::post('/user/profile', [ProfileController::class, 'update']);
+    Route::put('/user/skills', [ProfileController::class, 'updateSkills']);
     Route::post('/user/change-password', [ProfileController::class, 'changePassword']);
+
+    // 🤖 IA Recommandations Gemini
+    Route::get('/ai/recommendations', [RecommendationController::class, 'recommend']);
 });
 
 // 🧑‍🎓 Étudiant : offres publiques

@@ -29,6 +29,7 @@ class ProfileController extends Controller
             'graduation_year'     => $user->graduation_year,
             'cv_name'             => $user->cv_path ? basename($user->cv_path) : null,
             'cv_url'              => $user->cv_path ? Storage::url($user->cv_path) : null,
+            'skills'              => $user->skills ?? [],
 
             // Entreprise
             'position'            => $user->position,
@@ -89,7 +90,6 @@ class ProfileController extends Controller
 
         // ✅ Upload photo de profil
         if ($request->hasFile('photo')) {
-            // Supprimer l'ancienne photo
             if ($user->photo_path) {
                 Storage::disk('public')->delete($user->photo_path);
             }
@@ -125,6 +125,27 @@ class ProfileController extends Controller
         ]);
     }
 
+    // ✅ PUT /api/user/skills — Mise à jour des skills uniquement
+    public function updateSkills(Request $request)
+    {
+        $request->validate([
+            'skills' => 'required|array',
+            'skills.*' => 'string|max:100',
+        ]);
+
+        $user = $request->user();
+        $user->skills = $request->skills;
+        $user->save();
+
+        // Invalider le cache des recommandations IA pour cet étudiant
+        cache()->forget('ai_recommendations_' . $user->id);
+
+        return response()->json([
+            'message' => 'Compétences mises à jour avec succès',
+            'skills'  => $user->skills,
+        ]);
+    }
+
     // ✅ POST /api/user/change-password
     public function changePassword(Request $request)
     {
@@ -150,4 +171,5 @@ class ProfileController extends Controller
             'message' => 'Mot de passe modifié avec succès',
         ]);
     }
+
 }

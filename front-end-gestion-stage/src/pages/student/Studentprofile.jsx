@@ -32,9 +32,84 @@ import {
   LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
+  SparklesIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
+
+// ─── Catégories de compétences prédéfinies ─────────────────────────────────
+const SKILLS_CATALOG = [
+  {
+    category: "💻 Développement",
+    color: "blue",
+    skills: [
+      "Python","JavaScript","TypeScript","Java","PHP","C++","C#","Go","Rust","Swift",
+      "Kotlin","React","Vue.js","Angular","Node.js","Laravel","Django","Spring Boot",
+      "Next.js","Express.js","Flutter","React Native",
+    ],
+  },
+  {
+    category: "🗄️ Base de données",
+    color: "indigo",
+    skills: [
+      "MySQL","PostgreSQL","MongoDB","Redis","SQLite","Oracle","Firebase",
+      "Elasticsearch","MariaDB","Cassandra",
+    ],
+  },
+  {
+    category: "📊 Data & IA",
+    color: "purple",
+    skills: [
+      "Machine Learning","Deep Learning","TensorFlow","PyTorch","Scikit-learn",
+      "Power BI","Tableau","Excel","Pandas","NumPy","Data Analysis","SQL",
+      "NLP","Computer Vision","Keras",
+    ],
+  },
+  {
+    category: "☁️ DevOps & Cloud",
+    color: "cyan",
+    skills: [
+      "Docker","Kubernetes","AWS","Azure","Google Cloud","Linux","CI/CD",
+      "Git","GitHub","GitLab","Nginx","Jenkins","Ansible","Terraform",
+    ],
+  },
+  {
+    category: "🎨 Design & UX",
+    color: "pink",
+    skills: [
+      "Figma","Adobe XD","Photoshop","Illustrator","InDesign","UI/UX Design",
+      "Wireframing","Prototypage","Canva","After Effects",
+    ],
+  },
+  {
+    category: "🌐 Réseaux & Sécurité",
+    color: "orange",
+    skills: [
+      "Cisco","TCP/IP","Sécurité informatique","Cybersécurité","VPN","Firewall",
+      "Pénétration Test","Wireshark","CCNA",
+    ],
+  },
+  {
+    category: "🤝 Soft Skills",
+    color: "green",
+    skills: [
+      "Communication","Leadership","Travail en équipe","Gestion de projet",
+      "Résolution de problèmes","Créativité","Adaptabilité","Autonomie",
+      "Gestion du temps","Prise de décision","Présentation","Négociation",
+    ],
+  },
+];
+
+const COLOR_MAP = {
+  blue:   { bg: "bg-blue-50",   border: "border-blue-200",   text: "text-blue-700",   selected: "bg-blue-500 text-white border-blue-500" },
+  indigo: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", selected: "bg-indigo-500 text-white border-indigo-500" },
+  purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", selected: "bg-purple-500 text-white border-purple-500" },
+  cyan:   { bg: "bg-cyan-50",   border: "border-cyan-200",   text: "text-cyan-700",   selected: "bg-cyan-500 text-white border-cyan-500" },
+  pink:   { bg: "bg-pink-50",   border: "border-pink-200",   text: "text-pink-700",   selected: "bg-pink-500 text-white border-pink-500" },
+  orange: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", selected: "bg-orange-500 text-white border-orange-500" },
+  green:  { bg: "bg-green-50",  border: "border-green-200",  text: "text-green-700",  selected: "bg-green-500 text-white border-green-500" },
+};
 
 export default function StudentProfile() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -45,9 +120,14 @@ export default function StudentProfile() {
   const [applications, setApplications] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [cvUploadProgress, setCvUploadProgress] = useState(null); // 0-100 or null
+  const [cvUploadProgress, setCvUploadProgress] = useState(null);
   const photoInputRef = useRef(null);
   const cvInputRef = useRef(null);
+
+  // Skills state
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [skillSearch, setSkillSearch] = useState("");
+  const [savingSkills, setSavingSkills] = useState(false);
 
   const [profile, setProfile] = useState({
     name: "",
@@ -62,6 +142,7 @@ export default function StudentProfile() {
     photo_url: null,
     cv: null,
     cv_name: null,
+    skills: [],
   });
 
   const [passwords, setPasswords] = useState({
@@ -92,6 +173,7 @@ export default function StudentProfile() {
     try {
       const res = await api.get("/user/profile");
       setProfile((prev) => ({ ...prev, ...res.data }));
+      setSelectedSkills(Array.isArray(res.data.skills) ? res.data.skills : []);
     } catch {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       setProfile((prev) => ({
@@ -114,12 +196,11 @@ export default function StudentProfile() {
       setLoading(true);
       const formData = new FormData();
       Object.entries(profile).forEach(([key, value]) => {
-        if (value !== null && key !== "photo_url" && key !== "cv_name") {
+        if (value !== null && key !== "photo_url" && key !== "cv_name" && key !== "skills") {
           formData.append(key, value);
         }
       });
 
-      // Show CV upload progress if a new CV file is included
       const hasCvFile = profile.cv instanceof File;
       if (hasCvFile) setCvUploadProgress(0);
 
@@ -134,7 +215,6 @@ export default function StudentProfile() {
         setCvUploadProgress(100);
         setTimeout(() => setCvUploadProgress(null), 1800);
       }
-      // Update localStorage
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...user, name: profile.name, email: profile.email }));
 
@@ -145,6 +225,32 @@ export default function StudentProfile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveSkills = async () => {
+    try {
+      setSavingSkills(true);
+      await api.put("/user/skills", { skills: selectedSkills });
+      setProfile((prev) => ({ ...prev, skills: selectedSkills }));
+      Swal.fire({
+        icon: "success",
+        title: "Compétences sauvegardées !",
+        text: `${selectedSkills.length} compétence(s) enregistrée(s).`,
+        timer: 2500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Erreur", text: err.response?.data?.message || "Impossible de sauvegarder les compétences.", confirmButtonColor: "#ef4444" });
+    } finally {
+      setSavingSkills(false);
+    }
+  };
+
+  const toggleSkill = (skill) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+    );
   };
 
   const handlePhotoChange = (e) => {
@@ -189,13 +295,20 @@ export default function StudentProfile() {
     }
   };
 
-  // Statut mapping
+  // Filtrer les skills par recherche
+  const filteredCatalog = SKILLS_CATALOG.map((cat) => ({
+    ...cat,
+    skills: cat.skills.filter((s) =>
+      s.toLowerCase().includes(skillSearch.toLowerCase())
+    ),
+  })).filter((cat) => cat.skills.length > 0);
+
   const statusMap = { nouveau: "pending", preselectionnee: "reviewing", entretien: "interview", acceptee: "accepted", refusee: "rejected" };
   const normalizeStatus = (s) => statusMap[s] || s;
   const statusColor = (s) => ({ accepted: "green", rejected: "red", interview: "purple", reviewing: "amber" }[normalizeStatus(s)] || "orange");
   const statusLabel = (s) => ({ accepted: "✅ Acceptée", rejected: "❌ Refusée", interview: "📞 Entretien", reviewing: "👀 Présélectionnée" }[normalizeStatus(s)] || "⏳ En attente");
 
-  const completionFields = [profile.name, profile.email, profile.phone, profile.school, profile.field, profile.photo_url, profile.cv_name];
+  const completionFields = [profile.name, profile.email, profile.phone, profile.school, profile.field, profile.photo_url, profile.cv_name, selectedSkills.length > 0 ? "ok" : null];
   const completionPct = Math.round((completionFields.filter(Boolean).length / completionFields.length) * 100);
 
   const menuItems = [
@@ -208,10 +321,11 @@ export default function StudentProfile() {
   ];
 
   const sections = [
-    { id: "personal",      label: "Infos personnelles", icon: UserCircleIcon },
-    { id: "cv",            label: "CV & Documents",      icon: DocumentArrowUpIcon },
-    { id: "applications",  label: "Historique",          icon: BriefcaseIcon },
-    { id: "password",      label: "Mot de passe",        icon: LockClosedIcon },
+    { id: "personal",     label: "Infos personnelles", icon: UserCircleIcon },
+    { id: "skills",       label: "Mes compétences",    icon: SparklesIcon },
+    { id: "cv",           label: "CV & Documents",     icon: DocumentArrowUpIcon },
+    { id: "applications", label: "Historique",         icon: BriefcaseIcon },
+    { id: "password",     label: "Mot de passe",       icon: LockClosedIcon },
   ];
 
   if (initialLoading) {
@@ -310,7 +424,24 @@ export default function StudentProfile() {
                     <Typography variant="small" className="text-blue-gray-500 mb-4">
                       {profile.school || "Établissement"} {profile.graduation_year ? `• Promotion ${profile.graduation_year}` : ""}
                     </Typography>
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+
+                    {/* Skills badges */}
+                    {selectedSkills.length > 0 && (
+                      <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                        {selectedSkills.slice(0, 5).map((skill) => (
+                          <span key={skill} className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                            {skill}
+                          </span>
+                        ))}
+                        {selectedSkills.length > 5 && (
+                          <span className="bg-blue-gray-100 text-blue-gray-600 text-xs px-3 py-1 rounded-full font-medium">
+                            +{selectedSkills.length - 5}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-2">
                       {profile.email && (
                         <span className="flex items-center gap-1 text-xs text-blue-gray-600 bg-blue-gray-50 px-3 py-1 rounded-full">
                           <EnvelopeIcon className="w-3 h-3" /> {profile.email}
@@ -357,12 +488,19 @@ export default function StudentProfile() {
                     onClick={() => setActiveSection(s.id)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
                       activeSection === s.id
-                        ? "bg-blue-500 text-white shadow-md"
+                        ? s.id === "skills"
+                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                          : "bg-blue-500 text-white shadow-md"
                         : "bg-white text-blue-gray-700 border border-blue-gray-200 hover:bg-blue-50"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
                     {s.label}
+                    {s.id === "skills" && selectedSkills.length > 0 && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeSection === "skills" ? "bg-white/30 text-white" : "bg-purple-100 text-purple-700"}`}>
+                        {selectedSkills.length}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -391,12 +529,12 @@ export default function StudentProfile() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                      { label: "Nom complet",       name: "name",            icon: UserCircleIcon,  type: "text",  placeholder: "Votre nom complet" },
-                      { label: "Email",              name: "email",           icon: EnvelopeIcon,    type: "email", placeholder: "votre@email.com" },
-                      { label: "Téléphone",          name: "phone",           icon: PhoneIcon,       type: "tel",   placeholder: "+216 XX XXX XXX" },
-                      { label: "Adresse",            name: "address",         icon: MapPinIcon,      type: "text",  placeholder: "Ville, Pays" },
-                      { label: "Établissement",      name: "school",          icon: AcademicCapIcon, type: "text",  placeholder: "Nom de votre école" },
-                      { label: "Domaine d'études",   name: "field",           icon: BriefcaseIcon,   type: "text",  placeholder: "Ex: Informatique" },
+                      { label: "Nom complet",       name: "name",            icon: UserCircleIcon,  type: "text",   placeholder: "Votre nom complet" },
+                      { label: "Email",              name: "email",           icon: EnvelopeIcon,    type: "email",  placeholder: "votre@email.com" },
+                      { label: "Téléphone",          name: "phone",           icon: PhoneIcon,       type: "tel",    placeholder: "+216 XX XXX XXX" },
+                      { label: "Adresse",            name: "address",         icon: MapPinIcon,      type: "text",   placeholder: "Ville, Pays" },
+                      { label: "Établissement",      name: "school",          icon: AcademicCapIcon, type: "text",   placeholder: "Nom de votre école" },
+                      { label: "Domaine d'études",   name: "field",           icon: BriefcaseIcon,   type: "text",   placeholder: "Ex: Informatique" },
                       { label: "Année de diplôme",   name: "graduation_year", icon: AcademicCapIcon, type: "number", placeholder: "2025" },
                     ].map(({ label, name, icon: Icon, type, placeholder }) => (
                       <div key={name}>
@@ -457,6 +595,119 @@ export default function StudentProfile() {
               </Card>
             )}
 
+            {/* ✅ Section : Compétences (Skills) */}
+            {activeSection === "skills" && (
+              <div className="space-y-6">
+                {/* Header */}
+                <Card className="shadow-sm border border-purple-100 overflow-hidden">
+                  <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Typography variant="h5" className="font-bold text-white flex items-center gap-2">
+                          <SparklesIcon className="w-6 h-6" />
+                          Mes Compétences
+                        </Typography>
+                        <Typography variant="small" className="text-white/80 mt-1">
+                          Sélectionnez vos compétences pour recevoir des recommandations IA personnalisées
+                        </Typography>
+                      </div>
+                      <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
+                        <Typography className="text-3xl font-bold text-white">{selectedSkills.length}</Typography>
+                        <Typography variant="small" className="text-white/80">sélectionnée(s)</Typography>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selected skills preview */}
+                  {selectedSkills.length > 0 && (
+                    <CardBody className="p-4 bg-purple-50 border-b border-purple-100">
+                      <Typography variant="small" className="font-semibold text-purple-800 mb-3">
+                        ✅ Compétences sélectionnées :
+                      </Typography>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSkills.map((skill) => (
+                          <button
+                            key={skill}
+                            onClick={() => toggleSkill(skill)}
+                            className="flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm px-3 py-1.5 rounded-full font-medium hover:opacity-80 transition group"
+                          >
+                            {skill}
+                            <XMarkIcon className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setSelectedSkills([])}
+                          className="text-xs text-red-500 hover:text-red-700 px-2 py-1.5 rounded-full border border-red-200 hover:border-red-400 transition"
+                        >
+                          Tout effacer
+                        </button>
+                      </div>
+                    </CardBody>
+                  )}
+                </Card>
+
+                {/* Search */}
+                <div className="relative">
+                  <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher une compétence..."
+                    value={skillSearch}
+                    onChange={(e) => setSkillSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-blue-gray-200 rounded-xl text-sm focus:outline-none focus:border-purple-400 bg-white shadow-sm"
+                  />
+                </div>
+
+                {/* Skills by category */}
+                <div className="space-y-4">
+                  {filteredCatalog.map((cat) => {
+                    const colors = COLOR_MAP[cat.color] || COLOR_MAP.blue;
+                    return (
+                      <Card key={cat.category} className="shadow-sm border border-blue-gray-100">
+                        <CardBody className="p-5">
+                          <Typography variant="small" className="font-bold text-blue-gray-800 mb-3">
+                            {cat.category}
+                          </Typography>
+                          <div className="flex flex-wrap gap-2">
+                            {cat.skills.map((skill) => {
+                              const isSelected = selectedSkills.includes(skill);
+                              return (
+                                <button
+                                  key={skill}
+                                  onClick={() => toggleSkill(skill)}
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 transform hover:scale-105 ${
+                                    isSelected
+                                      ? colors.selected
+                                      : `${colors.bg} ${colors.border} ${colors.text} hover:opacity-80`
+                                  }`}
+                                >
+                                  {isSelected && <span className="mr-1">✓</span>}
+                                  {skill}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </CardBody>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Save button */}
+                <div className="flex justify-end gap-3 pb-4">
+                  <Button
+                    size="lg"
+                    onClick={handleSaveSkills}
+                    disabled={savingSkills}
+                    className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <SparklesIcon className="w-5 h-5" />
+                    {savingSkills ? "Sauvegarde..." : `Sauvegarder mes ${selectedSkills.length} compétence(s)`}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* ✅ Section : CV & Documents */}
             {activeSection === "cv" && (
               <Card className="shadow-sm border border-blue-gray-100">
@@ -465,7 +716,6 @@ export default function StudentProfile() {
                     📄 CV & Documents
                   </Typography>
 
-                  {/* Upload CV */}
                   <div className="mb-8">
                     <Typography variant="small" className="font-semibold text-blue-gray-900 mb-4 block">
                       Curriculum Vitae (PDF)
@@ -505,7 +755,6 @@ export default function StudentProfile() {
                     )}
                     <input ref={cvInputRef} type="file" accept=".pdf" className="hidden" onChange={handleCvChange} />
 
-                    {/* Upload progress bar */}
                     {cvUploadProgress !== null && (
                       <div className="mt-4">
                         <div className="flex justify-between items-center mb-1">
@@ -597,7 +846,6 @@ export default function StudentProfile() {
                   </Typography>
 
                   <div className="max-w-md space-y-5">
-                    {/* Mot de passe actuel */}
                     <div>
                       <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">Mot de passe actuel</Typography>
                       <div className="relative">
@@ -615,7 +863,6 @@ export default function StudentProfile() {
                       </div>
                     </div>
 
-                    {/* Nouveau mot de passe */}
                     <div>
                       <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">Nouveau mot de passe</Typography>
                       <div className="relative">
@@ -645,7 +892,6 @@ export default function StudentProfile() {
                       )}
                     </div>
 
-                    {/* Confirmation */}
                     <div>
                       <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">Confirmer le nouveau mot de passe</Typography>
                       <Input

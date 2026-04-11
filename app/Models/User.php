@@ -36,6 +36,7 @@ class User extends Authenticatable
         'field',
         'graduation_year',
         'cv_path',
+        'skills',         // ✅ compétences JSON
 
         // Entreprise
         'position',
@@ -53,7 +54,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        'password'         => 'hashed',
+        'skills'           => 'array',  // ✅ JSON → array automatique
     ];
 
     // ================= RELATIONS =================
