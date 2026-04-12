@@ -17,13 +17,14 @@ class RecommendationController extends Controller
     private array $apiKeys;
     private int $cacheTtl;
 
-    // ✅ Modèles Gemini à essayer dans l'ordre (du plus rapide au plus stable)
+    // ✅ Modèles confirmés disponibles (listés via API /v1beta/models)
+    // Tous utilisent v1beta — les modèles récents ne sont PAS dans v1
     private array $geminiModels = [
-        'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
-        'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent',
-        'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-001:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
     ];
 
     public function __construct()
@@ -35,6 +36,7 @@ class RecommendationController extends Controller
         ]));
         $this->cacheTtl = (int) env('GEMINI_CACHE_TTL', 7200); // 2h par défaut
     }
+
 
     /**
      * GET /api/ai/recommendations
