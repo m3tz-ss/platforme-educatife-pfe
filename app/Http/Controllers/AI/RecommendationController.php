@@ -15,6 +15,7 @@ class RecommendationController extends Controller
      * Clés API Gemini (fallback automatique si quota dépassé)
      */
     private array $apiKeys;
+    private string $geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
     private int $cacheTtl;
 
     // ✅ Modèles confirmés disponibles (listés via API /v1beta/models)
@@ -29,11 +30,11 @@ class RecommendationController extends Controller
 
     public function __construct()
     {
-        $this->apiKeys = array_values(array_filter([
+        $this->apiKeys = array_filter([
             env('GEMINI_API_KEY_1'),
             env('GEMINI_API_KEY_2'),
             env('GEMINI_API_KEY_3'),
-        ]));
+        ]);
         $this->cacheTtl = (int) env('GEMINI_CACHE_TTL', 7200); // 2h par défaut
     }
 
@@ -178,53 +179,38 @@ PROMPT;
     }
 
     /**
-     * Appel Gemini avec fallback automatique : essaie chaque modèle avec chaque clé API
+     * Appel Gemini avec fallback automatique entre les clés API
      */
     private function callGeminiWithFallback(string $prompt): ?array
     {
-        if (empty($this->apiKeys)) {
-            Log::error('Gemini: aucune clé API configurée dans .env');
-            return null;
-        }
+        foreach ($this->apiKeys as $apiKey) {
+            $result = $this->callGemini($apiKey, $prompt);
 
-        foreach ($this->geminiModels as $modelUrl) {
-            foreach ($this->apiKeys as $apiKey) {
-                Log::info('Gemini: tentative avec ' . $modelUrl);
-                $result = $this->callGemini($apiKey, $prompt, $modelUrl);
-
-                if ($result === 'quota_exceeded') {
-                    Log::warning("Gemini quota dépassé pour clé sur {$modelUrl}, essai clé suivante...");
-                    continue; // clé suivante, même modèle
-                }
-
-                if ($result === 'model_not_found') {
-                    Log::warning("Gemini: modèle non trouvé {$modelUrl}, passage au modèle suivant...");
-                    break; // passer directement au modèle suivant
-                }
-
-                if ($result !== null) {
-                    Log::info("Gemini: succès avec {$modelUrl}");
-                    return $result; // ✅ Succès
-                }
-
-                // Autre erreur : essayer clé suivante
-                Log::error("Gemini: erreur inconnue sur {$modelUrl}, clé suivante...");
+            if ($result === 'quota_exceeded') {
+                Log::warning('Gemini quota dépassé, passage à la clé suivante...');
+                continue; // Essayer la clé suivante
             }
+
+            if ($result !== null) {
+                return $result; // Succès
+            }
+
+            // Erreur non-quota : on essaie quand même la clé suivante
+            Log::error('Erreur Gemini API avec une clé, tentative suivante...');
         }
 
-        Log::error('Gemini: toutes les clés et modèles ont échoué');
-        return null;
+        return null; // Toutes les clés ont échoué
     }
 
     /**
      * Appel direct à l'API Gemini
-     * Retourne 'quota_exceeded', 'model_not_found', null (erreur), ou array (résultat)
+     * Retourne 'quota_exceeded', null (erreur), ou array (résultat)
      */
-    private function callGemini(string $apiKey, string $prompt, string $modelUrl): string|array|null
+    private function callGemini(string $apiKey, string $prompt): string|array|null
     {
         try {
             $response = Http::timeout(30)
-                ->post("{$modelUrl}?key={$apiKey}", [
+                ->post("{$this->geminiUrl}?key={$apiKey}", [
                     'contents' => [
                         [
                             'parts' => [
@@ -233,39 +219,24 @@ PROMPT;
                         ],
                     ],
                     'generationConfig' => [
-                        'temperature'     => 0.3,
+                        'temperature'     => 0.3,  // Réponses plus déterministes
                         'maxOutputTokens' => 1024,
                     ],
                     'safetySettings' => [
-                        ['category' => 'HARM_CATEGORY_HARASSMENT',        'threshold' => 'BLOCK_NONE'],
-                        ['category' => 'HARM_CATEGORY_HATE_SPEECH',       'threshold' => 'BLOCK_NONE'],
-                        ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_NONE'],
-                        ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_NONE'],
+                        ['category' => 'HARM_CATEGORY_HARASSMENT',       'threshold' => 'BLOCK_NONE'],
+                        ['category' => 'HARM_CATEGORY_HATE_SPEECH',      'threshold' => 'BLOCK_NONE'],
+                        ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT','threshold' => 'BLOCK_NONE'],
+                        ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT','threshold' => 'BLOCK_NONE'],
                     ],
                 ]);
 
-            $statusCode = $response->status();
-            $body       = $response->body();
-
             // ✅ Quota dépassé
-            if ($statusCode === 429) {
+            if ($response->status() === 429) {
                 return 'quota_exceeded';
             }
 
-            // ✅ Modèle introuvable (essayer un autre modèle)
-            if ($statusCode === 404) {
-                Log::warning('Gemini 404 NOT_FOUND: ' . $body);
-                return 'model_not_found';
-            }
-
-            // ✅ Erreur de permission / clé invalide (essayer clé suivante)
-            if ($statusCode === 400 || $statusCode === 401 || $statusCode === 403) {
-                Log::error("Gemini {$statusCode}: " . $body);
-                return null;
-            }
-
             if (!$response->successful()) {
-                Log::error('Gemini API error: ' . $statusCode . ' ' . $body);
+                Log::error('Gemini API error: ' . $response->status() . ' ' . $response->body());
                 return null;
             }
 
@@ -275,13 +246,11 @@ PROMPT;
             $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
             if (!$text) {
-                // Vérifier si la réponse est bloquée par safety
-                $finishReason = $data['candidates'][0]['finishReason'] ?? null;
-                Log::error('Gemini: réponse vide ou bloquée', ['finishReason' => $finishReason, 'data' => $data]);
+                Log::error('Gemini: réponse vide ou mal formée', $data);
                 return null;
             }
 
-            // ✅ Nettoyer le JSON (Gemini ajoute parfois des backticks markdown)
+            // ✅ Nettoyer le JSON (Gemini peut ajouter des backticks markdown)
             $text = trim($text);
             $text = preg_replace('/^```json\s*/i', '', $text);
             $text = preg_replace('/^```\s*/i', '', $text);
@@ -291,7 +260,7 @@ PROMPT;
             $parsed = json_decode($text, true);
 
             if (json_last_error() !== JSON_ERROR_NONE || !is_array($parsed)) {
-                Log::error('Gemini: impossible de parser le JSON', ['text' => $text, 'json_error' => json_last_error_msg()]);
+                Log::error('Gemini: impossible de parser le JSON', ['text' => $text]);
                 return null;
             }
 
