@@ -23,9 +23,9 @@ class OfferController extends Controller
     {
         $perPage = request()->integer('per_page', 50); // default 10
 
-$query = Offer::with(['user'])->latest();
+        $query = Offer::with(['user'])->latest();
 
-$offers = $query->paginate($perPage);
+        $offers = $query->paginate($perPage);
 
         return OfferResource::collection($offers);
     }
@@ -40,11 +40,11 @@ $offers = $query->paginate($perPage);
             $query = Offer::with('user')
                 ->where(function ($q) use ($user) {
                     $q->where('enterprise_id', $user->id)
-                      ->orWhereIn('enterprise_id', function ($q2) use ($user) {
-                          $q2->select('id')
-                             ->from('users')
-                             ->where('manager_id', $user->id);
-                      });
+                        ->orWhereIn('enterprise_id', function ($q2) use ($user) {
+                            $q2->select('id')
+                                ->from('users')
+                                ->where('manager_id', $user->id);
+                        });
                 })
                 ->latest();
         } else {
@@ -62,36 +62,36 @@ $offers = $query->paginate($perPage);
     public function store(Request $request)
     {
         $request->validate([
-            'title'           => 'required|string|max:255',
-            'domain'          => 'required|string|max:255',
-            'location'        => 'required|string|max:255',
-            'duration'        => 'required|string',
-            'startDate'       => 'nullable|date',
+            'title' => 'required|string|max:255',
+            'domain' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'duration' => 'required|string',
+            'startDate' => 'nullable|date',
             'availablePlaces' => 'nullable|integer|min:1',
-            'description'     => 'required|string',
-            'requirements'    => 'nullable|string',
-            'advantages'      => 'nullable|string',
+            'description' => 'required|string',
+            'requirements' => 'nullable|string',
+            'advantages' => 'nullable|string',
         ]);
 
         $user = $request->user();
 
         // ✅ enterprise_id = id du user connecté (RH ou Manager)
         $offer = Offer::create([
-            'enterprise_id'    => $user->id, // ✅ corrigé
-            'title'            => $request->title,
-            'domain'           => $request->domain,
-            'location'         => $request->location,
-            'duration'         => $request->duration,
-            'start_date'       => $request->startDate,
+            'enterprise_id' => $user->id, // ✅ corrigé
+            'title' => $request->title,
+            'domain' => $request->domain,
+            'location' => $request->location,
+            'duration' => $request->duration,
+            'start_date' => $request->startDate,
             'available_places' => $request->availablePlaces,
-            'description'      => $request->description,
-            'requirements'     => $request->requirements,
-            'advantages'       => $request->advantages,
+            'description' => $request->description,
+            'requirements' => $request->requirements,
+            'advantages' => $request->advantages,
         ]);
 
         return response()->json([
             'message' => 'Offre publiée avec succès',
-            'offer'   => $offer,
+            'offer' => $offer,
         ], 201);
     }
 
@@ -99,20 +99,20 @@ $offers = $query->paginate($perPage);
     public function update(Request $request, Offer $offer)
     {
         $offer->update([
-            'title'            => $request->title           ?? $offer->title,
-            'domain'           => $request->domain          ?? $offer->domain,
-            'location'         => $request->location        ?? $offer->location,
-            'duration'         => $request->duration        ?? $offer->duration,
-            'start_date'       => $request->startDate       ?? $offer->start_date,
+            'title' => $request->title ?? $offer->title,
+            'domain' => $request->domain ?? $offer->domain,
+            'location' => $request->location ?? $offer->location,
+            'duration' => $request->duration ?? $offer->duration,
+            'start_date' => $request->startDate ?? $offer->start_date,
             'available_places' => $request->availablePlaces ?? $offer->available_places,
-            'description'      => $request->description     ?? $offer->description,
-            'requirements'     => $request->requirements    ?? $offer->requirements,
-            'advantages'       => $request->advantages      ?? $offer->advantages,
+            'description' => $request->description ?? $offer->description,
+            'requirements' => $request->requirements ?? $offer->requirements,
+            'advantages' => $request->advantages ?? $offer->advantages,
         ]);
 
         return response()->json([
             'message' => 'Offre mise à jour',
-            'offer'   => $offer,
+            'offer' => $offer,
         ]);
     }
 
@@ -122,7 +122,7 @@ $offers = $query->paginate($perPage);
         $offer->delete();
         return response()->json(['message' => 'Offre supprimée']);
     }
-    
+
 }
 
 

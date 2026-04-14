@@ -164,4 +164,12 @@ class StudentTaskService
 
         return $task->fresh();
     }
+
+    public function destroyTask(User $user, int $applicationId, int $taskId): void
+    {
+        $this->access->ensureStudent($user);
+        $task = $this->findStudentTaskOrAbort($user, $applicationId, $taskId);
+        
+        $task->delete();
+    }
 }

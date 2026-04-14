@@ -18,11 +18,11 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'            => 'required|string|max:255',
-            'email'           => 'required|email|unique:users,email',
-            'password'        => 'required|min:6',
-            'type'            => 'required|in:enterprise,student',
-            'role'            => 'sometimes|nullable|in:manager,rh,encadrant',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'type' => 'required|in:enterprise,student',
+            'role' => 'sometimes|nullable|in:manager,rh,encadrant',
             'enterprise_name' => 'sometimes|nullable|string|max:255',
         ]);
 
@@ -31,20 +31,20 @@ class AuthController extends Controller
         // ✅ Créer l'entreprise seulement si le rôle est manager
         if (($validated['role'] ?? null) === 'manager' && !empty($validated['enterprise_name'])) {
             $enterprise = Enterprise::create([
-                'name'  => $validated['enterprise_name'],
+                'name' => $validated['enterprise_name'],
                 'email' => $validated['email'],
             ]);
             $enterpriseId = $enterprise->id;
         }
 
         $user = User::create([
-            'name'          => $validated['name'],
-            'email'         => $validated['email'],
-            'password'      => Hash::make($validated['password']),
-            'type'          => $validated['type'],
-            'role'          => $validated['role'] ?? null,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'type' => $validated['type'],
+            'role' => $validated['role'] ?? null,
             'enterprise_id' => $enterpriseId,
-            'company_name'  => $validated['enterprise_name'] ?? null,
+            'company_name' => $validated['enterprise_name'] ?? null,
         ]);
 
         // ✅ Lier le manager à son entreprise en une seule requête
@@ -54,7 +54,7 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $user->createToken('auth_token')->plainTextToken,
-            'user'  => $this->formatUser($user),
+            'user' => $this->formatUser($user),
         ], 201);
     }
 
@@ -70,14 +70,14 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
         // ✅ Eager loading en UNE SEULE requête SQL (évite le N+1)
         $user = User::with('enterprise:id,name,email,manager_id')
-                    ->where('email', $request->email)
-                    ->first();
+            ->where('email', $request->email)
+            ->first();
 
         // ✅ Vérification de l'existence et du mot de passe
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -100,26 +100,26 @@ class AuthController extends Controller
         $manager = null;
         if (in_array($user->role, ['rh', 'encadrant'], true) && $user->manager_id) {
             $manager = User::select('id', 'email', 'company_name')
-                           ->find($user->manager_id);
+                ->find($user->manager_id);
         }
 
         // ✅ Déterminer company_name et enterprise_email sans requêtes supplémentaires
         [$companyName, $enterpriseEmail] = $this->resolveEnterpriseInfo($user, $manager);
 
         // ✅ Supprimer les anciens tokens pour éviter la croissance de personal_access_tokens
-       
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'token' => $token,
-            'user'  => [
-                'id'               => $user->id,
-                'name'             => $user->name,
-                'email'            => $user->email,
-                'type'             => $user->role ?: $user->type,
-                'role'             => $user->role,
-                'enterprise_id'    => $user->enterprise_id,
-                'company_name'     => $companyName,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->role ?: $user->type,
+                'role' => $user->role,
+                'enterprise_id' => $user->enterprise_id,
+                'company_name' => $companyName,
                 'enterprise_email' => $enterpriseEmail,
             ],
         ]);
@@ -132,17 +132,17 @@ class AuthController extends Controller
     public function enterpriseLogin(Request $request): JsonResponse
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string',
-            'role'     => 'required|in:manager,rh,encadrant',
+            'role' => 'required|in:manager,rh,encadrant',
         ]);
 
         // ✅ Une seule requête avec toutes les conditions
         $user = User::with('enterprise:id,name,email')
-                    ->where('email', $request->email)
-                    ->where('role', $request->role)
-                    ->where('type', 'enterprise')
-                    ->first();
+            ->where('email', $request->email)
+            ->where('role', $request->role)
+            ->where('type', 'enterprise')
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(
@@ -155,7 +155,7 @@ class AuthController extends Controller
         $manager = null;
         if (in_array($user->role, ['rh', 'encadrant'], true) && $user->manager_id) {
             $manager = User::select('id', 'email', 'company_name')
-                           ->find($user->manager_id);
+                ->find($user->manager_id);
         }
 
         [$companyName, $enterpriseEmail] = $this->resolveEnterpriseInfo($user, $manager);
@@ -166,15 +166,15 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user'  => [
-                'id'               => $user->id,
-                'name'             => $user->name,
-                'email'            => $user->email,
-                'type'             => $user->role,
-                'role'             => $user->role,
-                'manager_id'       => $user->manager_id,
-                'enterprise_id'    => $user->enterprise_id,
-                'company_name'     => $companyName,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->role,
+                'role' => $user->role,
+                'manager_id' => $user->manager_id,
+                'enterprise_id' => $user->enterprise_id,
+                'company_name' => $companyName,
                 'enterprise_email' => $enterpriseEmail,
             ],
         ]);
@@ -243,13 +243,13 @@ class AuthController extends Controller
     private function formatUser(User $user): array
     {
         return [
-            'id'               => $user->id,
-            'name'             => $user->name,
-            'email'            => $user->email,
-            'type'             => $user->role ?: $user->type,
-            'role'             => $user->role,
-            'enterprise_id'    => $user->enterprise_id,
-            'company_name'     => $user->company_name ?? $user->enterprise?->name,
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'type' => $user->role ?: $user->type,
+            'role' => $user->role,
+            'enterprise_id' => $user->enterprise_id,
+            'company_name' => $user->company_name ?? $user->enterprise?->name,
             'enterprise_email' => $user->role === 'manager' ? $user->email : null,
         ];
     }

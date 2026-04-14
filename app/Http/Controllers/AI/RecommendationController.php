@@ -26,7 +26,7 @@ class RecommendationController extends Controller
 
         // ✅ Vérifier les compétences
         $skills = is_array($user->skills) ? $user->skills : [];
-        
+
         if (empty($skills)) {
             return response()->json([
                 'error' => 'profile_incomplete',
@@ -58,15 +58,15 @@ class RecommendationController extends Controller
             ->take(30)
             ->get()
             ->map(fn($offer) => [
-                'id'           => $offer->id,
-                'title'        => $offer->title,
-                'domain'       => $offer->domain,
-                'description'  => substr($offer->description ?? '', 0, 300),
+                'id' => $offer->id,
+                'title' => $offer->title,
+                'domain' => $offer->domain,
+                'description' => substr($offer->description ?? '', 0, 300),
                 'requirements' => substr($offer->requirements ?? '', 0, 200),
-                'location'     => $offer->location,
-                'duration'     => $offer->duration,
-                'advantages'   => substr($offer->advantages ?? '', 0, 150),
-                'enterprise'   => $offer->enterprise?->name ?? 'N/A',
+                'location' => $offer->location,
+                'duration' => $offer->duration,
+                'advantages' => substr($offer->advantages ?? '', 0, 150),
+                'enterprise' => $offer->enterprise?->name ?? 'N/A',
             ]);
 
         if ($offers->isEmpty()) {
@@ -173,22 +173,22 @@ PROMPT;
                 ->map(function ($rec) use ($allOffers) {
                     $offer = $allOffers->get($rec['offer_id']);
                     return [
-                        'offer_id'    => $rec['offer_id'],
-                        'score'       => min(100, max(0, (int) ($rec['score'] ?? 0))),
-                        'reason'      => $rec['reason'] ?? '',
-                        'offer'       => [
-                            'id'              => $offer->id,
-                            'title'           => $offer->title,
-                            'domain'          => $offer->domain,
-                            'location'        => $offer->location,
-                            'duration'        => $offer->duration,
-                            'description'     => $offer->description,
-                            'requirements'    => $offer->requirements,
-                            'advantages'      => $offer->advantages,
-                            'available_places'=> $offer->available_places,
-                            'start_date'      => $offer->start_date,
-                            'enterprise'      => [
-                                'id'   => $offer->enterprise?->id,
+                        'offer_id' => $rec['offer_id'],
+                        'score' => min(100, max(0, (int) ($rec['score'] ?? 0))),
+                        'reason' => $rec['reason'] ?? '',
+                        'offer' => [
+                            'id' => $offer->id,
+                            'title' => $offer->title,
+                            'domain' => $offer->domain,
+                            'location' => $offer->location,
+                            'duration' => $offer->duration,
+                            'description' => $offer->description,
+                            'requirements' => $offer->requirements,
+                            'advantages' => $offer->advantages,
+                            'available_places' => $offer->available_places,
+                            'start_date' => $offer->start_date,
+                            'enterprise' => [
+                                'id' => $offer->enterprise?->id,
                                 'name' => $offer->enterprise?->name,
                             ],
                         ],
@@ -203,7 +203,7 @@ PROMPT;
 
             return response()->json([
                 'recommendations' => $enriched,
-                'cached'          => false,
+                'cached' => false,
             ]);
 
         } catch (\Exception $e) {

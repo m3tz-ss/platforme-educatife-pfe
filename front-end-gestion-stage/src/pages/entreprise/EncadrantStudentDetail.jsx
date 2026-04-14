@@ -992,10 +992,10 @@ function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd,
           { label: "À faire", value: stats.todo, cls: "bg-slate-50 border-slate-200 text-slate-600" },
           { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
           { label: "Terminé", value: stats.done, cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
-          ...(stats.evaluation ? [{ 
-            label: "Note Finale", 
-            value: `${stats.evaluation.score ?? "?"}/20`, 
-            cls: "bg-indigo-50 border-indigo-200 text-indigo-700 font-bold" 
+          ...(stats.evaluation ? [{
+            label: "Note Finale",
+            value: `${stats.evaluation.score ?? "?"}/20`,
+            cls: "bg-indigo-50 border-indigo-200 text-indigo-700 font-bold"
           }] : [])
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border px-4 py-3 ${s.cls} shadow-sm`}>

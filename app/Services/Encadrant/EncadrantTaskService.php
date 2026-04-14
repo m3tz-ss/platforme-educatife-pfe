@@ -38,6 +38,7 @@ class EncadrantTaskService
             'status'         => $data['status'] ?? 'todo',
             'due_date'       => $data['due_date'] ?? null,
             'sort_order'     => $data['sort_order'] ?? 0,
+            'attachment'     => $data['attachment'] ?? null,
         ]);
 
         $application = Application::with('student')->find($applicationId);

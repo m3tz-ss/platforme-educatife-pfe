@@ -385,7 +385,7 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
 function TaskModal({
   task, col, encadrantId, currentUserId, applicationId,
   onClose, commentDrafts, setCommentDrafts,
-  sendComment, deleteComment, editComment, onUpdateTask, busy,
+  sendComment, deleteComment, editComment, onUpdateTask, onDeleteTask, busy,
 }) {
   const overlayRef = useRef(null);
   const [showEdit, setShowEdit] = useState(false);
@@ -464,6 +464,18 @@ function TaskModal({
               )}
             </div>
           </div>
+          {/* Bouton supprimer tâche */}
+          {applicationId && onDeleteTask && (
+            <button
+              onClick={onDeleteTask}
+              title="Supprimer la tâche"
+              className="w-8 h-8 flex-shrink-0 rounded-xl border border-rose-200 text-rose-400 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
           {/* Bouton éditer tâche */}
           {applicationId && onUpdateTask && (
             <button
@@ -741,7 +753,7 @@ function StudentTaskCard({ task, col, encadrantId, onDragStart, onDragEnd, onOpe
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
 function StudentKanbanBoard({ tasks, encadrantId, currentUserId, busy, applicationId,
-  commentDrafts, setCommentDrafts, sendComment, deleteComment, editComment, onPatchStatus, onUpdateTask }) {
+  commentDrafts, setCommentDrafts, sendComment, deleteComment, editComment, onPatchStatus, onUpdateTask, onDeleteTask }) {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   const [modalTask, setModalTask] = useState(null);
@@ -782,6 +794,10 @@ function StudentKanbanBoard({ tasks, encadrantId, currentUserId, busy, applicati
           onUpdateTask={(updated) => {
             setModalTask(prev => prev ? { ...prev, ...updated } : null);
             onUpdateTask?.(updated);
+          }}
+          onDeleteTask={() => {
+            onDeleteTask?.(syncedModalTask.id);
+            setModalTask(null);
           }}
           busy={busy}
         />
@@ -1091,6 +1107,35 @@ export default function StudentTasksPage() {
       Swal.fire({ icon: "error", title: "Erreur", text: err.response?.data?.message || "Impossible de créer la tâche" });
     } finally {
       setCreating(false);
+    }
+  };
+
+  // ── Delete task ─────────────────────────────────────────────────────────────
+  const deleteTask = async (taskId) => {
+    if (!selectedId) return;
+    const res = await Swal.fire({
+      title: "Supprimer la tâche ?",
+      text: "Cette action est irréversible et supprimera également les commentaires associés.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Oui, supprimer",
+      cancelButtonText: "Annuler",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b"
+    });
+    if (!res.isConfirmed) return;
+
+    try {
+      await api.delete(`/student/applications/${selectedId}/tasks/${taskId}`);
+      setSupervision(prev => {
+        if (!prev) return prev;
+        return { ...prev, tasks: prev.tasks.filter(t => t.id !== taskId) };
+      });
+      Swal.fire({ icon: "success", title: "Tâche supprimée", timer: 1500, showConfirmButton: false });
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: "error", title: "Erreur", text: "Impossible de supprimer la tâche." });
+      loadSupervision(true);
     }
   };
 
@@ -1410,6 +1455,7 @@ export default function StudentTasksPage() {
                     deleteComment={deleteComment}
                     editComment={editComment}
                     onPatchStatus={patchStatus}
+                    onDeleteTask={deleteTask}
                     onUpdateTask={(updated) => {
                       setSupervision(prev => {
                         if (!prev) return prev;

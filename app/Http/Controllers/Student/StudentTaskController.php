@@ -98,4 +98,10 @@ class StudentTaskController extends Controller
 
         return response()->json($task);
     }
+
+    public function destroyTask(Request $request, int $applicationId, int $taskId)
+    {
+        $this->tasks->destroyTask($request->user(), $applicationId, $taskId);
+        return response()->json(null, 204);
+    }
 }

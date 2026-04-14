@@ -1,0 +1,9 @@
+@media (max-width: 768px) {
+  .signin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .signin-left-panel {
+    display: none;
+  }
+}
