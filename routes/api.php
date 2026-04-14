@@ -178,4 +178,7 @@ Route::middleware('auth:sanctum')->prefix('rh')->group(function () {
     // 📋 Validation Manager
     Route::get('/applications/{applicationId}/evaluation', [EnterpriseEvaluationController::class, 'show']);
     Route::put('/applications/{applicationId}/evaluation', [EnterpriseEvaluationController::class, 'upsert']);
+
+    // 🤖 IA – Recommander les 5 meilleurs étudiants pour une offre
+    Route::get('/offers/{id}/recommend-students', [RecommendationController::class, 'recommendStudentsForOffer']);
 });

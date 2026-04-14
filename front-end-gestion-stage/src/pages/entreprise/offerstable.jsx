@@ -44,6 +44,9 @@ import {
   ClockIcon,
   CalendarIcon,
   UsersIcon,
+  SparklesIcon,
+  AcademicCapIcon,
+  EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -60,6 +63,12 @@ export default function Offertable() {
   const [editOffer, setEditOffer] = useState(null);
   const [activeTab, setActiveTab] = useState("description");
   const [submitting, setSubmitting] = useState(false);
+
+  // 🤖 IA – Recommandations étudiants
+  const [aiStudents, setAiStudents] = useState([]);
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  const [aiCached, setAiCached] = useState(false);
 
   const [form, setForm] = useState({
     title: "", domain: "", location: "", duration: "",
@@ -125,6 +134,32 @@ setOffers(res.data.data);
     setSelectedOffer(offer);
     setActiveTab("description");
     setOpenDetailModal(true);
+    // Reset AI state
+    setAiStudents([]);
+    setAiError(null);
+    setAiCached(false);
+  };
+
+  const fetchAiStudents = async (offerId) => {
+    setLoadingAi(true);
+    setAiError(null);
+    try {
+      const res = await api.get(`/rh/offers/${offerId}/recommend-students`);
+      setAiStudents(res.data.recommendations || []);
+      setAiCached(res.data.cached || false);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Erreur du service IA.";
+      setAiError(msg);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
+  const handleAiTabClick = () => {
+    setActiveTab("ai");
+    if (aiStudents.length === 0 && !loadingAi && selectedOffer) {
+      fetchAiStudents(selectedOffer.id);
+    }
   };
 
   const handleSubmit = async () => {
@@ -431,6 +466,12 @@ setOffers(res.data.data);
                   <Tab value="description" onClick={() => setActiveTab("description")} className="cursor-pointer">Description</Tab>
                   <Tab value="requirements" onClick={() => setActiveTab("requirements")} className="cursor-pointer">Prérequis</Tab>
                   <Tab value="advantages"   onClick={() => setActiveTab("advantages")}   className="cursor-pointer">Avantages</Tab>
+                  <Tab value="ai" onClick={handleAiTabClick} className="cursor-pointer">
+                    <span className="flex items-center gap-1">
+                      <SparklesIcon className="w-4 h-4 text-purple-500" />
+                      Profils IA
+                    </span>
+                  </Tab>
                 </TabsHeader>
               </Tabs>
 
@@ -467,6 +508,184 @@ setOffers(res.data.data);
                       <Typography className="text-blue-gray-500">Aucun avantage spécifié</Typography>
                     )}
                   </ul>
+                )}
+
+                {/* 🤖 Onglet IA – Meilleurs étudiants */}
+                {activeTab === "ai" && (
+                  <div className="space-y-4 mt-2">
+                    {/* En-tête de l'onglet */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <SparklesIcon className="w-5 h-5 text-purple-500" />
+                        <Typography variant="h6" className="font-bold text-purple-700">
+                          Top 5 Étudiants Recommandés
+                        </Typography>
+                        {aiCached && (
+                          <span className="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full font-medium">
+                            ⚡ Mis en cache
+                          </span>
+                        )}
+                      </div>
+                      {!loadingAi && (
+                        <button
+                          onClick={() => fetchAiStudents(selectedOffer.id)}
+                          className="text-xs text-purple-500 hover:text-purple-700 font-medium flex items-center gap-1 transition-colors"
+                        >
+                          🔄 Actualiser
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Loading */}
+                    {loadingAi && (
+                      <div className="flex flex-col items-center justify-center py-10 gap-4">
+                        <div className="relative">
+                          <div className="w-14 h-14 rounded-full border-4 border-purple-100 border-t-purple-500 animate-spin" />
+                          <SparklesIcon className="w-6 h-6 text-purple-400 absolute inset-0 m-auto" />
+                        </div>
+                        <Typography className="text-purple-400 text-sm font-medium animate-pulse">
+                          L'IA analyse les profils étudiants…
+                        </Typography>
+                      </div>
+                    )}
+
+                    {/* Erreur */}
+                    {!loadingAi && aiError && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                        <span className="text-2xl">⚠️</span>
+                        <div>
+                          <Typography className="font-semibold text-red-700 text-sm">Erreur IA</Typography>
+                          <Typography className="text-red-500 text-xs mt-1">{aiError}</Typography>
+                          <button
+                            onClick={() => fetchAiStudents(selectedOffer.id)}
+                            className="mt-2 text-xs text-red-600 underline hover:text-red-800 font-medium"
+                          >
+                            Réessayer
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cartes étudiants */}
+                    {!loadingAi && !aiError && aiStudents.length === 0 && (
+                      <div className="text-center py-8">
+                        <AcademicCapIcon className="w-12 h-12 mx-auto text-blue-gray-300 mb-3" />
+                        <Typography className="text-blue-gray-400 text-sm">
+                          Aucune recommandation disponible pour cette offre.
+                        </Typography>
+                      </div>
+                    )}
+
+                    {!loadingAi && !aiError && aiStudents.map((rec, idx) => (
+                      <div
+                        key={rec.student_id}
+                        className="border border-purple-100 rounded-xl p-4 bg-gradient-to-r from-purple-50 to-white hover:shadow-md transition-shadow"
+                      >
+                        {/* Header étudiant */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            {/* Avatar */}
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <Typography className="font-bold text-blue-gray-900 text-sm">
+                                {rec.student?.name || "Étudiant"}
+                              </Typography>
+                              {rec.student?.email && (
+                                <span className="flex items-center gap-1 text-xs text-blue-gray-400">
+                                  <EnvelopeIcon className="w-3 h-3" />
+                                  {rec.student.email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Score badge */}
+                          <div className="flex flex-col items-end flex-shrink-0">
+                            <span
+                              className={`text-lg font-extrabold ${
+                                rec.score >= 80
+                                  ? "text-green-600"
+                                  : rec.score >= 60
+                                  ? "text-yellow-600"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {rec.score}%
+                            </span>
+                            <span className="text-xs text-blue-gray-400">Compatibilité</span>
+                          </div>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mb-3">
+                          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-2 rounded-full transition-all duration-700 ${
+                                rec.score >= 80
+                                  ? "bg-green-500"
+                                  : rec.score >= 60
+                                  ? "bg-yellow-400"
+                                  : "bg-red-400"
+                              }`}
+                              style={{ width: `${rec.score}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Infos de base */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {rec.student?.field && (
+                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                              🎓 {rec.student.field}
+                            </span>
+                          )}
+                          {rec.student?.school && (
+                            <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                              🏫 {rec.student.school}
+                            </span>
+                          )}
+                          {rec.student?.graduation_year && (
+                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">
+                              📅 Promo {rec.student.graduation_year}
+                            </span>
+                          )}
+                          {rec.student?.cv_path && (
+                            <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                              📎 CV disponible
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Compétences */}
+                        {rec.student?.skills && rec.student.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {rec.student.skills.slice(0, 6).map((skill, si) => (
+                              <span
+                                key={si}
+                                className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-md font-medium"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {rec.student.skills.length > 6 && (
+                              <span className="text-xs text-blue-gray-400">
+                                +{rec.student.skills.length - 6} autres
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Explication IA */}
+                        {rec.reason && (
+                          <div className="bg-white border border-purple-100 rounded-lg p-3">
+                            <p className="text-xs text-purple-600 font-semibold mb-1">💡 Analyse IA</p>
+                            <p className="text-xs text-blue-gray-600 leading-relaxed">{rec.reason}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
