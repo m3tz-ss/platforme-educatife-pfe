@@ -449,11 +449,11 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask,
               {task.attachment && (
                 <div className="mt-3">
                   {task.attachment.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                    <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer">
-                      <img src={`http://localhost:8000/storage/${task.attachment}`} alt="Pièce jointe" className="max-w-full h-auto max-h-56 rounded-lg border border-slate-200 object-cover hover:opacity-90 transition shadow-sm" />
+                    <a href={storageUrl(task.attachment)} target="_blank" rel="noreferrer">
+                      <img src={storageUrl(task.attachment)} alt="Pièce jointe" className="max-w-full h-auto max-h-56 rounded-lg border border-slate-200 object-cover hover:opacity-90 transition shadow-sm" />
                     </a>
                   ) : (
-                    <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer"
+                    <a href={storageUrl(task.attachment)} target="_blank" rel="noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition shadow-sm">
                       <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -905,7 +905,7 @@ function AddTaskInline({ onAdd, busy }) {
 }
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
-function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask }) {
+function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask }) {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   const [modalTask, setModalTask] = useState(null);
@@ -922,6 +922,7 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd, onUpdateTas
     todo: grouped.todo?.length ?? 0,
     in_progress: grouped.in_progress?.length ?? 0,
     done: grouped.done?.length ?? 0,
+    evaluation: evaluation || null
   };
   const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
@@ -991,6 +992,11 @@ function KanbanBoard({ tasks, busy, onUpdateStatus, onDelete, onAdd, onUpdateTas
           { label: "À faire", value: stats.todo, cls: "bg-slate-50 border-slate-200 text-slate-600" },
           { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
           { label: "Terminé", value: stats.done, cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+          ...(stats.evaluation ? [{ 
+            label: "Note Finale", 
+            value: `${stats.evaluation.score ?? "?"}/20`, 
+            cls: "bg-indigo-50 border-indigo-200 text-indigo-700 font-bold" 
+          }] : [])
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border px-4 py-3 ${s.cls} shadow-sm`}>
             <p className="text-2xl font-black">{s.value}</p>
@@ -1308,6 +1314,7 @@ export default function EncadrantStudentDetail() {
         {/* ── KANBAN ── */}
         <KanbanBoard
           tasks={tasks}
+          evaluation={evaluation}
           busy={busy}
           onUpdateStatus={handleUpdateTaskStatus}
           onDelete={handleDeleteTask}

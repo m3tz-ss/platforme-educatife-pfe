@@ -7,8 +7,12 @@ use App\Models\Offer;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use App\Notifications\RH\NewApplicationReceivedNotification;
 use App\Notifications\Student\ApplicationStatusChangedNotification;
+use App\Mail\ApplicationReceivedMail;
+use App\Mail\ApplicationStatusUpdatedMail;
 
 class ApplicationService
 {
@@ -42,26 +46,25 @@ class ApplicationService
         $offer   = Offer::with('user')->findOrFail($offerId);
         $application->load(['student:id,name,email', 'offer:id,title']);
 
-        // ✅ Notification DB → RH/Manager
+        // ✅ Notification DB → RH/Manager (Queued bulk via Notification::send)
         $this->notifyEnterpriseUsers($application, $offer);
 
-        // ✅ Email à l'entreprise
-        $enterpriseEmail = $this->getEnterpriseEmail($offer->user);
+        // ✅ Invalidate caches
+        Cache::forget("applications_student_{$studentId}");
+        
+        $enterpriseUser = $offer->user;
+        if ($enterpriseUser) {
+            $managedIds = User::where('manager_id', $enterpriseUser->id)->pluck('id')->toArray();
+            $cacheIdsToClear = array_merge([$enterpriseUser->id], $managedIds);
+            foreach ($cacheIdsToClear as $cid) {
+                Cache::forget("applications_enterprise_{$cid}");
+            }
+        }
+
+        // ✅ Email à l'entreprise (Queued)
+        $enterpriseEmail = $this->getEnterpriseEmail($enterpriseUser);
         if ($enterpriseEmail) {
-            Mail::send([], [], function ($message) use ($offer, $student, $enterpriseEmail) {
-                $message->to($enterpriseEmail)
-                        ->subject("📩 Nouvelle candidature : {$offer->title}")
-                        ->html("
-                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto;'>
-                                <h2 style='color: #3b82f6;'>Nouvelle candidature reçue</h2>
-                                <p><strong>Offre :</strong> {$offer->title}</p>
-                                <p><strong>Candidat :</strong> {$student->name}</p>
-                                <p><strong>Email candidat :</strong> {$student->email}</p>
-                                <hr>
-                                <p style='color: #6b7280;'>Connectez-vous sur MyStage pour consulter.</p>
-                            </div>
-                        ");
-            });
+            Mail::send(new ApplicationReceivedMail($offer, $student, $enterpriseEmail));
         }
 
         return ['data' => $application, 'code' => 201];
@@ -86,7 +89,21 @@ class ApplicationService
             $student->notify(new ApplicationStatusChangedNotification($fresh, $status, $oldStatus));
         }
 
-        // ✅ Email à l'étudiant
+        // ✅ Invalidate caches
+        Cache::forget("applications_student_{$application->student_id}");
+        
+        if ($fresh->offer) {
+            $enterpriseUser = $fresh->offer->user;
+            if ($enterpriseUser) {
+                $managedIds = User::where('manager_id', $enterpriseUser->id)->pluck('id')->toArray();
+                $cacheIdsToClear = array_merge([$enterpriseUser->id], $managedIds);
+                foreach ($cacheIdsToClear as $cid) {
+                    Cache::forget("applications_enterprise_{$cid}");
+                }
+            }
+        }
+
+        // ✅ Email à l'étudiant (Queued)
         if ($student?->email) {
             $statusLabels = [
                 'acceptee'        => '✅ Acceptée',
@@ -98,19 +115,7 @@ class ApplicationService
             $label      = $statusLabels[$status] ?? $status;
             $offerTitle = $fresh->offer?->title ?? 'Offre';
 
-            Mail::send([], [], function ($message) use ($student, $label, $offerTitle) {
-                $message->to($student->email)
-                        ->subject("📬 Mise à jour de votre candidature")
-                        ->html("
-                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto;'>
-                                <h2 style='color: #3b82f6;'>Statut de votre candidature</h2>
-                                <p><strong>Offre :</strong> {$offerTitle}</p>
-                                <p><strong>Nouveau statut :</strong> {$label}</p>
-                                <hr>
-                                <p style='color: #6b7280;'>Connectez-vous sur MyStage pour plus de détails.</p>
-                            </div>
-                        ");
-            });
+            Mail::send(new ApplicationStatusUpdatedMail($student, $label, $offerTitle));
         }
 
         return $updated;
@@ -144,9 +149,8 @@ class ApplicationService
             $usersToNotify->push($enterpriseUser);
         }
 
-        foreach ($usersToNotify->unique('id') as $user) {
-            $user->notify(new NewApplicationReceivedNotification($application));
-        }
+        // Optimized multiple users notification triggering (bulk queue dispatch)
+        Notification::send($usersToNotify->unique('id'), new NewApplicationReceivedNotification($application));
     }
 
     /**
@@ -169,18 +173,28 @@ class ApplicationService
     }
 
     /**
-     * Candidatures d'un étudiant
+     * Candidatures d'un étudiant (Avec Cache)
      */
     public function getStudentApplications(int $studentId, ?int $perPage = null)
     {
-        return $this->repository->getByStudent($studentId, $perPage);
+        $cacheKey = "applications_student_{$studentId}_page_" . request('page', 1) . "_per_{$perPage}";
+        $ttl = 60; // 60 seconds
+
+        return Cache::remember($cacheKey, $ttl, function () use ($studentId, $perPage) {
+            return $this->repository->getByStudent($studentId, $perPage);
+        });
     }
 
     /**
-     * Candidatures reçues par une entreprise
+     * Candidatures reçues par une entreprise (Avec Cache)
      */
     public function getEnterpriseApplications(int $enterpriseId, ?int $perPage = null)
     {
-        return $this->repository->getByEnterprise($enterpriseId, $perPage);
+        $cacheKey = "applications_enterprise_{$enterpriseId}_page_" . request('page', 1) . "_per_{$perPage}";
+        $ttl = 60; // 60 seconds
+
+        return Cache::remember($cacheKey, $ttl, function () use ($enterpriseId, $perPage) {
+            return $this->repository->getByEnterprise($enterpriseId, $perPage);
+        });
     }
 }

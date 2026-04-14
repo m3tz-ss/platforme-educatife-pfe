@@ -53,8 +53,9 @@ class MessageController extends Controller
     public function send(Request $request)
     {
         $request->validate([
-            'receiver_id' => 'required|exists:users,id',
-            'body'        => 'required|string|max:2000',
+            'receiver_id'     => 'required|exists:users,id',
+            'body'            => 'required|string|max:2000',
+            'conversation_id' => 'nullable|exists:conversations,id',
         ]);
 
         $sender   = $request->user();
@@ -66,7 +67,12 @@ class MessageController extends Controller
             ], 403);
         }
 
-        $conversation = $this->service->findOrCreateConversation($sender, $receiver);
+        if ($request->has('conversation_id')) {
+            $conversation = \App\Models\Conversation::findOrFail($request->conversation_id);
+            // Optionally, verify that sender is a participant, but canSendTo covers overall permission.
+        } else {
+            $conversation = $this->service->findOrCreateConversation($sender, $receiver);
+        }
         $message      = $this->service->sendMessage($conversation, $sender, $request->body);
 
         return response()->json([

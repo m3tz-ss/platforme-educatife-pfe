@@ -3,10 +3,13 @@
 namespace App\Notifications\Student;
 
 use App\Models\Application;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class ApplicationStatusChangedNotification extends Notification
+class ApplicationStatusChangedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
     private static array $STATUS_LABELS = [
         'nouveau'         => 'En attente de traitement',
         'preselectionnee' => 'Présélectionnée ✨',

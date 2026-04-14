@@ -130,6 +130,161 @@ const ApplicationCard = memo(({ app }) => (
 ));
 ApplicationCard.displayName = "ApplicationCard";
 
+// ─── AIRecommendationsSection ─────────────────────────────────────────���──────
+const AIRecommendationsSection = memo(({
+  aiLoading,
+  aiError,
+  aiRecommendations,
+  aiCached,
+  onRefresh,
+  onOpenDetails,
+  applyToOffer,
+  hasApplied,
+  loading,
+}) => {
+  if (aiLoading) {
+    return (
+      <Card className="p-8">
+        <Typography className="text-center text-blue-gray-500">
+          ⏳ Chargement des recommandations...
+        </Typography>
+      </Card>
+    );
+  }
+
+  if (aiError === "profile_incomplete") {
+    return (
+      <Card className="bg-orange-50 border border-orange-200 p-6">
+        <div className="flex items-start gap-3">
+          <ExclamationTriangleIcon className="w-6 h-6 text-orange-600 mt-1" />
+          <div>
+            <Typography className="font-bold text-orange-700">
+              Profil incomplet
+            </Typography>
+            <Typography variant="small" className="text-orange-600 mt-1">
+              Veuillez compléter votre profil (compétences, bio, domaine d'études)
+              pour recevoir des recommandations personnalisées.
+            </Typography>
+            <Link to="/student/profile">
+              <Button size="sm" color="orange" variant="text" className="mt-2">
+                Compléter mon profil →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (aiError === "api_quota_exceeded") {
+    return (
+      <Card className="bg-red-50 border border-red-200 p-6">
+        <div className="flex items-start gap-3">
+          <ExclamationTriangleIcon className="w-6 h-6 text-red-600 mt-1" />
+          <div>
+            <Typography className="font-bold text-red-700">
+              Quota API dépassé
+            </Typography>
+            <Typography variant="small" className="text-red-600 mt-1">
+              Le service IA a atteint sa limite. Réessayez dans quelques heures.
+            </Typography>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (aiError === "no_offers") {
+    return (
+      <Card className="bg-blue-50 border border-blue-200 p-6">
+        <Typography className="text-center text-blue-700">
+          Aucune offre disponible pour le moment
+        </Typography>
+      </Card>
+    );
+  }
+
+  if (aiError === "generic") {
+    return (
+      <Card className="bg-red-50 border border-red-200 p-6">
+        <Typography className="text-center text-red-700">
+          ❌ Erreur lors du chargement des recommandations
+        </Typography>
+      </Card>
+    );
+  }
+
+  if (aiRecommendations.length === 0) {
+    return (
+      <Card className="p-8">
+        <Typography className="text-center text-blue-gray-500">
+          Aucune recommandation disponible
+        </Typography>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {aiRecommendations.map((rec, idx) => {
+        const gradient = AI_GRADIENTS[idx % AI_GRADIENTS.length];
+        const offer = rec.offer;
+        return (
+          <div
+            key={rec.offer_id}
+            className="rounded-lg overflow-hidden text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+            onClick={() => onOpenDetails(offer)}
+          >
+            {/* Header gradient */}
+            <div className={`bg-gradient-to-br ${gradient.card} p-6 pb-12 relative`}>
+              <div className="absolute top-4 right-4">
+                <span className={`${gradient.badge} px-3 py-1 rounded-full text-xs font-bold`}>
+                  Score {rec.score}%
+                </span>
+              </div>
+              <Typography variant="h6" className="font-bold mb-2">
+                {offer.title}
+              </Typography>
+              <Typography variant="small" className="opacity-90">
+                {offer.enterprise?.name}
+              </Typography>
+            </div>
+
+            {/* Body */}
+            <div className="bg-white p-6 text-blue-gray-900">
+              <Typography variant="small" className="mb-3 leading-relaxed">
+                <strong>Pourquoi :</strong> {rec.reason}
+              </Typography>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                  📍 {offer.location}
+                </span>
+                <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs">
+                  ⏱️ {offer.duration}
+                </span>
+              </div>
+
+              <Button
+                size="sm"
+                fullWidth
+                color="blue"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  applyToOffer(offer.id);
+                }}
+                disabled={loading || hasApplied(offer.id)}
+              >
+                {hasApplied(offer.id) ? "✓ Déjà postulé" : "Postuler"}
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+AIRecommendationsSection.displayName = "AIRecommendationsSection";
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export function StudentDashboard() {
@@ -145,7 +300,7 @@ export function StudentDashboard() {
   // ── État IA ────────────────────────────────────────────────────────────────
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState([]);
-  const [aiError, setAiError] = useState(null); // null | 'profile_incomplete' | 'api_quota_exceeded' | 'no_offers' | 'generic'
+  const [aiError, setAiError] = useState(null);
   const [aiCached, setAiCached] = useState(false);
 
   const [userName] = useState(() => {
@@ -334,7 +489,7 @@ export function StudentDashboard() {
       </div>
 
       {/* Grille 2 colonnes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Offres récentes */}
         <Card className="border border-blue-gray-100 shadow-sm">
           <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
@@ -372,6 +527,44 @@ export function StudentDashboard() {
             )}
           </CardBody>
         </Card>
+      </div>
+
+      {/* 🤖 Section Recommandations IA */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <SparklesIcon className="w-6 h-6 text-yellow-500" />
+            <Typography variant="h5" className="font-bold">
+              Recommandations IA
+            </Typography>
+            {aiCached && (
+              <Chip value="En cache" size="sm" variant="ghost" color="blue" />
+            )}
+          </div>
+          <Button
+            size="sm"
+            color="blue"
+            variant="outlined"
+            onClick={() => fetchAIRecommendations(true)}
+            disabled={aiLoading}
+            className="flex items-center gap-2"
+          >
+            <ArrowPathIcon className="w-4 h-4" />
+            Actualiser
+          </Button>
+        </div>
+
+        <AIRecommendationsSection
+          aiLoading={aiLoading}
+          aiError={aiError}
+          aiRecommendations={aiRecommendations}
+          aiCached={aiCached}
+          onRefresh={() => fetchAIRecommendations(true)}
+          onOpenDetails={handleOpenDetails}
+          applyToOffer={applyToOffer}
+          hasApplied={hasApplied}
+          loading={loading}
+        />
       </div>
 
       {/* Modal Détails Offre */}

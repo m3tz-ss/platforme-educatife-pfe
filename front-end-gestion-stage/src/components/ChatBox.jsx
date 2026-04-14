@@ -190,28 +190,38 @@ export default function ChatBox() {
     setNewMessage("");
     setSending(true);
     try {
-      const res = await api.post("/messages/send", { receiver_id: receiverId, body: text });
+      const payload = { receiver_id: receiverId, body: text };
+      if (activeConvIdRef.current) {
+        payload.conversation_id = activeConvIdRef.current;
+      }
+      
+      const res = await api.post("/messages/send", payload);
       const savedMsg = res.data?.message ?? res.data;
+      
       setMessages((prev) =>
         prev.map((m) =>
           m._key === tempKey ? { ...savedMsg, _key: tempKey, is_mine: true } : m
         )
       );
-      // Refresh conversations and update activeConvId for new chats
-      const convRes = await api.get("/messages/conversations");
-      const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
-      setConvs(convData);
-      setUnread(convData.reduce((acc, c) => acc + (c.unread_count || 0), 0));
-      if (!activeConvIdRef.current && receiverId) {
-        const newConv = convData.find(conv => {
-          const other = conv.other_user ?? conv.user;
-          return other?.id === receiverId;
-        });
-        if (newConv) {
-          setActiveConvId(newConv.id);
-          activeConvIdRef.current = newConv.id;
+
+      // Refresh conversations in background, DO NOT await it to avoid blocking the UI
+      api.get("/messages/conversations").then((convRes) => {
+        const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
+        setConvs(convData);
+        setUnread(convData.reduce((acc, c) => acc + (c.unread_count || 0), 0));
+        
+        if (!activeConvIdRef.current && receiverId) {
+          const newConv = convData.find(conv => {
+            const other = conv.other_user ?? conv.user;
+            return other?.id === receiverId;
+          });
+          if (newConv) {
+            setActiveConvId(newConv.id);
+            activeConvIdRef.current = newConv.id;
+          }
         }
-      }
+      }).catch(console.error);
+
     } catch {
       setMessages((prev) =>
         prev.map((m) =>

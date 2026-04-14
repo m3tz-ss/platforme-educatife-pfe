@@ -17,6 +17,7 @@ class EncadrantTask extends Model
         'description',
         'status',
         'due_date',
+        'attachment',
         'sort_order',
     ];
 

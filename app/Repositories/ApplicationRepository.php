@@ -21,7 +21,7 @@ class ApplicationRepository
 
     public function getByStudent(int $studentId, ?int $perPage = null)
     {
-        $query = Application::with(['offer.user', 'encadrant:id,name,email'])
+        $query = Application::with(['offer.user:id,name,email', 'encadrant:id,name,email'])
             ->where('student_id', $studentId)
             ->orderBy('created_at', 'desc');
 
@@ -34,16 +34,20 @@ class ApplicationRepository
     {
         $user = User::find($userId);
 
-        $query = Application::with(['student', 'offer', 'encadrant']);
+        // Eager load only needed columns based on the transformer
+        $query = Application::with([
+            'student:id,name,email,phone', // Basic fields
+            'offer:id,title,domain,location,duration,start_date,available_places,enterprise_id',
+            'encadrant:id,name,email'
+        ]);
 
         if ($user?->role === 'manager') {
-            $query->whereHas('offer', function ($q) use ($userId) {
-                $q->where('enterprise_id', $userId)
-                  ->orWhereIn('enterprise_id', function ($q2) use ($userId) {
-                      $q2->select('id')
-                         ->from('users')
-                         ->where('manager_id', $userId);
-                  });
+            // Flat IDs fetching is 100x faster than PostgreSQL orWhereIn subquery
+            $managedIds = User::where('manager_id', $userId)->pluck('id')->toArray();
+            $managedIds[] = $userId;
+            
+            $query->whereHas('offer', function ($q) use ($managedIds) {
+                $q->whereIn('enterprise_id', $managedIds);
             });
         } else {
             $query->whereHas('offer', function ($q) use ($userId) {

@@ -27,12 +27,14 @@ class StudentSupervisionController extends Controller
                 'encadrant:id,name,email',
                 'encadrantTasks' => function ($q): void {
                     $q->orderBy('sort_order')->orderByDesc('id')
-                        ->with(['taskComments' => function ($q2): void {
-                            $q2->orderByDesc('created_at')->with('user:id,name');
-                        }]);
+                        ->with([
+                            'taskComments' => function ($q2): void {
+                                $q2->orderByDesc('created_at')->with('user:id,name');
+                            }
+                        ]);
                 },
                 'encadrantComments.encadrant:id,name',
-                'evaluations',
+                'encadrantEvaluation.encadrant:id,name',
             ])
             ->firstOrFail();
 
@@ -41,7 +43,7 @@ class StudentSupervisionController extends Controller
             'encadrant'      => $application->encadrant,
             'tasks'          => $application->encadrantTasks,
             'comments'       => $application->encadrantComments,
-            'evaluations'    => $application->evaluations,
+            'evaluation'     => $application->encadrantEvaluation,
         ]);
     }
 }

@@ -3,10 +3,13 @@
 namespace App\Notifications\RH;
 
 use App\Models\Application;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class NewApplicationReceivedNotification extends Notification
+class NewApplicationReceivedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
     public function __construct(
         public Application $application,
     ) {

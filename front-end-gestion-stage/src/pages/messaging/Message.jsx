@@ -165,27 +165,35 @@ export default function Message() {
     setNewMessage("");
     setSending(true);
     try {
-      const res = await api.post("/messages/send", { receiver_id: receiverId, body: text });
+      const payload = { receiver_id: receiverId, body: text };
+      if (activeConvIdRef.current) {
+        payload.conversation_id = activeConvIdRef.current;
+      }
+      const res = await api.post("/messages/send", payload);
       const savedMsg = res.data?.message ?? res.data;
+      
       setMessages((prev) =>
         prev.map((m) =>
           m._key === tempKey ? { ...savedMsg, _key: tempKey, is_mine: true } : m
         )
       );
-      // Refresh conversation list and update activeConvId if it was a new conversation
-      const convRes = await api.get("/messages/conversations");
-      const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
-      setConversations(convData);
-      if (!activeConvIdRef.current && receiverIdRef.current) {
-        const newConv = convData.find(conv => {
-          const other = conv.other_user ?? conv.user;
-          return other?.id === receiverIdRef.current;
-        });
-        if (newConv) {
-          setActiveConvId(newConv.id);
-          activeConvIdRef.current = newConv.id;
+
+      // Refresh conversation list in background to not block UI
+      api.get("/messages/conversations").then((convRes) => {
+        const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
+        setConversations(convData);
+        if (!activeConvIdRef.current && receiverIdRef.current) {
+          const newConv = convData.find(conv => {
+            const other = conv.other_user ?? conv.user;
+            return other?.id === receiverIdRef.current;
+          });
+          if (newConv) {
+            setActiveConvId(newConv.id);
+            activeConvIdRef.current = newConv.id;
+          }
         }
-      }
+      }).catch(console.error);
+
     } catch {
       setMessages((prev) =>
         prev.map((m) =>

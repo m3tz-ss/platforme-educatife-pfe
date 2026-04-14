@@ -8,6 +8,14 @@ import { getStudentMenuItems } from "../../config/sidebarConfig";
 import StudentNotificationBell from "../../components/student/StudentNotificationBell";
 import ChatBox from "../../components/ChatBox";
 
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
+
+const getStorageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${API_ORIGIN}/storage/${path.replace(/^\//, "")}`;
+};
+
 // ── Column definitions ────────────────────────────────────────────────────────
 const TASK_COLUMNS = [
   {
@@ -253,13 +261,15 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
 
   // Render attachments
   const rawAtts = comment.attachment || comment.attachments || [];
-  const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
   const attachments = Array.isArray(rawAtts)
-    ? rawAtts.map(a => typeof a === 'string' ? {
-      url: a.startsWith('http') ? a : `${API_ORIGIN}/storage/${a}`,
-      name: a.split('/').pop(),
-      type: a.match(/\.(jpeg|jpg|gif|png)$/i) ? 'image/jpeg' : 'application/octet-stream'
-    } : a)
+    ? rawAtts.map(a => {
+      const path = typeof a === 'string' ? a : (a.url || a.path);
+      return {
+        url: getStorageUrl(path),
+        name: typeof a === 'string' ? a.split('/').pop() : (a.name || "Fichier"),
+        type: (typeof a === 'string' ? a : (a.type || "")).match(/\.(jpeg|jpg|gif|png)$/i) ? 'image/jpeg' : 'application/octet-stream'
+      };
+    })
     : [];
 
   const handleSaveEdit = () => {
@@ -349,11 +359,11 @@ function CommentBubble({ comment, isEncadrant, isCurrentUser, onDelete, onEdit }
             <div className="ml-9 mt-2 flex flex-wrap gap-2">
               {attachments.map((att, i) => (
                 att.type?.startsWith("image/") && att.url ? (
-                  <a key={i} href={att.url} target="_blank" rel="noreferrer">
-                    <img src={att.url} alt={att.name} className="h-20 w-auto rounded-lg border border-slate-200 object-cover hover:opacity-90 transition" />
+                  <a key={i} href={getStorageUrl(att.url)} target="_blank" rel="noreferrer">
+                    <img src={getStorageUrl(att.url)} alt={att.name} className="h-20 w-auto rounded-lg border border-slate-200 object-cover hover:opacity-90 transition" />
                   </a>
                 ) : (
-                  <a key={i} href={att.url} target="_blank" rel="noreferrer"
+                  <a key={i} href={getStorageUrl(att.url)} target="_blank" rel="noreferrer"
                     className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-blue-600 hover:bg-slate-50 transition">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -578,11 +588,11 @@ function TaskModal({
               {task.attachment && (
                 <div className="mt-3">
                   {task.attachment.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                    <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer">
-                      <img src={`http://localhost:8000/storage/${task.attachment}`} alt="Pièce jointe" className="max-w-full h-auto max-h-56 rounded-lg border border-slate-200 object-cover hover:opacity-90 transition shadow-sm" />
+                    <a href={getStorageUrl(task.attachment)} target="_blank" rel="noreferrer">
+                      <img src={getStorageUrl(task.attachment)} alt="Pièce jointe" className="max-w-full h-auto max-h-56 rounded-lg border border-slate-200 object-cover hover:opacity-90 transition shadow-sm" />
                     </a>
                   ) : (
-                    <a href={`http://localhost:8000/storage/${task.attachment}`} target="_blank" rel="noreferrer"
+                    <a href={getStorageUrl(task.attachment)} target="_blank" rel="noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-sm">
                       <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -1309,6 +1319,11 @@ export default function StudentTasksPage() {
                   { label: "À faire", value: stats.todo, cls: "bg-slate-50 border-slate-200 text-slate-600" },
                   { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
                   { label: "Terminé", value: stats.done, cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                  ...(supervision.evaluation ? [{ 
+                    label: "Note Finale", 
+                    value: `${supervision.evaluation.score ?? "?"}/20`, 
+                    cls: "bg-indigo-50 border-indigo-200 text-indigo-700" 
+                  }] : [])
                 ].map(s => (
                   <div key={s.label} className={`rounded-2xl border px-4 py-3 shadow-sm ${s.cls}`}>
                     <p className="text-2xl font-black">{s.value}</p>
