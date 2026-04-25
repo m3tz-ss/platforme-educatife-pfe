@@ -107,7 +107,7 @@ class AuthController extends Controller
         [$companyName, $enterpriseEmail] = $this->resolveEnterpriseInfo($user, $manager);
 
         // ✅ Supprimer les anciens tokens pour éviter la croissance de personal_access_tokens
-
+        $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

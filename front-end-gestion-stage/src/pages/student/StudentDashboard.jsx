@@ -19,6 +19,7 @@ import {
   TabsHeader,
   Tab,
   Chip,
+  Tooltip,
 } from "@material-tailwind/react";
 import {
   MagnifyingGlassIcon,
@@ -32,6 +33,8 @@ import {
   SparklesIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
+  EnvelopeIcon,
+  PhoneIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, StarIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -94,22 +97,67 @@ const StatCard = memo(({ label, value, icon: Icon, bg, iconColor }) => (
 ));
 StatCard.displayName = "StatCard";
 
-// ─── OfferCard ────────────────────────────────────────────────────────────────
-const OfferCard = memo(({ offer, applied, onOpen }) => (
-  <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-    <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">{offer.title}</Typography>
-    <Typography className="text-sm text-blue-500 font-medium mb-2">{offer.enterprise?.name || "Entreprise"}</Typography>
-    <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
-      <span className="flex items-center gap-1"><MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}</span>
-      <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}</span>
-      <span className="flex items-center gap-1">📅 {formatDate(offer.start_date)}</span>
-      <span className="flex items-center gap-1">👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}</span>
+// ─── OfferCard (AVEC EMAIL ET TÉLÉPHONE) ──────────────────────────────────────
+const OfferCard = memo(({ offer, applied, onOpen }) => {
+  const copyToClipboard = (text, label, e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    Swal.fire({
+      icon: "success",
+      title: `${label} copié`,
+      timer: 1200,
+      showConfirmButton: false,
+    });
+  };
+
+  return (
+    <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
+      <div className="flex items-start justify-between mb-1">
+        <Typography variant="h6" className="text-blue-gray-900 font-bold">{offer.title}</Typography>
+      </div>
+      <Typography className="text-sm text-blue-500 font-medium mb-2">{offer.enterprise?.name || "Entreprise"}</Typography>
+      
+      <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-3">
+        <span className="flex items-center gap-1"><MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}</span>
+        <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}</span>
+        <span className="flex items-center gap-1">📅 {formatDate(offer.start_date)}</span>
+        <span className="flex items-center gap-1">👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}</span>
+      </div>
+
+      {/* ✅ Email et Téléphone */}
+      {(offer.enterprise?.email || offer.enterprise?.phone) && (
+        <div className="bg-gray-50 p-2 rounded mb-3 space-y-1">
+          {offer.enterprise?.email && (
+            <Tooltip title="Cliquez pour copier" placement="bottom">
+              <div
+                onClick={(e) => copyToClipboard(offer.enterprise.email, "Email", e)}
+                className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-1 rounded transition text-xs"
+              >
+                <EnvelopeIcon className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span className="text-blue-700 font-semibold truncate">{offer.enterprise.email}</span>
+              </div>
+            </Tooltip>
+          )}
+          {offer.enterprise?.phone && (
+            <Tooltip title="Cliquez pour copier" placement="bottom">
+              <div
+                onClick={(e) => copyToClipboard(offer.enterprise.phone, "Téléphone", e)}
+                className="flex items-center gap-2 cursor-pointer hover:bg-green-100 p-1 rounded transition text-xs"
+              >
+                <PhoneIcon className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                <span className="text-green-700 font-semibold truncate">{offer.enterprise.phone}</span>
+              </div>
+            </Tooltip>
+          )}
+        </div>
+      )}
+
+      <Button size="sm" color={applied ? "green" : "blue"} variant="outlined" className="text-xs" onClick={() => onOpen(offer)} disabled={applied}>
+        {applied ? "✓ Déjà postulé" : "Postuler"}
+      </Button>
     </div>
-    <Button size="sm" color={applied ? "green" : "blue"} variant="outlined" className="text-xs" onClick={() => onOpen(offer)} disabled={applied}>
-      {applied ? "✓ Déjà postulé" : "Postuler"}
-    </Button>
-  </div>
-));
+  );
+});
 OfferCard.displayName = "OfferCard";
 
 // ─── ApplicationCard ──────────────────────────────────────────────────────────
@@ -129,6 +177,132 @@ const ApplicationCard = memo(({ app }) => (
   </div>
 ));
 ApplicationCard.displayName = "ApplicationCard";
+
+// ─── AIRecommendationCard (AVEC EMAIL ET TÉLÉPHONE) ──────────────────────────
+const AIRecommendationCard = memo(
+  ({ rec, index, onOpenDetails, applyToOffer, hasApplied, loading }) => {
+    const gradient = AI_GRADIENTS[index % AI_GRADIENTS.length];
+    const offer = rec.offer;
+
+    const copyToClipboard = (text, label) => {
+      navigator.clipboard.writeText(text);
+      Swal.fire({
+        icon: "success",
+        title: `${label} copié`,
+        timer: 1200,
+        showConfirmButton: false,
+      });
+    };
+
+    return (
+      <div
+        className="rounded-lg overflow-hidden text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full flex flex-col"
+        onClick={() => onOpenDetails(offer)}
+      >
+        {/* Header gradient */}
+        <div className={`bg-gradient-to-br ${gradient.card} p-6 pb-12 relative flex-shrink-0`}>
+          <div className="absolute top-4 right-4">
+            <span className={`${gradient.badge} px-3 py-1 rounded-full text-xs font-bold`}>
+              Score {rec.score}%
+            </span>
+          </div>
+          <Typography variant="h6" className="font-bold mb-2 line-clamp-2">
+            {offer.title}
+          </Typography>
+          <Typography variant="small" className="opacity-90">
+            {offer.enterprise?.name}
+          </Typography>
+        </div>
+
+        {/* Body */}
+        <div className="bg-white p-6 text-blue-gray-900 flex-1 flex flex-col gap-3">
+          {/* Raison */}
+          <Typography variant="small" className="mb-2 leading-relaxed line-clamp-2">
+            <strong>Pourquoi :</strong> {rec.reason}
+          </Typography>
+
+          {/* Localisation et durée */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+              📍 {offer.location}
+            </span>
+            <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs">
+              ⏱️ {offer.duration}
+            </span>
+          </div>
+
+          {/* ✅ Email et Téléphone */}
+          {(offer.enterprise?.email || offer.enterprise?.phone) && (
+            <div className="bg-gray-50 p-2 rounded space-y-1 border border-gray-200">
+              {offer.enterprise?.email && (
+                <Tooltip title="Cliquez pour copier" placement="bottom">
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(offer.enterprise.email, "Email");
+                    }}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-1 rounded transition"
+                  >
+                    <EnvelopeIcon className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-xs text-blue-700 font-semibold truncate">
+                      {offer.enterprise.email}
+                    </span>
+                  </div>
+                </Tooltip>
+              )}
+
+              {offer.enterprise?.phone && (
+                <Tooltip title="Cliquez pour copier" placement="bottom">
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(offer.enterprise.phone, "Téléphone");
+                    }}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-green-100 p-1 rounded transition"
+                  >
+                    <PhoneIcon className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="text-xs text-green-700 font-semibold truncate">
+                      {offer.enterprise.phone}
+                    </span>
+                  </div>
+                </Tooltip>
+              )}
+            </div>
+          )}
+
+          {/* Boutons d'action */}
+          <div className="grid grid-cols-2 gap-2 mt-auto">
+            <Button
+              size="sm"
+              fullWidth
+              variant="outlined"
+              color="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenDetails(offer);
+              }}
+            >
+              Détails
+            </Button>
+            <Button
+              size="sm"
+              fullWidth
+              color={hasApplied(offer.id) ? "green" : "blue"}
+              onClick={(e) => {
+                e.stopPropagation();
+                applyToOffer(offer.id);
+              }}
+              disabled={loading || hasApplied(offer.id)}
+            >
+              {hasApplied(offer.id) ? "✓" : "Postuler"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+AIRecommendationCard.displayName = "AIRecommendationCard";
 
 // ─── AIRecommendationsSection ─────────────────────────────────────────   ──────
 const AIRecommendationsSection = memo(({
@@ -226,61 +400,17 @@ const AIRecommendationsSection = memo(({
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {aiRecommendations.map((rec, idx) => {
-        const gradient = AI_GRADIENTS[idx % AI_GRADIENTS.length];
-        const offer = rec.offer;
-        return (
-          <div
-            key={rec.offer_id}
-            className="rounded-lg overflow-hidden text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-            onClick={() => onOpenDetails(offer)}
-          >
-            {/* Header gradient */}
-            <div className={`bg-gradient-to-br ${gradient.card} p-6 pb-12 relative`}>
-              <div className="absolute top-4 right-4">
-                <span className={`${gradient.badge} px-3 py-1 rounded-full text-xs font-bold`}>
-                  Score {rec.score}%
-                </span>
-              </div>
-              <Typography variant="h6" className="font-bold mb-2">
-                {offer.title}
-              </Typography>
-              <Typography variant="small" className="opacity-90">
-                {offer.enterprise?.name}
-              </Typography>
-            </div>
-
-            {/* Body */}
-            <div className="bg-white p-6 text-blue-gray-900">
-              <Typography variant="small" className="mb-3 leading-relaxed">
-                <strong>Pourquoi :</strong> {rec.reason}
-              </Typography>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                  📍 {offer.location}
-                </span>
-                <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs">
-                  ⏱️ {offer.duration}
-                </span>
-              </div>
-
-              <Button
-                size="sm"
-                fullWidth
-                color="blue"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  applyToOffer(offer.id);
-                }}
-                disabled={loading || hasApplied(offer.id)}
-              >
-                {hasApplied(offer.id) ? "✓ Déjà postulé" : "Postuler"}
-              </Button>
-            </div>
-          </div>
-        );
-      })}
+      {aiRecommendations.map((rec, idx) => (
+        <AIRecommendationCard
+          key={rec.offer_id}
+          rec={rec}
+          index={idx}
+          onOpenDetails={onOpenDetails}
+          applyToOffer={applyToOffer}
+          hasApplied={hasApplied}
+          loading={loading}
+        />
+      ))}
     </div>
   );
 });
@@ -348,9 +478,12 @@ export function StudentDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchOffers();
-    fetchApplications();
-    fetchAIRecommendations();
+    // ✅ Lancer les 3 appels en PARALLÈLE — plus de séquence bloquante
+    Promise.allSettled([
+      fetchOffers(),
+      fetchApplications(),
+      fetchAIRecommendations(),
+    ]);
   }, [fetchOffers, fetchApplications, fetchAIRecommendations]);
 
   const appliedOfferIds = useMemo(
@@ -595,18 +728,19 @@ export function StudentDashboard() {
         />
       </div>
 
-      {/* Modal Détails Offre */}
+      {/* ✅ MODAL AVEC COORDONNÉES COMPLÈTES */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
-        <DialogHeader className="flex justify-between items-center">
+        <DialogHeader className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6">
           <Typography variant="h5" className="font-bold">{selectedOffer?.title}</Typography>
-          <IconButton variant="text" color="blue-gray" onClick={handleCloseModal}>
+          <IconButton variant="text" color="white" onClick={handleCloseModal}>
             <XMarkIcon className="w-6 h-6" />
           </IconButton>
         </DialogHeader>
 
-        <DialogBody divider className="max-h-[70vh] overflow-y-auto">
+        <DialogBody divider className="max-h-[70vh] overflow-y-auto p-6">
           {selectedOffer && (
             <div className="space-y-6">
+              {/* Tags */}
               <div className="flex flex-wrap gap-2">
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">🏢 {selectedOffer.enterprise?.name || "Non spécifiée"}</span>
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">📍 {selectedOffer.location || "N/A"}</span>
@@ -616,6 +750,7 @@ export function StudentDashboard() {
                 <span className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-medium">💼 {selectedOffer.domain || "N/A"}</span>
               </div>
 
+              {/* Tabs */}
               <Tabs value={activeTab}>
                 <TabsHeader>
                   {["description", "requirements", "advantages", "company"].map((tab) => (
@@ -668,13 +803,113 @@ export function StudentDashboard() {
                   </div>
                 )}
                 {activeTab === "company" && (
-                  <div>
-                    <Typography variant="h6" className="mb-3 font-semibold">À propos de l'entreprise</Typography>
-                    <Typography className="text-blue-gray-700 leading-relaxed mb-4">{selectedOffer.enterprise?.description || "Information non disponible"}</Typography>
-                    <div className="space-y-2">
-                      <Typography variant="small" className="text-blue-gray-600"><strong>Email :</strong> {selectedOffer.enterprise?.email || "N/A"}</Typography>
-                      <Typography variant="small" className="text-blue-gray-600"><strong>Téléphone :</strong> {selectedOffer.enterprise?.phone || "N/A"}</Typography>
+                  <div className="space-y-4">
+                    {/* Description */}
+                    <div>
+                      <Typography variant="h6" className="mb-3 font-semibold">À propos de l'entreprise</Typography>
+                      <Typography className="text-blue-gray-700 leading-relaxed mb-4">{selectedOffer.enterprise?.description || "Information non disponible"}</Typography>
                     </div>
+
+                    {/* ✅ Coordonnées améliorées */}
+                    <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+                      <Typography variant="h6" className="font-bold text-blue-900 mb-4">
+                        📞 Coordonnées de l'entreprise
+                      </Typography>
+
+                      <div className="space-y-3">
+                        {selectedOffer.enterprise?.email && (
+                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 hover:shadow-md transition">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <EnvelopeIcon className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <Typography variant="caption" className="text-blue-600 font-bold block">
+                                Email
+                              </Typography>
+                              <a
+                                href={`mailto:${selectedOffer.enterprise.email}`}
+                                className="text-blue-700 font-semibold hover:text-blue-900 underline break-all text-sm"
+                              >
+                                {selectedOffer.enterprise.email}
+                              </a>
+                            </div>
+                            <Tooltip title="Copier l'email">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(selectedOffer.enterprise.email);
+                                  Swal.fire({
+                                    icon: "success",
+                                    title: "Email copié",
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-900 font-bold text-lg"
+                              >
+                                📋
+                              </button>
+                            </Tooltip>
+                          </div>
+                        )}
+
+                        {selectedOffer.enterprise?.phone && (
+                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-green-200 hover:shadow-md transition">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <PhoneIcon className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                              <Typography variant="caption" className="text-green-600 font-bold block">
+                                Téléphone
+                              </Typography>
+                              <a
+                                href={`tel:${selectedOffer.enterprise.phone}`}
+                                className="text-green-700 font-semibold hover:text-green-900 underline text-sm"
+                              >
+                                {selectedOffer.enterprise.phone}
+                              </a>
+                            </div>
+                            <Tooltip title="Copier le téléphone">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(selectedOffer.enterprise.phone);
+                                  Swal.fire({
+                                    icon: "success",
+                                    title: "Téléphone copié",
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                  });
+                                }}
+                                className="text-green-600 hover:text-green-900 font-bold text-lg"
+                              >
+                                📋
+                              </button>
+                            </Tooltip>
+                          </div>
+                        )}
+
+                        {selectedOffer.enterprise?.sector && (
+                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-purple-200 hover:shadow-md transition">
+                            <div className="p-2 bg-purple-100 rounded-lg">
+                              <BriefcaseIcon className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div className="flex-1">
+                              <Typography variant="caption" className="text-purple-600 font-bold block">
+                                Secteur
+                              </Typography>
+                              <Typography className="text-purple-700 font-semibold text-sm">
+                                {selectedOffer.enterprise.sector}
+                              </Typography>
+                            </div>
+                          </div>
+                        )}
+
+                        {!selectedOffer.enterprise?.email && !selectedOffer.enterprise?.phone && !selectedOffer.enterprise?.sector && (
+                          <Typography className="text-gray-500 text-center py-4">
+                            Aucune information de contact disponible
+                          </Typography>
+                        )}
+                      </div>
+                    </Card>
                   </div>
                 )}
               </div>
@@ -722,7 +957,7 @@ export function StudentDashboard() {
           )}
         </DialogBody>
 
-        <DialogFooter className="space-x-3">
+        <DialogFooter className="space-x-3 p-6 bg-gray-50">
           <Button color="blue" variant="outlined" onClick={toggleSaved}>
             {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
           </Button>

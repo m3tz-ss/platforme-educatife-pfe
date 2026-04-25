@@ -21,9 +21,10 @@ class OfferController extends Controller
     // ✅ Offres publiques pour les étudiants
     public function publicIndex()
     {
-        $perPage = request()->integer('per_page', 50); // default 10
+        $perPage = request()->integer('per_page', 20); // dashboard only shows 4
 
-        $query = Offer::with(['user'])->latest();
+        // ✅ Eager load user + manager to prevent N+1 inside OfferResource
+        $query = Offer::with(['user', 'user.manager'])->latest();
 
         $offers = $query->paginate($perPage);
 
