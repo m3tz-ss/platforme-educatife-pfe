@@ -128,6 +128,8 @@ Route::middleware('auth:sanctum')->prefix('messages')->group(function () {
     Route::get('/conversations', [MessageController::class, 'conversations']);
     Route::get('/conversations/{conversationId}', [MessageController::class, 'show']);
     Route::post('/send', [MessageController::class, 'send']);
+    Route::put('/{messageId}', [MessageController::class, 'update']);
+    Route::delete('/{messageId}', [MessageController::class, 'destroy']);
     Route::get('/contacts', [MessageController::class, 'contacts']);
 });
 

@@ -9,6 +9,8 @@ class EncadrantTaskRepository
     public function paginateForApplication(int $applicationId, int $encadrantId, int $perPage = 15)
     {
         return EncadrantTask::query()
+            // ✅ Eager load taskComments — évite le N+1 dans le frontend (task.taskComments)
+            ->with(['taskComments:id,encadrant_task_id,body,created_at,user_id', 'taskComments.user:id,name'])
             ->where('application_id', $applicationId)
             ->where('encadrant_id', $encadrantId)
             ->orderBy('sort_order')

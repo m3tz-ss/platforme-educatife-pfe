@@ -127,7 +127,7 @@ export function SignUp() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      destination = userType === "enterprise" ? "/enterprise/manager" : "/auth/sign-in";
+      destination = userType === "enterprise" ? "/enterprise/manager" : "/student";
       setSuccess(true);
 
     } catch (err) {

@@ -65,11 +65,13 @@ class MessageService
     /**
      * ✉️ Envoyer message
      */
-    public function sendMessage(Conversation $conversation, User $sender, string $body): Message
+    public function sendMessage(Conversation $conversation, User $sender, string $body, ?string $attachment = null, ?string $attachmentName = null): Message
     {
         $message = $conversation->messages()->create([
             'sender_id' => $sender->id,
             'body' => $body,
+            'attachment' => $attachment,
+            'attachment_name' => $attachmentName,
         ]);
 
         // ✅ Invalidate caches for all participants
@@ -78,6 +80,42 @@ class MessageService
         }
 
         return $message;
+    }
+
+    public function updateMessage(Message $message, User $user, string $body): Message
+    {
+        if ($message->sender_id !== $user->id) {
+            abort(403, 'Non autorisé à modifier ce message');
+        }
+        
+        $message->update([
+            'body' => $body,
+            'is_edited' => true,
+        ]);
+
+        foreach ($message->conversation->participants as $participant) {
+            Cache::forget("messages_user_{$participant->id}");
+        }
+
+        return $message;
+    }
+
+    public function deleteMessage(Message $message, User $user): void
+    {
+        if ($message->sender_id !== $user->id) {
+            abort(403, 'Non autorisé à supprimer ce message');
+        }
+
+        $message->update([
+            'body' => 'Ce message a été supprimé.',
+            'attachment' => null,
+            'attachment_name' => null,
+            'is_deleted' => true,
+        ]);
+
+        foreach ($message->conversation->participants as $participant) {
+            Cache::forget("messages_user_{$participant->id}");
+        }
     }
 
     /**
@@ -116,9 +154,11 @@ class MessageService
                 ->get()
                 ->map(function ($conv) use ($user) {
                     $other = $conv->participants->firstWhere('id', '!=', $user->id);
+                    $unreadCount = $conv->messages()->where('sender_id', '!=', $user->id)->whereNull('read_at')->count();
 
                     return [
                         'id' => $conv->id,
+                        'unread_count' => $unreadCount,
                         'user' => $other ? [
                             'id' => $other->id,
                             'name' => $other->name,

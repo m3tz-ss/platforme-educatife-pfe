@@ -1125,10 +1125,33 @@ export default function EncadrantStudentDetail() {
     });
   }, [id]);
 
-  useEffect(() => { loadDetail(); }, [loadDetail]);
   useEffect(() => {
-    if (detail) { loadTasks(); loadComments(); loadEvaluation(); }
-  }, [detail]);
+    if (!id) return;
+    // ✅ Tous les 4 appels en PARALLÈLE — plus de séquence bloquante
+    setLoading(true);
+    Promise.allSettled([
+      api.get(`/encadrant/supervision/applications/${id}`)
+        .then(r => setDetail(r.data))
+        .catch(() => setDetail(null)),
+      api.get(`/encadrant/applications/${id}/tasks?per_page=50`)
+        .then(r => { const raw = r.data?.data ?? r.data ?? []; setTasks(Array.isArray(raw) ? raw : []); })
+        .catch(() => {}),
+      api.get(`/encadrant/applications/${id}/comments`)
+        .then(r => setCommentsRes(r.data))
+        .catch(() => {}),
+      api.get(`/encadrant/applications/${id}/evaluation`)
+        .then(r => {
+          const ev = r.data;
+          setEvaluation(ev);
+          if (ev) setEvalForm({
+            score: ev.score != null ? String(ev.score) : "",
+            final_decision: ev.final_decision || "pending",
+            notes: ev.notes || "",
+          });
+        })
+        .catch(() => {}),
+    ]).finally(() => setLoading(false));
+  }, [id]);
 
   const patchAppStatus = (status) => {
     setBusy(true);

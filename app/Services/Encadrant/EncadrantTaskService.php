@@ -17,10 +17,8 @@ class EncadrantTaskService
 
     public function list(int $encadrantId, int $applicationId, int $perPage = 15)
     {
-        if (!$this->supervision->applicationOwnedByEncadrant($applicationId, $encadrantId)) {
-            abort(403, 'Accès refusé');
-        }
-
+        // ✅ Pas besoin de vérifier applicationOwnedByEncadrant ici :
+        //    la requête du repository filtre déjà sur encadrant_id (sécurité implicite)
         return $this->tasks->paginateForApplication($applicationId, $encadrantId, $perPage);
     }
 

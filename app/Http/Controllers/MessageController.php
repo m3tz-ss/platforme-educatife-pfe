@@ -38,6 +38,10 @@ class MessageController extends Controller
             ->map(fn($msg) => [
                 'id'         => $msg->id,
                 'body'       => $msg->body,
+                'attachment' => $msg->attachment ? url('storage/' . $msg->attachment) : null,
+                'attachment_name' => $msg->attachment_name,
+                'is_edited'  => $msg->is_edited,
+                'is_deleted' => $msg->is_deleted,
                 'sender'     => $msg->sender,
                 'is_mine'    => $msg->sender_id === $user->id,
                 'read_at'    => $msg->read_at,
@@ -56,6 +60,7 @@ class MessageController extends Controller
             'receiver_id'     => 'required|exists:users,id',
             'body'            => 'required|string|max:2000',
             'conversation_id' => 'nullable|exists:conversations,id',
+            'attachment'      => 'nullable|file|max:5120', // 5MB max
         ]);
 
         $sender   = $request->user();
@@ -69,21 +74,64 @@ class MessageController extends Controller
 
         if ($request->has('conversation_id')) {
             $conversation = \App\Models\Conversation::findOrFail($request->conversation_id);
-            // Optionally, verify that sender is a participant, but canSendTo covers overall permission.
         } else {
             $conversation = $this->service->findOrCreateConversation($sender, $receiver);
         }
-        $message      = $this->service->sendMessage($conversation, $sender, $request->body);
+
+        $attachmentPath = null;
+        $attachmentName = null;
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentPath = $file->store('messages', 'public');
+        }
+
+        $message = $this->service->sendMessage($conversation, $sender, $request->body, $attachmentPath, $attachmentName);
 
         return response()->json([
             'conversation_id' => $conversation->id,
             'message'         => [
                 'id'         => $message->id,
                 'body'       => $message->body,
+                'attachment' => $message->attachment ? url('storage/' . $message->attachment) : null,
+                'attachment_name' => $message->attachment_name,
+                'is_edited'  => false,
+                'is_deleted' => false,
                 'is_mine'    => true,
                 'created_at' => $message->created_at,
             ],
         ], 201);
+    }
+
+    /**
+     * PUT /api/messages/{messageId}
+     */
+    public function update(Request $request, int $messageId)
+    {
+        $request->validate([
+            'body' => 'required|string|max:2000',
+        ]);
+
+        $message = \App\Models\Message::findOrFail($messageId);
+        $updatedMessage = $this->service->updateMessage($message, $request->user(), $request->body);
+
+        return response()->json([
+            'id' => $updatedMessage->id,
+            'body' => $updatedMessage->body,
+            'is_edited' => $updatedMessage->is_edited,
+            'is_deleted' => $updatedMessage->is_deleted,
+        ]);
+    }
+
+    /**
+     * DELETE /api/messages/{messageId}
+     */
+    public function destroy(Request $request, int $messageId)
+    {
+        $message = \App\Models\Message::findOrFail($messageId);
+        $this->service->deleteMessage($message, $request->user());
+
+        return response()->json(null, 204);
     }
 
     /**
