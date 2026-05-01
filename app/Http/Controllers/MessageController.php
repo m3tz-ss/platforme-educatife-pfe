@@ -173,7 +173,7 @@ class MessageController extends Controller
             });
         }
 
-        // ✅ STUDENT → son encadrant via applications
+        // ✅ STUDENT → son encadrant + les RH qui lui ont envoyé des propositions
         elseif ($user->type === 'student') {
 
             $application = Application::with('encadrant')
@@ -183,13 +183,26 @@ class MessageController extends Controller
                 ->first();
 
             if ($application && $application->encadrant) {
-                $contacts = collect([
-                    [
-                        'id' => $application->encadrant->id,
-                        'name' => $application->encadrant->name,
-                        'role' => 'encadrant',
-                        'type' => 'enterprise'
-                    ]
+                $contacts->push([
+                    'id'   => $application->encadrant->id,
+                    'name' => $application->encadrant->name,
+                    'role' => 'encadrant',
+                    'type' => 'enterprise',
+                ]);
+            }
+
+            // Ajouter les RH avec qui il a une proposition (ou conversation)
+            $rhIds = \App\Models\OfferProposal::where('student_id', $user->id)
+                ->pluck('rh_id')
+                ->unique();
+
+            $rhs = User::whereIn('id', $rhIds)->get(['id', 'name', 'role', 'type']);
+            foreach ($rhs as $rh) {
+                $contacts->push([
+                    'id'   => $rh->id,
+                    'name' => $rh->name . ' (RH)',
+                    'role' => $rh->role,
+                    'type' => $rh->type,
                 ]);
             }
         }

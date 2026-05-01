@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
@@ -69,6 +69,12 @@ export default function Offertable() {
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [aiCached, setAiCached] = useState(false);
+
+  // 💬 Modal Contacter un étudiant
+  const [contactModal, setContactModal] = useState({ open: false, student: null, offer: null });
+  const [personalMessage, setPersonalMessage] = useState("");
+  const [sendingProposal, setSendingProposal] = useState(false);
+  const [proposedStudentIds, setProposedStudentIds] = useState(new Set());
 
   const [form, setForm] = useState({
     title: "", domain: "", location: "", duration: "",
@@ -159,6 +165,44 @@ setOffers(res.data.data);
     setActiveTab("ai");
     if (aiStudents.length === 0 && !loadingAi && selectedOffer) {
       fetchAiStudents(selectedOffer.id);
+    }
+  };
+
+  // 💬 Proposer l'offre à un étudiant
+  const handleOpenContact = (student, offer) => {
+    setContactModal({ open: true, student, offer });
+    setPersonalMessage("");
+  };
+
+  const handleSendProposal = async () => {
+    const { student, offer } = contactModal;
+    if (!student || !offer) return;
+    try {
+      setSendingProposal(true);
+      await api.post("/rh/offer-proposals", {
+        offer_id:         offer.id,
+        student_id:       student.id,
+        personal_message: personalMessage,
+      });
+      setProposedStudentIds(prev => new Set([...prev, student.id]));
+      setContactModal({ open: false, student: null, offer: null });
+      Swal.fire({
+        icon: "success",
+        title: "📬 Proposition envoyée !",
+        text: `${student.name} a reçu votre proposition par email et notification.`,
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      const msg = err.response?.data?.message || "Erreur lors de l'envoi.";
+      if (err.response?.status === 409) {
+        Swal.fire({ icon: "warning", title: "Déjà envoyé", text: msg, confirmButtonColor: "#f59e0b" });
+      } else {
+        Swal.fire({ icon: "error", title: "Erreur", text: msg, confirmButtonColor: "#ef4444" });
+      }
+    } finally {
+      setSendingProposal(false);
     }
   };
 
@@ -650,9 +694,19 @@ setOffers(res.data.data);
                               📅 Promo {rec.student.graduation_year}
                             </span>
                           )}
-                          {rec.student?.cv_path && (
-                            <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                              📎 CV disponible
+                          {rec.student?.cv_path ? (
+                            <a
+                              href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${rec.student.cv_path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium hover:bg-green-200 transition cursor-pointer flex items-center gap-1"
+                            >
+                              📎 Voir CV
+                            </a>
+                          ) : (
+                            <span className="bg-gray-100 text-gray-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                              Pas de CV
                             </span>
                           )}
                         </div>
@@ -683,6 +737,25 @@ setOffers(res.data.data);
                             <p className="text-xs text-blue-gray-600 leading-relaxed">{rec.reason}</p>
                           </div>
                         )}
+
+                        {/* Bouton Contacter */}
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={() => handleOpenContact(rec.student, selectedOffer)}
+                            disabled={proposedStudentIds.has(rec.student?.id)}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition ${
+                              proposedStudentIds.has(rec.student?.id)
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
+                            }`}
+                          >
+                            {proposedStudentIds.has(rec.student?.id) ? (
+                              <>✅ Proposé</>
+                            ) : (
+                              <>📨 Contacter &amp; Proposer</>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -800,7 +873,48 @@ setOffers(res.data.data);
             {submitting ? "Enregistrement..." : editOffer ? "Mettre à jour" : "Publier l'offre"}
           </Button>
         </DialogFooter>
+      
+      {/* ===== Modal Contacter and Proposer ===== */}
+      <Dialog open={contactModal.open} handler={() => setContactModal({ open: false, student: null, offer: null })} size="sm">
+        <DialogHeader className="flex justify-between items-center border-b border-blue-gray-100">
+          <div>
+            <Typography variant="h6" className="font-bold text-purple-700">
+              Proposer cette offre a l etudiant
+            </Typography>
+            <Typography variant="small" className="text-blue-gray-500">
+              {contactModal.student?.name} - {contactModal.offer?.title}
+            </Typography>
+          </div>
+          <IconButton variant="text" color="blue-gray" onClick={() => setContactModal({ open: false, student: null, offer: null })}>
+            <XMarkIcon className="w-5 h-5" />
+          </IconButton>
+        </DialogHeader>
+        <DialogBody className="p-6 space-y-4">
+          <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+              {contactModal.student?.name?.[0] || "?"}
+            </div>
+            <div>
+              <Typography className="font-bold text-sm">{contactModal.student?.name}</Typography>
+              <Typography variant="small" className="text-blue-gray-500">{contactModal.student?.email}</Typography>
+            </div>
+          </div>
+          <div>
+            <Typography variant="small" className="font-semibold mb-2 block">Message personnel (optionnel)</Typography>
+            <textarea rows={4} placeholder="Bonjour, votre profil nous interesse pour cette offre..." value={personalMessage} onChange={e => setPersonalMessage(e.target.value)} className="w-full border border-blue-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-purple-400 resize-none" />
+          </div>
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
+            Un email et une notification seront envoyes a l etudiant. Une conversation sera ouverte automatiquement.
+          </div>
+        </DialogBody>
+        <DialogFooter className="border-t border-blue-gray-100 gap-3">
+          <Button variant="outlined" color="blue-gray" onClick={() => setContactModal({ open: false, student: null, offer: null })}>Annuler</Button>
+          <Button style={{ backgroundColor: '#7c3aed' }} onClick={handleSendProposal} disabled={sendingProposal} className="flex items-center gap-2 text-white">
+            {sendingProposal ? "Envoi..." : "Envoyer la proposition"}
+          </Button>
+        </DialogFooter>
       </Dialog>
+</Dialog>
     </div>
   );
 }

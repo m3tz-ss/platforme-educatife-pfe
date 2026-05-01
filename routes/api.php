@@ -28,6 +28,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\RHNotificationController;
 use App\Http\Controllers\AI\RecommendationController;
 use App\Http\Controllers\Enterprise\EnterpriseEvaluationController;
+use App\Http\Controllers\OfferProposalController;
 
 
 
@@ -74,6 +75,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/notifications/unread-count', [StudentNotificationController::class, 'unreadCount']);
         Route::post('/notifications/read-all', [StudentNotificationController::class, 'markAllRead']);
         Route::post('/notifications/{id}/read', [StudentNotificationController::class, 'markAsRead']);
+
+        // 🎯 Propositions d'offres reçues par l'étudiant
+        Route::get('/offer-proposals', [OfferProposalController::class, 'studentProposals']);
+        Route::post('/offer-proposals/{id}/respond', [OfferProposalController::class, 'respond']);
     });
 });
 // ⚙️ Gestion des utilisateurs internes par le Manager
@@ -184,4 +189,8 @@ Route::middleware('auth:sanctum')->prefix('rh')->group(function () {
 
     // 🤖 IA – Recommander les 5 meilleurs étudiants pour une offre
     Route::get('/offers/{id}/recommend-students', [RecommendationController::class, 'recommendStudentsForOffer']);
+
+    // 🎯 Propositions d'offres (RH → étudiant)
+    Route::post('/offer-proposals', [OfferProposalController::class, 'propose']);
+    Route::get('/offer-proposals', [OfferProposalController::class, 'rhProposals']);
 });

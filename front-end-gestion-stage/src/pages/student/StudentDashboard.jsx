@@ -36,7 +36,7 @@ import {
   EnvelopeIcon,
   PhoneIcon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon, StarIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon, StarIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -455,6 +455,10 @@ export function StudentDashboard() {
   const [aiError, setAiError] = useState(null);
   const [aiCached, setAiCached] = useState(false);
 
+  // ── Propositions d'offres (RH → étudiant) ──────────────────────────────────
+  const [proposals, setProposals] = useState([]);
+  const [respondingId, setRespondingId] = useState(null);
+
   const [userName] = useState(() => {
     try { return JSON.parse(localStorage.getItem("user") || "{}")?.name || "Étudiant"; }
     catch { return "Étudiant"; }
@@ -498,14 +502,47 @@ export function StudentDashboard() {
     }
   }, []);
 
+  const fetchProposals = useCallback(async () => {
+    try {
+      const res = await api.get("/student/offer-proposals");
+      setProposals(Array.isArray(res.data) ? res.data : []);
+    } catch (err) { console.error("Erreur propositions:", err); }
+  }, []);
+
   useEffect(() => {
-    // ✅ Lancer les 3 appels en PARALLÈLE — plus de séquence bloquante
+    // ✅ Lancer les 4 appels en PARALLÈLE
     Promise.allSettled([
       fetchOffers(),
       fetchApplications(),
       fetchAIRecommendations(),
+      fetchProposals(),
     ]);
-  }, [fetchOffers, fetchApplications, fetchAIRecommendations]);
+  }, [fetchOffers, fetchApplications, fetchAIRecommendations, fetchProposals]);
+
+  const handleProposalResponse = useCallback(async (proposalId, response) => {
+    try {
+      setRespondingId(proposalId);
+      await api.post(`/student/offer-proposals/${proposalId}/respond`, { response });
+      await Swal.fire({
+        icon: response === 'accepted' ? 'success' : 'info',
+        title: response === 'accepted' ? '✅ Offre acceptée !' : '❌ Proposition refusée',
+        text: response === 'accepted'
+          ? 'Vous avez été affecté à cette offre. Le recruteur a été notifié.'
+          : 'Le recruteur a été notifié de votre décision.',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+      setProposals(prev => prev.map(p =>
+        p.id === proposalId ? { ...p, status: response } : p
+      ));
+      if (response === 'accepted') fetchApplications();
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Erreur', text: err.response?.data?.message || 'Une erreur est survenue.' });
+    } finally {
+      setRespondingId(null);
+    }
+  }, [fetchApplications]);
 
   const appliedOfferIds = useMemo(
     () => new Set(applications.map((app) => app.offer_id ?? app.offer?.id)),
@@ -710,6 +747,92 @@ export function StudentDashboard() {
           </CardBody>
         </Card>
       </div>
+
+      {/* 🎯 Propositions d'offres reçues du RH */}
+      {proposals.filter(p => p.status === 'pending').length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-2xl">🎯</span>
+            <Typography variant="h5" className="font-bold text-purple-700">
+              Propositions d'offres
+            </Typography>
+            <span className="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {proposals.filter(p => p.status === 'pending').length}
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {proposals.filter(p => p.status === 'pending').map(proposal => (
+              <div
+                key={proposal.id}
+                className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <Typography className="font-bold text-purple-900 text-base">
+                      🎓 {proposal.offer?.title || 'Offre'}
+                    </Typography>
+                    <Typography variant="small" className="text-purple-600">
+                      Proposé par : <strong>{proposal.rh?.name}</strong>
+                    </Typography>
+                  </div>
+                  <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
+                    En attente
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                  {proposal.offer?.domain && (
+                    <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                      🏷️ {proposal.offer.domain}
+                    </span>
+                  )}
+                  {proposal.offer?.location && (
+                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                      📍 {proposal.offer.location}
+                    </span>
+                  )}
+                  {proposal.offer?.duration && (
+                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      ⏱️ {proposal.offer.duration}
+                    </span>
+                  )}
+                </div>
+
+                {proposal.personal_message && (
+                  <div className="bg-white rounded-lg p-3 mb-3 border border-purple-100">
+                    <p className="text-xs text-purple-600 font-semibold mb-1">💬 Message du recruteur :</p>
+                    <p className="text-sm text-gray-700 italic">"{proposal.personal_message}"</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-4">
+                  <Button
+                    size="sm"
+                    color="green"
+                    className="flex-1 flex items-center justify-center gap-2"
+                    disabled={respondingId === proposal.id}
+                    onClick={() => handleProposalResponse(proposal.id, 'accepted')}
+                  >
+                    <CheckCircleIcon className="w-4 h-4" />
+                    Accepter
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="red"
+                    variant="outlined"
+                    className="flex-1 flex items-center justify-center gap-2"
+                    disabled={respondingId === proposal.id}
+                    onClick={() => handleProposalResponse(proposal.id, 'refused')}
+                  >
+                    <XCircleIcon className="w-4 h-4" />
+                    Refuser
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 🤖 Section Recommandations IA */}
       <div className="mb-8">

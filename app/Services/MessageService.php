@@ -20,11 +20,24 @@ class MessageService
             return true;
         }
 
-        // ✅ STUDENT → son encadrant uniquement
+        // ✅ STUDENT → son encadrant OU un RH avec qui il a déjà une conversation
         if ($sender->type === 'student') {
-            return Application::where('student_id', $sender->id)
+            // Vers encadrant
+            if (Application::where('student_id', $sender->id)
                 ->where('encadrant_id', $receiver->id)
-                ->exists();
+                ->exists()) {
+                return true;
+            }
+            // Vers RH via proposition ou conversation existante
+            if ($receiver->role === 'rh') {
+                return Conversation::whereHas('participants', fn($q) => $q->where('user_id', $sender->id))
+                    ->whereHas('participants', fn($q) => $q->where('user_id', $receiver->id))
+                    ->exists()
+                    || \App\Models\OfferProposal::where('student_id', $sender->id)
+                        ->where('rh_id', $receiver->id)
+                        ->exists();
+            }
+            return false;
         }
 
         // ✅ ENCADRANT → ses étudiants uniquement
