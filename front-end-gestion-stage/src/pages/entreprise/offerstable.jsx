@@ -873,16 +873,21 @@ setOffers(res.data.data);
             {submitting ? "Enregistrement..." : editOffer ? "Mettre à jour" : "Publier l'offre"}
           </Button>
         </DialogFooter>
-      
-      {/* ===== Modal Contacter and Proposer ===== */}
-      <Dialog open={contactModal.open} handler={() => setContactModal({ open: false, student: null, offer: null })} size="sm">
+      </Dialog>
+
+      {/* Contact Modal */}
+      <Dialog
+        open={contactModal.open}
+        handler={() => setContactModal({ open: false, student: null, offer: null })}
+        size="sm"
+      >
         <DialogHeader className="flex justify-between items-center border-b border-blue-gray-100">
           <div>
             <Typography variant="h6" className="font-bold text-purple-700">
-              Proposer cette offre a l etudiant
+              Proposer cette offre
             </Typography>
             <Typography variant="small" className="text-blue-gray-500">
-              {contactModal.student?.name} - {contactModal.offer?.title}
+              {contactModal.student?.name}
             </Typography>
           </div>
           <IconButton variant="text" color="blue-gray" onClick={() => setContactModal({ open: false, student: null, offer: null })}>
@@ -891,30 +896,50 @@ setOffers(res.data.data);
         </DialogHeader>
         <DialogBody className="p-6 space-y-4">
           <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
               {contactModal.student?.name?.[0] || "?"}
             </div>
             <div>
               <Typography className="font-bold text-sm">{contactModal.student?.name}</Typography>
               <Typography variant="small" className="text-blue-gray-500">{contactModal.student?.email}</Typography>
+              {contactModal.student?.field && (
+                <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-medium mt-1 inline-block">
+                  {contactModal.student.field}
+                </span>
+              )}
             </div>
           </div>
           <div>
-            <Typography variant="small" className="font-semibold mb-2 block">Message personnel (optionnel)</Typography>
-            <textarea rows={4} placeholder="Bonjour, votre profil nous interesse pour cette offre..." value={personalMessage} onChange={e => setPersonalMessage(e.target.value)} className="w-full border border-blue-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-purple-400 resize-none" />
+            <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">
+              Message personnel (optionnel)
+            </Typography>
+            <textarea
+              rows={4}
+              placeholder="Bonjour, votre profil correspond a notre offre..."
+              value={personalMessage}
+              onChange={(e) => setPersonalMessage(e.target.value)}
+              className="w-full border border-blue-gray-200 rounded-lg p-3 text-sm text-blue-gray-800 focus:outline-none focus:border-purple-400 resize-none"
+            />
           </div>
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
-            Un email et une notification seront envoyes a l etudiant. Une conversation sera ouverte automatiquement.
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 leading-relaxed">
+            Un email et une notification seront envoyes. Une conversation sera ouverte automatiquement.
           </div>
         </DialogBody>
         <DialogFooter className="border-t border-blue-gray-100 gap-3">
-          <Button variant="outlined" color="blue-gray" onClick={() => setContactModal({ open: false, student: null, offer: null })}>Annuler</Button>
-          <Button style={{ backgroundColor: '#7c3aed' }} onClick={handleSendProposal} disabled={sendingProposal} className="flex items-center gap-2 text-white">
+          <Button variant="outlined" color="blue-gray" onClick={() => setContactModal({ open: false, student: null, offer: null })}>
+            Annuler
+          </Button>
+          <Button
+            style={{ backgroundColor: "#7c3aed" }}
+            onClick={handleSendProposal}
+            disabled={sendingProposal}
+            className="flex items-center gap-2 text-white"
+          >
             {sendingProposal ? "Envoi..." : "Envoyer la proposition"}
           </Button>
         </DialogFooter>
       </Dialog>
-</Dialog>
+
     </div>
   );
 }
