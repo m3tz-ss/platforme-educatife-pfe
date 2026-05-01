@@ -74,7 +74,7 @@ const STAT_CONFIG = [
 
 // ─── AI Recommendation Card gradients ────────────────────────────────────────
 const AI_GRADIENTS = [
-  { card: "from-violet-600 via-purple-600 to-indigo-700", badge: "bg-yellow-400 text-yellow-900", score: "bg-white/20" },
+  { card: "from-gray-900 via-gray-800 to-gray-700", badge: "bg-yellow-400 text-yellow-900", score: "bg-white/20" },
   { card: "from-pink-500 via-rose-500 to-orange-500", badge: "bg-cyan-400 text-cyan-900", score: "bg-white/20" },
   { card: "from-cyan-500 via-teal-500 to-emerald-600", badge: "bg-orange-400 text-orange-900", score: "bg-white/20" },
   { card: "from-orange-500 via-amber-500 to-yellow-400", badge: "bg-violet-400 text-violet-900", score: "bg-white/20" },
@@ -116,7 +116,7 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
         <Typography variant="h6" className="text-blue-gray-900 font-bold">{offer.title}</Typography>
       </div>
       <Typography className="text-sm text-blue-500 font-medium mb-2">{offer.enterprise?.name || "Entreprise"}</Typography>
-      
+
       <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-3">
         <span className="flex items-center gap-1"><MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}</span>
         <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}</span>
@@ -318,11 +318,32 @@ const AIRecommendationsSection = memo(({
 }) => {
   if (aiLoading) {
     return (
-      <Card className="p-8">
-        <Typography className="text-center text-blue-gray-500">
-          ⏳ Chargement des recommandations...
-        </Typography>
-      </Card>
+      <div className="w-full">
+        <div className="flex flex-col items-center justify-center mb-8">
+          <SparklesIcon className="w-8 h-8 text-yellow-500 animate-bounce mb-2" />
+          <Typography variant="h6" className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
+            L'IA analyse les offres pour vous...
+          </Typography>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl overflow-hidden bg-white border border-blue-gray-50 shadow-sm animate-pulse">
+              {/* Header skeleton */}
+              <div className="h-32 bg-gradient-to-r from-blue-gray-50 to-blue-gray-100" />
+              {/* Body skeleton */}
+              <div className="p-6 space-y-4">
+                <div className="h-4 bg-blue-gray-100 rounded-full w-3/4" />
+                <div className="h-4 bg-blue-gray-50 rounded-full w-full" />
+                <div className="h-4 bg-blue-gray-50 rounded-full w-5/6" />
+                <div className="flex gap-2 pt-4">
+                  <div className="h-8 bg-blue-gray-100 rounded-lg w-1/2" />
+                  <div className="h-8 bg-blue-gray-100 rounded-lg w-1/2" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 

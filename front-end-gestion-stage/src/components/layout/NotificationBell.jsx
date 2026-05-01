@@ -5,17 +5,19 @@ import api from "../../services/api";
 
 // ── Status badge colors ───────────────────────────────────────────────────────
 const STATUS_STYLES = {
-  acceptee:        { bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500" },
-  refusee:         { bg: "bg-red-100",     text: "text-red-700",     dot: "bg-red-500" },
-  entretien:       { bg: "bg-blue-100",    text: "text-blue-700",    dot: "bg-blue-500" },
-  preselectionnee: { bg: "bg-violet-100",  text: "text-violet-700",  dot: "bg-violet-500" },
-  nouveau:         { bg: "bg-gray-100",    text: "text-gray-600",    dot: "bg-gray-400" },
-  new_application: { bg: "bg-amber-100",   text: "text-amber-700",   dot: "bg-amber-500" },
+  acceptee: { bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500" },
+  refusee: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500" },
+  entretien: { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500" },
+  preselectionnee: { bg: "bg-violet-100", text: "text-violet-700", dot: "bg-violet-500" },
+  nouveau: { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" },
+  new_application: { bg: "bg-amber-100", text: "text-amber-700", dot: "bg-amber-500" },
+  new_encadrant_assigned: { bg: "bg-cyan-100", text: "text-cyan-700", dot: "bg-cyan-500" },
 };
 
 const getStyle = (notif) => {
   const type = notif.data?.type;
   if (type === "new_application") return STATUS_STYLES.new_application;
+  if (type === "new_encadrant_assigned") return STATUS_STYLES.new_encadrant_assigned;
   const status = notif.data?.new_status;
   return STATUS_STYLES[status] ?? { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" };
 };
@@ -23,7 +25,7 @@ const getStyle = (notif) => {
 const formatTime = (dateStr) => {
   if (!dateStr) return "";
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-  if (diff < 60)   return "À l'instant";
+  if (diff < 60) return "À l'instant";
   if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
   if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
   return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
@@ -32,14 +34,13 @@ const formatTime = (dateStr) => {
 // ── Single notification item ──────────────────────────────────────────────────
 function NotifItem({ notif, onRead }) {
   const isRead = !!notif.read_at;
-  const style  = getStyle(notif);
-  const msg    = notif.data?.message ?? "Nouvelle notification";
+  const style = getStyle(notif);
+  const msg = notif.data?.message ?? "Nouvelle notification";
 
   return (
     <div
-      className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50/60 transition-colors cursor-pointer group ${
-        !isRead ? "bg-blue-50/30" : ""
-      }`}
+      className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50/60 transition-colors cursor-pointer group ${!isRead ? "bg-blue-50/30" : ""
+        }`}
       onClick={() => !isRead && onRead(notif.id)}
     >
       {/* Dot indicator */}
@@ -51,7 +52,8 @@ function NotifItem({ notif, onRead }) {
         {/* Type badge */}
         <span className={`inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full mb-1 ${style.bg} ${style.text}`}>
           {notif.data?.type === "new_application" ? "📩 Candidature" :
-           notif.data?.type === "application_status_changed" ? "📬 Statut" : "🔔 Notif"}
+            notif.data?.type === "application_status_changed" ? "📬 Statut" :
+              notif.data?.type === "new_encadrant_assigned" ? "👨‍🏫 Encadrant" : "🔔 Notif"}
         </span>
 
         {/* Message */}
@@ -85,11 +87,11 @@ function NotifItem({ notif, onRead }) {
  * @param {number} pollInterval — ms (default 30000)
  */
 export default function NotificationBell({ apiPrefix = "student", pollInterval = 30000 }) {
-  const [open, setOpen]           = useState(false);
+  const [open, setOpen] = useState(false);
   const [notifications, setNotifs] = useState([]);
-  const [unread, setUnread]        = useState(0);
-  const [loading, setLoading]      = useState(false);
-  const dropdownRef                = useRef(null);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef(null);
 
   // ── API helpers ───────────────────────────────────────────────────────────
   const fetchCount = useCallback(async () => {

@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Offer;
 use App\Models\User;
+use App\Mail\NewOfferPublishedMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use App\Http\Resources\OfferResource;
-
-
 
 class OfferController extends Controller
 {
@@ -21,11 +22,9 @@ class OfferController extends Controller
     // ✅ Offres publiques pour les étudiants
     public function publicIndex()
     {
-        $perPage = request()->integer('per_page', 20); // dashboard only shows 4
+        $perPage = request()->integer('per_page', 40);
 
-        // ✅ Eager load user + manager to prevent N+1 inside OfferResource
         $query = Offer::with(['user', 'user.manager'])->latest();
-
         $offers = $query->paginate($perPage);
 
         return OfferResource::collection($offers);
@@ -34,7 +33,7 @@ class OfferController extends Controller
     // ✅ Offres du RH/Manager connecté
     public function index(Request $request)
     {
-        $user = $request->user();
+        $user    = $request->user();
         $perPage = $request->integer('per_page', 0);
 
         if ($user->role === 'manager') {
@@ -59,40 +58,54 @@ class OfferController extends Controller
         return OfferResource::collection($offers);
     }
 
-    // ✅ Créer une offre
+    // ✅ Créer une offre + ✉️ notifier tous les étudiants par email
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-            'duration' => 'required|string',
-            'startDate' => 'nullable|date',
+            'title'           => 'required|string|max:255',
+            'domain'          => 'required|string|max:255',
+            'location'        => 'required|string|max:255',
+            'duration'        => 'required|string',
+            'startDate'       => 'nullable|date',
             'availablePlaces' => 'nullable|integer|min:1',
-            'description' => 'required|string',
-            'requirements' => 'nullable|string',
-            'advantages' => 'nullable|string',
+            'description'     => 'required|string',
+            'requirements'    => 'nullable|string',
+            'advantages'      => 'nullable|string',
         ]);
 
         $user = $request->user();
 
-        // ✅ enterprise_id = id du user connecté (RH ou Manager)
         $offer = Offer::create([
-            'enterprise_id' => $user->id, // ✅ corrigé
-            'title' => $request->title,
-            'domain' => $request->domain,
-            'location' => $request->location,
-            'duration' => $request->duration,
-            'start_date' => $request->startDate,
+            'enterprise_id'    => $user->id,
+            'title'            => $request->title,
+            'domain'           => $request->domain,
+            'location'         => $request->location,
+            'duration'         => $request->duration,
+            'start_date'       => $request->startDate,
             'available_places' => $request->availablePlaces,
-            'description' => $request->description,
-            'requirements' => $request->requirements,
-            'advantages' => $request->advantages,
+            'description'      => $request->description,
+            'requirements'     => $request->requirements,
+            'advantages'       => $request->advantages,
         ]);
+
+        // ✉️ Envoyer un email à tous les étudiants (par chunks de 50 pour éviter la surcharge mémoire)
+        User::where('type', 'student')
+            ->whereNotNull('email')
+            ->orderBy('id')
+            ->chunk(50, function ($students) use ($offer) {
+                foreach ($students as $student) {
+                    try {
+                        Mail::to($student->email)
+                            ->send(new NewOfferPublishedMail($offer, $student));
+                    } catch (\Throwable $e) {
+                        Log::error("Mail new offer failed for {$student->email}: " . $e->getMessage());
+                    }
+                }
+            });
 
         return response()->json([
             'message' => 'Offre publiée avec succès',
-            'offer' => $offer,
+            'offer'   => $offer,
         ], 201);
     }
 
@@ -100,20 +113,20 @@ class OfferController extends Controller
     public function update(Request $request, Offer $offer)
     {
         $offer->update([
-            'title' => $request->title ?? $offer->title,
-            'domain' => $request->domain ?? $offer->domain,
-            'location' => $request->location ?? $offer->location,
-            'duration' => $request->duration ?? $offer->duration,
-            'start_date' => $request->startDate ?? $offer->start_date,
+            'title'            => $request->title           ?? $offer->title,
+            'domain'           => $request->domain          ?? $offer->domain,
+            'location'         => $request->location        ?? $offer->location,
+            'duration'         => $request->duration        ?? $offer->duration,
+            'start_date'       => $request->startDate       ?? $offer->start_date,
             'available_places' => $request->availablePlaces ?? $offer->available_places,
-            'description' => $request->description ?? $offer->description,
-            'requirements' => $request->requirements ?? $offer->requirements,
-            'advantages' => $request->advantages ?? $offer->advantages,
+            'description'      => $request->description     ?? $offer->description,
+            'requirements'     => $request->requirements    ?? $offer->requirements,
+            'advantages'       => $request->advantages      ?? $offer->advantages,
         ]);
 
         return response()->json([
             'message' => 'Offre mise à jour',
-            'offer' => $offer,
+            'offer'   => $offer,
         ]);
     }
 
@@ -123,7 +136,4 @@ class OfferController extends Controller
         $offer->delete();
         return response()->json(['message' => 'Offre supprimée']);
     }
-
 }
-
-

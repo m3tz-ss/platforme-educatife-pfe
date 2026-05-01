@@ -55,6 +55,7 @@ export default function ChatBox() {
   const [receiverId, setReceiverId] = useState(null);
   const [receiverName, setReceiverName] = useState("");
   const [newMessage, setNewMessage] = useState("");
+  const [searchMsg, setSearchMsg] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [unreadTotal, setUnread] = useState(0);
   const [sending, setSending] = useState(false);
@@ -196,6 +197,7 @@ export default function ChatBox() {
     setActiveConvId(null);
     setAttachment(null);
     setEditingMsgId(null);
+    setSearchMsg("");
   };
 
   const handleSend = async () => {
@@ -217,19 +219,19 @@ export default function ChatBox() {
       formData.append("receiver_id", receiverId);
       if (text) formData.append("body", text);
       else formData.append("body", "Fichier joint"); // fallback
-      
+
       if (activeConvIdRef.current) {
         formData.append("conversation_id", activeConvIdRef.current);
       }
       if (attachment) {
         formData.append("attachment", attachment);
       }
-      
+
       const res = await api.post("/messages/send", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       const savedMsg = res.data?.message ?? res.data;
-      
+
       setMessages((prev) =>
         prev.map((m) =>
           m._key === tempKey ? { ...savedMsg, _key: tempKey, is_mine: true } : m
@@ -242,7 +244,7 @@ export default function ChatBox() {
         const convData = Array.isArray(convRes.data) ? convRes.data : convRes.data?.data ?? [];
         setConvs(convData);
         setUnread(convData.reduce((acc, c) => acc + (c.unread_count || 0), 0));
-        
+
         if (!activeConvIdRef.current && receiverId) {
           const newConv = convData.find(conv => {
             const other = conv.other_user ?? conv.user;
@@ -280,7 +282,6 @@ export default function ChatBox() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer ce message ?")) return;
     try {
       await api.delete(`/messages/${id}`);
       setMessages(prev => prev.map(m => m.id === id ? { ...m, is_deleted: true, body: "Ce message a été supprimé.", attachment: null } : m));
@@ -617,6 +618,22 @@ export default function ChatBox() {
                   </button>
                 </div>
 
+                {/* Message Search Bar */}
+                <div style={{ padding: "8px 14px", background: "#f8faff", borderBottom: "1px solid #f0f3fb", flexShrink: 0 }}>
+                  <div style={{ position: "relative" }}>
+                    <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#94a3b8" }} fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Chercher dans la conversation..."
+                      value={searchMsg}
+                      onChange={(e) => setSearchMsg(e.target.value)}
+                      style={{ ...css.input, width: "100%", paddingLeft: 32, paddingRight: 10, py: 6, fontSize: 12, borderRadius: 8, minHeight: 32 }}
+                    />
+                  </div>
+                </div>
+
                 {/* Messages */}
                 <div className="cb-scroll" style={css.msgsArea}>
                   {messages.length === 0 && (
@@ -624,75 +641,77 @@ export default function ChatBox() {
                       Commencez la conversation !
                     </p>
                   )}
-                  {messages.map((m) => {
-                    const isImg = m.attachment && String(m.attachment).match(/\.(jpeg|jpg|gif|png|webp)$/i);
-                    return (
-                      <div key={m._key ?? m.id} style={css.bubbleWrap(m.is_mine)} onMouseEnter={() => setHovMsgMenu(m.id)} onMouseLeave={() => setHovMsgMenu(null)}>
-                        {editingMsgId === m.id ? (
-                          // Edit Mode
-                          <div style={{ display: "flex", gap: 4, background: "#f8faff", padding: 8, borderRadius: 12, border: "1px solid #e0e5f2", width: "100%" }}>
-                             <input 
-                               value={editBody} 
-                               onChange={e => setEditBody(e.target.value)} 
-                               style={{ ...css.input, padding: "6px 10px", flex: 1 }}
-                               autoFocus
-                               onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleEdit()}
-                             />
-                             <button disabled={editSending} onClick={handleEdit} style={{ background: "#6366f1", color: "#fff", border: "none", borderRadius: 8, padding: "0 10px", fontSize: 12, cursor: "pointer" }}>OK</button>
-                             <button onClick={() => setEditingMsgId(null)} style={{ background: "#e0e5f2", color: "#475569", border: "none", borderRadius: 8, padding: "0 10px", fontSize: 12, cursor: "pointer" }}>✕</button>
-                          </div>
-                        ) : (
-                          // Normal Bubble
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: m.is_mine ? "row-reverse" : "row" }}>
-                            <div style={css.bubbleInner(m.is_mine, m.error, m.is_deleted)}>
-                              {m.body}
-                              {/* Attachment */}
-                              {m.attachment && !m.is_deleted && (
-                                <div style={{ marginTop: 6 }}>
-                                  {isImg ? (
-                                    <a href={m.attachment} target="_blank" rel="noreferrer">
-                                      <img src={m.attachment} alt="attachment" style={{ maxWidth: "100%", maxHeight: 150, borderRadius: 6, display: "block" }} />
-                                    </a>
-                                  ) : (
-                                    <a href={m.attachment} target="_blank" rel="noreferrer" style={{ color: m.is_mine ? "#fff" : "#6366f1", textDecoration: "underline", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                      {m.attachment_name || "Pièce jointe"}
-                                    </a>
-                                  )}
+                  {messages
+                    .filter((m) => !searchMsg.trim() || m.body.toLowerCase().includes(searchMsg.toLowerCase()))
+                    .map((m) => {
+                      const isImg = m.attachment && String(m.attachment).match(/\.(jpeg|jpg|gif|png|webp)$/i);
+                      return (
+                        <div key={m._key ?? m.id} style={css.bubbleWrap(m.is_mine)} onMouseEnter={() => setHovMsgMenu(m.id)} onMouseLeave={() => setHovMsgMenu(null)}>
+                          {editingMsgId === m.id ? (
+                            // Edit Mode
+                            <div style={{ display: "flex", gap: 4, background: "#f8faff", padding: 8, borderRadius: 12, border: "1px solid #e0e5f2", width: "100%" }}>
+                              <input
+                                value={editBody}
+                                onChange={e => setEditBody(e.target.value)}
+                                style={{ ...css.input, padding: "6px 10px", flex: 1 }}
+                                autoFocus
+                                onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleEdit()}
+                              />
+                              <button disabled={editSending} onClick={handleEdit} style={{ background: "#6366f1", color: "#fff", border: "none", borderRadius: 8, padding: "0 10px", fontSize: 12, cursor: "pointer" }}>OK</button>
+                              <button onClick={() => setEditingMsgId(null)} style={{ background: "#e0e5f2", color: "#475569", border: "none", borderRadius: 8, padding: "0 10px", fontSize: 12, cursor: "pointer" }}>✕</button>
+                            </div>
+                          ) : (
+                            // Normal Bubble
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: m.is_mine ? "row-reverse" : "row" }}>
+                              <div style={css.bubbleInner(m.is_mine, m.error, m.is_deleted)}>
+                                {m.body}
+                                {/* Attachment */}
+                                {m.attachment && !m.is_deleted && (
+                                  <div style={{ marginTop: 6 }}>
+                                    {isImg ? (
+                                      <a href={m.attachment} target="_blank" rel="noreferrer">
+                                        <img src={m.attachment} alt="attachment" style={{ maxWidth: "100%", maxHeight: 150, borderRadius: 6, display: "block" }} />
+                                      </a>
+                                    ) : (
+                                      <a href={m.attachment} target="_blank" rel="noreferrer" style={{ color: m.is_mine ? "#fff" : "#6366f1", textDecoration: "underline", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                        {m.attachment_name || "Pièce jointe"}
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Actions menu for mine */}
+                              {m.is_mine && !m.is_deleted && !m.sending && !m.error && hovMsgMenu === m.id && (
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  <button onClick={() => { setEditingMsgId(m.id); setEditBody(m.body); }} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: 2 }} title="Modifier">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                  </button>
+                                  <button onClick={() => handleDelete(m.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 2 }} title="Supprimer">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                  </button>
                                 </div>
                               )}
                             </div>
-                            
-                            {/* Actions menu for mine */}
-                            {m.is_mine && !m.is_deleted && !m.sending && !m.error && hovMsgMenu === m.id && (
-                              <div style={{ display: "flex", gap: 4 }}>
-                                <button onClick={() => { setEditingMsgId(m.id); setEditBody(m.body); }} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: 2 }} title="Modifier">
-                                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                </button>
-                                <button onClick={() => handleDelete(m.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 2 }} title="Supprimer">
-                                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                </button>
-                              </div>
+                          )}
+
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            {m.sending && <span style={{ fontSize: 10, color: "#94a3b8" }}>Envoi…</span>}
+                            {m.error && <span style={{ fontSize: 10, color: "#ef4444" }}>Échec ✕</span>}
+                            {!m.sending && !m.error && <TimeLabel ts={m.created_at} />}
+                            {m.is_edited && !m.is_deleted && <span style={{ fontSize: 9, fontStyle: "italic", color: "#cbd5e1" }}>Modifié</span>}
+
+                            {/* Read tick */}
+                            {m.is_mine && !m.error && !m.sending && (
+                              <span style={{ fontSize: 10, color: m.read_at ? "#3b82f6" : "#cbd5e1", marginLeft: 2, fontWeight: 800 }}>
+                                {m.read_at ? "✓✓" : "✓"}
+                              </span>
                             )}
                           </div>
-                        )}
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          {m.sending && <span style={{ fontSize: 10, color: "#94a3b8" }}>Envoi…</span>}
-                          {m.error && <span style={{ fontSize: 10, color: "#ef4444" }}>Échec ✕</span>}
-                          {!m.sending && !m.error && <TimeLabel ts={m.created_at} />}
-                          {m.is_edited && !m.is_deleted && <span style={{ fontSize: 9, fontStyle: "italic", color: "#cbd5e1" }}>Modifié</span>}
-                          
-                          {/* Read tick */}
-                          {m.is_mine && !m.error && !m.sending && (
-                            <span style={{ fontSize: 10, color: m.read_at ? "#3b82f6" : "#cbd5e1", marginLeft: 2, fontWeight: 800 }}>
-                              {m.read_at ? "✓✓" : "✓"}
-                            </span>
-                          )}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -708,8 +727,8 @@ export default function ChatBox() {
 
                 {/* Input */}
                 <div style={css.inputRow}>
-                  <button 
-                    onClick={() => fileRef.current?.click()} 
+                  <button
+                    onClick={() => fileRef.current?.click()}
                     style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}
                     title="Joindre un fichier"
                   >

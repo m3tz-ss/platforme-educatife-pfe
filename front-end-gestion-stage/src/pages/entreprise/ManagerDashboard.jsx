@@ -151,11 +151,7 @@ export function ManagerDashboard() {
 
         <div className="dashboard-wrapper min-h-screen relative z-10 w-full p-4 sm:p-6 lg:p-8">
 
-          {/* ── Back link ── */}
-          <Link to="/auth/sign-in" className="back-link">
-            <ArrowLeftIcon className="back-link-icon" />
-            Retour à la connexion
-          </Link>
+          
 
           {/* ── Main Card ── */}
           <div className="main-card">

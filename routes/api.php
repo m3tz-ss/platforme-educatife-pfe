@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/assign-encadrant/{id}', [EncadrantController::class, 'assign']);
+    Route::delete('/unassign-encadrant/{id}', [EncadrantController::class, 'unassign']);
     Route::get('/encadrants', [UserController::class, 'encadrants']);
     Route::get('/encadrant/students', [EncadrantController::class, 'students']);
 
@@ -158,10 +159,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('/admin/users/{user}/unblock', [AdminController::class, 'unblockUser']);
 });
 
-Route::middleware(['auth:sanctum'])->group(function() {
-  Route::apiResource('enterprises', AdminEnterpriseController::class);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('enterprises', AdminEnterpriseController::class);
 });
-Route::middleware('auth:sanctum')->prefix('admin')->group(function() {
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::apiResource('offers', AdminOfferController::class);
 });
 

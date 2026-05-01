@@ -44,15 +44,15 @@ import StudentNotificationBell from "../../components/student/StudentNotificatio
 
 // ─── Constantes statuts tâches ────────────────────────────────────────────────
 const TASK_STATUS_OPTS = [
-  { value: "todo",        label: "À faire"  },
+  { value: "todo", label: "À faire" },
   { value: "in_progress", label: "En cours" },
-  { value: "done",        label: "Terminé"  },
+  { value: "done", label: "Terminé" },
 ];
 
 const TASK_STATUS_STYLES = {
-  todo:        { chip: "bg-slate-100 text-slate-600 border-slate-200",  dot: "bg-slate-400",             row: "" },
-  in_progress: { chip: "bg-amber-50  text-amber-700  border-amber-200", dot: "bg-amber-400",             row: "bg-amber-50/30" },
-  done:        { chip: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500",       row: "bg-emerald-50/20" },
+  todo: { chip: "bg-slate-100 text-slate-600 border-slate-200", dot: "bg-slate-400", row: "" },
+  in_progress: { chip: "bg-amber-50  text-amber-700  border-amber-200", dot: "bg-amber-400", row: "bg-amber-50/30" },
+  done: { chip: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", row: "bg-emerald-50/20" },
 };
 
 // ─── Badge statut tâche ───────────────────────────────────────────────────────
@@ -96,10 +96,10 @@ function MiniTaskCard({ task, col, encadrantId, applicationId, busy, onDragStart
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
 
-  const allComments  = task.comments || task.taskComments || [];
-  const encComments  = allComments.filter(c => encadrantId && c.user?.id === encadrantId);
-  const myComments   = allComments.filter(c => encadrantId ? c.user?.id !== encadrantId : true);
-  const isOverdue    = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
+  const allComments = task.comments || task.taskComments || [];
+  const encComments = allComments.filter(c => encadrantId && c.user?.id === encadrantId);
+  const myComments = allComments.filter(c => encadrantId ? c.user?.id !== encadrantId : true);
+  const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
 
   const sendComment = async () => {
     if (!draft.trim() || sending || !applicationId) return;
@@ -124,9 +124,9 @@ function MiniTaskCard({ task, col, encadrantId, applicationId, busy, onDragStart
         <div className="flex items-start gap-1.5">
           <div className="flex-shrink-0 text-slate-200 mt-0.5">
             <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-              <circle cx="2" cy="2" r="1.2"/> <circle cx="6" cy="2" r="1.2"/>
-              <circle cx="2" cy="6" r="1.2"/> <circle cx="6" cy="6" r="1.2"/>
-              <circle cx="2" cy="10" r="1.2"/> <circle cx="6" cy="10" r="1.2"/>
+              <circle cx="2" cy="2" r="1.2" /> <circle cx="6" cy="2" r="1.2" />
+              <circle cx="2" cy="6" r="1.2" /> <circle cx="6" cy="6" r="1.2" />
+              <circle cx="2" cy="10" r="1.2" /> <circle cx="6" cy="10" r="1.2" />
             </svg>
           </div>
           <p className="flex-1 font-semibold text-xs text-slate-900 leading-snug">{task.title}</p>
@@ -153,7 +153,7 @@ function MiniTaskCard({ task, col, encadrantId, applicationId, busy, onDragStart
           >
             💬 {allComments.length}
             <svg className={`w-2 h-2 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
         </div>
@@ -233,9 +233,9 @@ function MiniTaskCard({ task, col, encadrantId, applicationId, busy, onDragStart
 
 // ─── SupervisionTaskTable → mini Kanban in modal ──────────────────────────────
 function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = null, onRefresh = null }) {
-  const [draggingId,    setDraggingId]    = useState(null);
-  const [dragOverCol,   setDragOverCol]   = useState(null);
-  const [busyLocal,     setBusyLocal]     = useState(false);
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
+  const [busyLocal, setBusyLocal] = useState(false);
 
   const grouped = MODAL_COLUMNS.reduce((acc, col) => {
     acc[col.key] = tasks
@@ -245,10 +245,10 @@ function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = 
   }, {});
 
   const stats = {
-    total:       tasks.length,
-    todo:        grouped.todo?.length ?? 0,
+    total: tasks.length,
+    todo: grouped.todo?.length ?? 0,
     in_progress: grouped.in_progress?.length ?? 0,
-    done:        grouped.done?.length ?? 0,
+    done: grouped.done?.length ?? 0,
   };
   const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
@@ -261,7 +261,7 @@ function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = 
       try {
         await api.patch(`/student/applications/${applicationId}/tasks/${draggingId}/status`, { status: toStatus });
         onRefresh?.();
-      } catch {}
+      } catch { }
       finally { setBusyLocal(false); }
     }
     setDraggingId(null);
@@ -286,10 +286,10 @@ function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = 
       {/* Stats + Progress */}
       <div className="flex items-center gap-3 flex-wrap">
         {[
-          { label: "Total",    v: stats.total,       c: "text-slate-700" },
-          { label: "À faire",  v: stats.todo,        c: "text-slate-500" },
+          { label: "Total", v: stats.total, c: "text-slate-700" },
+          { label: "À faire", v: stats.todo, c: "text-slate-500" },
           { label: "En cours", v: stats.in_progress, c: "text-amber-700" },
-          { label: "Terminé",  v: stats.done,        c: "text-emerald-700" },
+          { label: "Terminé", v: stats.done, c: "text-emerald-700" },
         ].map(s => (
           <div key={s.label} className="text-center">
             <p className={`text-lg font-black ${s.c}`}>{s.v}</p>
@@ -316,7 +316,7 @@ function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = 
       <div className="grid grid-cols-3 gap-2">
         {MODAL_COLUMNS.map(col => {
           const colTasks = grouped[col.key] || [];
-          const isOver   = dragOverCol === col.key;
+          const isOver = dragOverCol === col.key;
           return (
             <div
               key={col.key}
@@ -330,7 +330,7 @@ function SupervisionTaskTable({ tasks = [], applicationId = null, encadrantId = 
               <div className="rounded-t-xl px-3 py-2 flex items-center justify-between"
                 style={{ background: col.headerGrad }}>
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`}/>
+                  <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`} />
                   <span className="text-white font-bold text-xs">{col.label}</span>
                 </div>
                 <span className="bg-white/25 text-white text-xs font-black px-1.5 rounded-full">
@@ -400,9 +400,9 @@ function EvaluationSection({ evaluation }) {
     ({ pending: "En attente", valide: "Validé", a_ameliorer: "À améliorer", non_conforme: "Non conforme" }[d] || d || "—");
 
   const decisionStyle = (d) => {
-    if (d === "valide")        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    if (d === "a_ameliorer")   return "bg-amber-50 text-amber-700 border-amber-200";
-    if (d === "non_conforme")  return "bg-red-50 text-red-700 border-red-200";
+    if (d === "valide") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    if (d === "a_ameliorer") return "bg-amber-50 text-amber-700 border-amber-200";
+    if (d === "non_conforme") return "bg-red-50 text-red-700 border-red-200";
     return "bg-slate-50 text-slate-600 border-slate-200";
   };
 
@@ -478,16 +478,16 @@ function EvaluationSection({ evaluation }) {
 
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function MyApplications() {
-  const [applications,        setApplications]        = useState([]);
-  const [sidebarOpen,         setSidebarOpen]         = useState(true);
-  const [loading,             setLoading]             = useState(true);
-  const [selectedApp,         setSelectedApp]         = useState(null);
-  const [openModal,           setOpenModal]           = useState(false);
-  const [interviews,          setInterviews]          = useState([]);
-  const [loadingInterviews,   setLoadingInterviews]   = useState(false);
-  const [activeTab,           setActiveTab]           = useState("info");
-  const [supervision,         setSupervision]         = useState(null);
-  const [loadingSupervision,  setLoadingSupervision]  = useState(false);
+  const [applications, setApplications] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [interviews, setInterviews] = useState([]);
+  const [loadingInterviews, setLoadingInterviews] = useState(false);
+  const [activeTab, setActiveTab] = useState("info");
+  const [supervision, setSupervision] = useState(null);
+  const [loadingSupervision, setLoadingSupervision] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -579,48 +579,48 @@ export default function MyApplications() {
 
   const statusColor = (s) => {
     switch (normalizeStatus(s)) {
-      case "accepted":  return "green";
-      case "rejected":  return "red";
+      case "accepted": return "green";
+      case "rejected": return "red";
       case "interview": return "purple";
       case "reviewing": return "amber";
-      default:          return "orange";
+      default: return "orange";
     }
   };
 
   const statusLabel = (s) => {
     switch (normalizeStatus(s)) {
-      case "accepted":  return "✅ Accepté";
-      case "rejected":  return "❌ Rejeté";
+      case "accepted": return "✅ Accepté";
+      case "rejected": return "❌ Rejeté";
       case "interview": return "📞 Entretien planifié";
       case "reviewing": return "👀 Présélectionnée";
-      default:          return "⏳ En attente";
+      default: return "⏳ En attente";
     }
   };
 
   const getStatusMessage = (status) => {
     switch (normalizeStatus(status)) {
-      case "accepted":  return { icon: "🎉", title: "Félicitations!", message: "Votre candidature a été acceptée. L'entreprise vous contactera bientôt.", bgColor: "bg-green-50", borderColor: "border-green-200", textColor: "text-green-700" };
-      case "rejected":  return { icon: "😔", title: "Candidature refusée", message: "Malheureusement, votre candidature n'a pas été retenue. Ne baissez pas les bras!", bgColor: "bg-red-50", borderColor: "border-red-200", textColor: "text-red-700" };
+      case "accepted": return { icon: "🎉", title: "Félicitations!", message: "Votre candidature a été acceptée. L'entreprise vous contactera bientôt.", bgColor: "bg-green-50", borderColor: "border-green-200", textColor: "text-green-700" };
+      case "rejected": return { icon: "😔", title: "Candidature refusée", message: "Malheureusement, votre candidature n'a pas été retenue. Ne baissez pas les bras!", bgColor: "bg-red-50", borderColor: "border-red-200", textColor: "text-red-700" };
       case "interview": return { icon: "📞", title: "Entretien planifié", message: "L'entreprise souhaite vous rencontrer. Vérifiez vos messages pour plus de détails.", bgColor: "bg-purple-50", borderColor: "border-purple-200", textColor: "text-purple-700" };
       case "reviewing": return { icon: "👀", title: "Présélectionnée", message: "Votre candidature a plu à l'entreprise! Vous êtes en cours d'examen.", bgColor: "bg-amber-50", borderColor: "border-amber-200", textColor: "text-amber-700" };
-      default:          return { icon: "⏳", title: "En cours d'examen", message: "Votre candidature est en cours d'examen par l'entreprise.", bgColor: "bg-orange-50", borderColor: "border-orange-200", textColor: "text-orange-700" };
+      default: return { icon: "⏳", title: "En cours d'examen", message: "Votre candidature est en cours d'examen par l'entreprise.", bgColor: "bg-orange-50", borderColor: "border-orange-200", textColor: "text-orange-700" };
     }
   };
 
-  const acceptedCount  = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
-  const rejectedCount  = applications.filter((a) => normalizeStatus(a.status) === "rejected").length;
+  const acceptedCount = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
+  const rejectedCount = applications.filter((a) => normalizeStatus(a.status) === "rejected").length;
   const interviewCount = applications.filter((a) => normalizeStatus(a.status) === "interview").length;
   const reviewingCount = applications.filter((a) => normalizeStatus(a.status) === "reviewing").length;
-  const pendingCount   = applications.filter((a) => normalizeStatus(a.status) === "pending").length;
+  const pendingCount = applications.filter((a) => normalizeStatus(a.status) === "pending").length;
 
   const menuItems = [
-    { icon: HomeIcon,                  label: "Tableau de bord",    path: "/student",              badge: null },
-    { icon: BriefcaseIcon,             label: "Offres de stage",    path: "/student/offers",       badge: null },
-    { icon: CheckCircleIcon,           label: "Mes candidatures",   path: "/student/applications", badge: applications.length },
-    { icon: ClipboardDocumentListIcon, label: "Mes tâches",         path: "/student/tasks",        badge: null },
-    { icon: BookmarkIcon,              label: "Offres sauvegardées",path: "/student/saved",        badge: null },
-    { icon: ChatBubbleLeftIcon,        label: "Messages",           path: "/student/messages",     badge: null },
-    { icon: UserCircleIcon,            label: "Mon profil",         path: "/student/profile",      badge: null },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/student", badge: null },
+    { icon: BriefcaseIcon, label: "Offres de stage", path: "/student/offers", badge: null },
+    { icon: CheckCircleIcon, label: "Mes candidatures", path: "/student/applications", badge: applications.length },
+    { icon: ClipboardDocumentListIcon, label: "Mes tâches", path: "/student/tasks", badge: null },
+    { icon: BookmarkIcon, label: "Offres sauvegardées", path: "/student/saved", badge: null },
+    { icon: ChatBubbleLeftIcon, label: "Messages", path: "/student/messages", badge: null },
+    { icon: UserCircleIcon, label: "Mon profil", path: "/student/profile", badge: null },
   ];
 
   // ─── Onglet encadrement ────────────────────────────────────────────────────
@@ -648,9 +648,9 @@ export default function MyApplications() {
       );
     }
 
-    const tasks       = supervision.tasks      || [];
-    const comments    = supervision.comments   || [];
-    const evaluations = supervision.evaluations|| [];
+    const tasks = supervision.tasks || [];
+    const comments = supervision.comments || [];
+    const evaluations = supervision.evaluations || [];
 
     return (
       <div className="space-y-8 p-6">
@@ -717,11 +717,11 @@ export default function MyApplications() {
           </h3>
           <div className="space-y-4">
             {evaluations.length > 0 ? (
-                evaluations.map((ev, index) => (
-                    <EvaluationSection key={index} evaluation={ev} />
-                ))
+              evaluations.map((ev, index) => (
+                <EvaluationSection key={index} evaluation={ev} />
+              ))
             ) : (
-                <EvaluationSection evaluation={null} />
+              <EvaluationSection evaluation={null} />
             )}
           </div>
         </div>
@@ -794,11 +794,11 @@ export default function MyApplications() {
             {/* Statistiques */}
             <div className="mb-8 grid gap-4 grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
               {[
-                { label: "Total",      value: applications.length,          color: "text-blue-gray-900", sub: "Soumises",   subColor: "text-blue-500"   },
-                { label: "Acceptées",  value: acceptedCount,                color: "text-green-500",     sub: "✅ Succès",   subColor: "text-green-500"  },
-                { label: "Entretiens", value: interviewCount,               color: "text-purple-500",    sub: "📞 Planifiés",subColor: "text-purple-500" },
-                { label: "En cours",   value: pendingCount + reviewingCount,color: "text-orange-500",    sub: "⏳ En cours", subColor: "text-orange-500" },
-                { label: "Rejetées",   value: rejectedCount,                color: "text-red-500",       sub: "❌ Refusées", subColor: "text-red-500"    },
+                { label: "Total", value: applications.length, color: "text-blue-gray-900", sub: "Soumises", subColor: "text-blue-500" },
+                { label: "Acceptées", value: acceptedCount, color: "text-green-500", sub: "✅ Succès", subColor: "text-green-500" },
+                { label: "Entretiens", value: interviewCount, color: "text-purple-500", sub: "📞 Planifiés", subColor: "text-purple-500" },
+                { label: "En cours", value: pendingCount + reviewingCount, color: "text-orange-500", sub: "⏳ En cours", subColor: "text-orange-500" },
+                { label: "Rejetées", value: rejectedCount, color: "text-red-500", sub: "❌ Refusées", subColor: "text-red-500" },
               ].map((stat) => (
                 <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
                   <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
@@ -860,13 +860,12 @@ export default function MyApplications() {
                             fetchInterviews(app.id);
                           }}
                         >
-                          <div className={`h-1 rounded-t-xl bg-gradient-to-r ${
-                            statusColor(app.status) === "green"  ? "from-green-500 to-green-600"  :
-                            statusColor(app.status) === "red"    ? "from-red-500 to-red-600"      :
-                            statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600":
-                            statusColor(app.status) === "amber"  ? "from-amber-500 to-amber-600"  :
-                                                                   "from-orange-500 to-orange-600"
-                          }`} />
+                          <div className={`h-1 rounded-t-xl bg-gradient-to-r ${statusColor(app.status) === "green" ? "from-green-500 to-green-600" :
+                              statusColor(app.status) === "red" ? "from-red-500 to-red-600" :
+                                statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600" :
+                                  statusColor(app.status) === "amber" ? "from-amber-500 to-amber-600" :
+                                    "from-orange-500 to-orange-600"
+                            }`} />
                           <CardHeader floated={false} shadow={false} className="p-4 border-b border-blue-gray-100">
                             <Typography variant="h6" className="font-bold mb-1">{app.offer?.title || "Offre inconnue"}</Typography>
                             <Typography variant="small" className="text-blue-500 font-medium">{app.offer?.enterprise?.name || "Entreprise"}</Typography>
@@ -939,13 +938,13 @@ export default function MyApplications() {
                     <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">💼 Offre de stage</Typography>
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        { label: "Titre",         value: selectedApp.offer?.title },
-                        { label: "Entreprise",    value: selectedApp.offer?.enterprise?.name },
-                        { label: "Localisation",  value: selectedApp.offer?.location },
-                        { label: "Durée",         value: selectedApp.offer?.duration },
+                        { label: "Titre", value: selectedApp.offer?.title },
+                        { label: "Entreprise", value: selectedApp.offer?.enterprise?.name },
+                        { label: "Localisation", value: selectedApp.offer?.location },
+                        { label: "Durée", value: selectedApp.offer?.duration },
                         { label: "Date de début", value: formatDate(selectedApp.offer?.start_date) },
-                        { label: "Places dispo",  value: selectedApp.offer?.available_places ? `${selectedApp.offer.available_places} place(s)` : "N/A" },
-                        { label: "Domaine",       value: selectedApp.offer?.domain },
+                        { label: "Places dispo", value: selectedApp.offer?.available_places ? `${selectedApp.offer.available_places} place(s)` : "N/A" },
+                        { label: "Domaine", value: selectedApp.offer?.domain },
                       ].map(({ label, value }) => (
                         <div key={label}>
                           <Typography variant="small" className="font-bold text-blue-gray-900">{label} :</Typography>

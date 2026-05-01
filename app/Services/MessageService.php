@@ -87,7 +87,7 @@ class MessageService
         if ($message->sender_id !== $user->id) {
             abort(403, 'Non autorisé à modifier ce message');
         }
-        
+
         $message->update([
             'body' => $body,
             'is_edited' => true,

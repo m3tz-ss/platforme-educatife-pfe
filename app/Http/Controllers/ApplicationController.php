@@ -9,7 +9,8 @@ class ApplicationController extends Controller
 {
     public function __construct(
         protected ApplicationService $service
-    ) {}
+    ) {
+    }
 
     /**
      * 🧑‍🎓 Étudiant — Postuler à une offre
@@ -18,7 +19,7 @@ class ApplicationController extends Controller
     {
         $request->validate([
             'offer_id' => 'required|exists:offers,id',
-            'cv'       => 'required|file|mimes:pdf|max:2048'
+            'cv' => 'required|file|mimes:pdf|max:2048'
         ]);
 
         $result = $this->service->apply(
@@ -32,7 +33,7 @@ class ApplicationController extends Controller
         }
 
         return response()->json([
-            'message'     => 'Candidature envoyée',
+            'message' => 'Candidature envoyée',
             'application' => $result['data']
         ], $result['code']);
     }
@@ -42,7 +43,7 @@ class ApplicationController extends Controller
      */
     public function myApplications()
     {
-        $perPage      = request()->integer('per_page', 0);
+        $perPage = request()->integer('per_page', 0);
         $applications = $this->service->getStudentApplications(auth()->id(), $perPage ?: null);
         return response()->json($applications);
     }
@@ -52,7 +53,7 @@ class ApplicationController extends Controller
      */
     public function receivedApplications()
     {
-        $perPage      = request()->integer('per_page', 0);
+        $perPage = request()->integer('per_page', 0);
         $applications = $this->service->getEnterpriseApplications(auth()->id(), $perPage ?: null);
         return response()->json($applications);
     }
@@ -69,7 +70,7 @@ class ApplicationController extends Controller
         $application = $this->service->updateStatus($id, $request->status);
 
         return response()->json([
-            'message'     => 'Statut mis à jour',
+            'message' => 'Statut mis à jour',
             'application' => $application
         ]);
     }

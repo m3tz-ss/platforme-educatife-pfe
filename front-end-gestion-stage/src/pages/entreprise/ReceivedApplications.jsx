@@ -148,10 +148,50 @@ export default function ReceivedApplications() {
       setSelectedEncadrant("");
       Swal.fire({ icon: "success", title: "Encadrant affecté !", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchApplications();
+      // Update selected application if it's the one we're assigning
+      if (selectedApplication?.id === applicationId) {
+        const res = await api.get("/enterprise/applications");
+        const apps = Array.isArray(res.data) ? res.data : res.data.data || [];
+        const updatedApp = apps.find(a => a.id === applicationId);
+        if (updatedApp) setSelectedApplication(updatedApp);
+      }
     } catch (err) {
       Swal.fire({ icon: "error", title: "Erreur", text: "Impossible d'affecter l'encadrant.", confirmButtonColor: "#ef4444" });
     } finally {
       setAssignLoading(false);
+    }
+  };
+
+  const unassignEncadrant = async (applicationId) => {
+    const result = await Swal.fire({
+      title: "Supprimer l'affectation ?",
+      text: "L'encadrant ne sera plus affecté à ce stagiaire.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Oui, supprimer",
+      cancelButtonText: "Annuler"
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setAssignLoading(true);
+        await api.delete(`/unassign-encadrant/${applicationId}`);
+        Swal.fire({ icon: "success", title: "Affectation supprimée !", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+        fetchApplications();
+        // Update selected application if it's the one we're unassigning
+        if (selectedApplication?.id === applicationId) {
+          const res = await api.get("/enterprise/applications");
+          const apps = Array.isArray(res.data) ? res.data : res.data.data || [];
+          const updatedApp = apps.find(a => a.id === applicationId);
+          if (updatedApp) setSelectedApplication(updatedApp);
+        }
+      } catch (err) {
+        Swal.fire({ icon: "error", title: "Erreur", text: "Impossible de supprimer l'affectation.", confirmButtonColor: "#ef4444" });
+      } finally {
+        setAssignLoading(false);
+      }
     }
   };
 
@@ -581,17 +621,48 @@ export default function ReceivedApplications() {
 
               {/* 👨‍🏫 Affecter encadrant */}
               <div>
-                <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">👨‍🏫 Affecter un encadrant</Typography>
-                {selectedApplication.encadrant && (
-                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <Typography variant="small" className="text-green-700 font-medium">
-                      ✅ Encadrant actuel : <strong>{selectedApplication.encadrant?.name}</strong>
+                <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">👨‍🏫 Affectation de l'encadrant</Typography>
+                {selectedApplication.encadrant ? (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {getInitial(selectedApplication.encadrant.name)}
+                      </div>
+                      <div>
+                        <Typography variant="small" className="font-bold text-blue-gray-900">
+                          {selectedApplication.encadrant.name}
+                        </Typography>
+                        <Typography variant="small" className="text-blue-gray-500 text-xs">
+                          Encadrant affecté
+                        </Typography>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      color="red"
+                      variant="text"
+                      className="flex items-center gap-2"
+                      onClick={() => unassignEncadrant(selectedApplication.id)}
+                      disabled={assignLoading}
+                    >
+                      <XCircleIcon className="w-4 h-4" /> Supprimer
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mb-4 p-4 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center">
+                    <Typography variant="small" className="text-gray-500 italic">
+                      Aucun encadrant n'est encore affecté à ce stagiaire.
                     </Typography>
                   </div>
                 )}
+
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <Select label="Choisir un encadrant" value={selectedEncadrant} onChange={(v) => setSelectedEncadrant(v)}>
+                    <Select
+                      label={selectedApplication.encadrant ? "Changer d'encadrant" : "Choisir un encadrant"}
+                      value={selectedEncadrant}
+                      onChange={(v) => setSelectedEncadrant(v)}
+                    >
                       {encadrants.length === 0 ? (
                         <Option disabled value="">Aucun encadrant disponible</Option>
                       ) : (
@@ -601,8 +672,12 @@ export default function ReceivedApplications() {
                       )}
                     </Select>
                   </div>
-                  <Button color="blue" onClick={() => assignEncadrant(selectedApplication.id)} disabled={assignLoading}>
-                    {assignLoading ? "Affectation..." : "Affecter"}
+                  <Button
+                    color="blue"
+                    onClick={() => assignEncadrant(selectedApplication.id)}
+                    disabled={assignLoading || !selectedEncadrant}
+                  >
+                    {assignLoading ? "Traitement..." : selectedApplication.encadrant ? "Modifier" : "Affecter"}
                   </Button>
                 </div>
               </div>

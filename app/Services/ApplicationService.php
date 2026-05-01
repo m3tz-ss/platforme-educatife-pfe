@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\RH\NewApplicationReceivedNotification;
 use App\Notifications\Student\ApplicationStatusChangedNotification;
-use App\Mail\ApplicationReceivedMail;
+use App\Mail\NewApplicationReceivedRHMail;
 use App\Mail\ApplicationStatusUpdatedMail;
 
 class ApplicationService
@@ -61,10 +61,15 @@ class ApplicationService
             }
         }
 
-        // ✅ Email à l'entreprise (Queued)
-        $enterpriseEmail = $this->getEnterpriseEmail($enterpriseUser);
-        if ($enterpriseEmail) {
-            Mail::send(new ApplicationReceivedMail($offer, $student, $enterpriseEmail));
+        // ✅ Email réel au(x) RH/Manager concerné(s)
+        if ($enterpriseUser) {
+            $usersToMail = $this->getEnterpriseUsersList($enterpriseUser);
+            foreach ($usersToMail as $rhUser) {
+                if ($rhUser->email) {
+                    Mail::to($rhUser->email)
+                        ->send(new NewApplicationReceivedRHMail($rhUser, $student, $offer));
+                }
+            }
         }
 
         return ['data' => $application, 'code' => 201];
@@ -103,7 +108,7 @@ class ApplicationService
             }
         }
 
-        // ✅ Email à l'étudiant (Queued)
+        // ✅ Email réel à l'étudiant
         if ($student?->email) {
             $statusLabels = [
                 'acceptee'        => '✅ Acceptée',
@@ -115,7 +120,8 @@ class ApplicationService
             $label      = $statusLabels[$status] ?? $status;
             $offerTitle = $fresh->offer?->title ?? 'Offre';
 
-            Mail::send(new ApplicationStatusUpdatedMail($student, $label, $offerTitle));
+            Mail::to($student->email)
+                ->send(new ApplicationStatusUpdatedMail($student, $label, $offerTitle, $status));
         }
 
         return $updated;
@@ -154,7 +160,31 @@ class ApplicationService
     }
 
     /**
-     * ✅ Trouver le bon email de l'entreprise
+     * ✅ Retourner la liste des RH/Manager liés à l'offre (pour les emails)
+     */
+    private function getEnterpriseUsersList(User $enterpriseUser): \Illuminate\Support\Collection
+    {
+        $users = collect();
+
+        if ($enterpriseUser->role === 'manager') {
+            $users->push($enterpriseUser);
+            $rhs = User::where('manager_id', $enterpriseUser->id)->where('role', 'rh')->get();
+            $users = $users->merge($rhs);
+        } elseif ($enterpriseUser->role === 'rh') {
+            $users->push($enterpriseUser);
+            if ($enterpriseUser->manager_id) {
+                $manager = User::find($enterpriseUser->manager_id);
+                if ($manager) $users->push($manager);
+            }
+        } else {
+            $users->push($enterpriseUser);
+        }
+
+        return $users->unique('id');
+    }
+
+    /**
+     * ✅ Trouver le bon email de l'entreprise (conservé pour compatibilité)
      */
     private function getEnterpriseEmail(?User $enterpriseUser): ?string
     {

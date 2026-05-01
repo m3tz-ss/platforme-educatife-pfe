@@ -8,43 +8,43 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-// ✅ NOUVEAU — Créer un manager (accessible par l'entreprise connectée)
+    // ✅ NOUVEAU — Créer un manager (accessible par l'entreprise connectée)
     public function setupManager(Request $request)
     {
         // Vérifier que c'est bien une entreprise connectée
         if ($request->user()->type !== 'enterprise') {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
- 
+
         $request->validate([
-            'name'     => 'required|string',
-            'email'    => 'required|email|unique:users',
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users',
             'password' => 'required|min:6',
         ]);
- 
+
         // Créer le manager lié à l'entreprise connectée
         $manager = User::create([
-            'name'       => $request->name,
-            'email'      => $request->email,
-            'password'   => Hash::make($request->password),
-            'type'       => 'enterprise',
-            'role'       => 'manager',
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'type' => 'enterprise',
+            'role' => 'manager',
             'manager_id' => $request->user()->id, // 👈 lié à l'entreprise connectée
         ]);
- 
+
         // Assigner le rôle Spatie
         if (!\Spatie\Permission\Models\Role::where('name', 'manager')->exists()) {
             \Spatie\Permission\Models\Role::create(['name' => 'manager']);
         }
         $manager->assignRole('manager');
- 
+
         return response()->json([
             'message' => 'Manager créé avec succès',
             'manager' => [
-                'id'    => $manager->id,
-                'name'  => $manager->name,
+                'id' => $manager->id,
+                'name' => $manager->name,
                 'email' => $manager->email,
-                'role'  => 'manager',
+                'role' => 'manager',
             ]
         ], 201);
     }
@@ -56,9 +56,9 @@ class UserController extends Controller
         }
 
         $users = User::where('type', 'enterprise')
-                     ->whereIn('role', ['rh', 'encadrant'])
-                     ->where('manager_id', $request->user()->id) // 👈 filtre par manager connecté
-                     ->get();
+            ->whereIn('role', ['rh', 'encadrant'])
+            ->where('manager_id', $request->user()->id) // 👈 filtre par manager connecté
+            ->get();
 
         return response()->json($users);
     }
@@ -78,15 +78,15 @@ class UserController extends Controller
         ]);
 
         $user = User::create([
-    'name'         => $request->name,
-    'email'        => $request->email,
-    'password'     => Hash::make($request->password),
-    'type'         => 'enterprise',
-    'role'         => $request->role,
-    'manager_id'   => $request->user()->id,
-    'enterprise_id' => $request->user()->enterprise_id, 
-    'company_name' => $request->user()->company_name, // ✅ hérite du manager
-]);
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'type' => 'enterprise',
+            'role' => $request->role,
+            'manager_id' => $request->user()->id,
+            'enterprise_id' => $request->user()->enterprise_id,
+            'company_name' => $request->user()->company_name, // ✅ hérite du manager
+        ]);
 
         return response()->json([
             'message' => 'Utilisateur ajouté avec succès',
@@ -110,10 +110,14 @@ class UserController extends Controller
             'role' => 'sometimes|in:rh,encadrant',
         ]);
 
-        if ($request->has('name')) $user->name = $request->name;
-        if ($request->has('email')) $user->email = $request->email;
-        if ($request->has('password')) $user->password = Hash::make($request->password);
-        if ($request->has('role')) $user->role = $request->role;
+        if ($request->has('name'))
+            $user->name = $request->name;
+        if ($request->has('email'))
+            $user->email = $request->email;
+        if ($request->has('password'))
+            $user->password = Hash::make($request->password);
+        if ($request->has('role'))
+            $user->role = $request->role;
 
         $user->save();
 
@@ -138,14 +142,14 @@ class UserController extends Controller
         ]);
     }
 
-   public function encadrants(Request $request)
-{
-    if ($request->user()->role !== 'rh') {
-        return response()->json(['message' => 'Accès refusé'], 403);
-    }
+    public function encadrants(Request $request)
+    {
+        if ($request->user()->role !== 'rh') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
 
-    return User::where('role', 'encadrant')
-               ->where('manager_id', $request->user()->manager_id)
-               ->get();
-}
+        return User::where('role', 'encadrant')
+            ->where('manager_id', $request->user()->manager_id)
+            ->get();
+    }
 }

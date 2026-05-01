@@ -88,7 +88,7 @@ export default function LandingNavbar() {
           </span>
         </Link>
 
-        
+
 
         {/* Auth buttons */}
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>

@@ -200,7 +200,7 @@ function EditTaskForm({ task, onUpdated, onCancel }) {
 }
 
 // ── TaskModal ─────────────────────────────────────────────────────────────────
-function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask, busy, onCommentsUpdated }) {
+function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask, busy, onCommentsUpdated, currentUser }) {
   const overlayRef = useRef(null);
   const inputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -529,20 +529,24 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask,
                         </div>
                         <span className="text-xs font-black text-indigo-900 flex-1">{name}</span>
                         <span className="text-xs text-slate-400">{date}</span>
-                        <CommentInlineEdit
-                          commentId={c.id}
-                          body={body}
-                          taskId={task.id}
-                          onUpdated={(newBody) =>
-                            setComments(prev => prev.map(x => x.id === c.id ? { ...x, body: newBody } : x))
-                          }
-                        />
-                        <button onClick={() => deleteComment(c.id)}
-                          className="text-rose-300 hover:text-rose-600 transition-colors ml-1 flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        {(currentUser?.id && (c.user?.id === currentUser.id || c.user_id === currentUser.id)) && (
+                          <>
+                            <CommentInlineEdit
+                              commentId={c.id}
+                              body={body}
+                              taskId={task.id}
+                              onUpdated={(newBody) =>
+                                setComments(prev => prev.map(x => x.id === c.id ? { ...x, body: newBody } : x))
+                              }
+                            />
+                            <button onClick={() => deleteComment(c.id)}
+                              className="text-rose-300 hover:text-rose-600 transition-colors ml-1 flex-shrink-0">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
                       </div>
                       <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{body}</p>
                       {/* Pièces jointes du commentaire */}
@@ -905,7 +909,7 @@ function AddTaskInline({ onAdd, busy }) {
 }
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
-function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask }) {
+function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask, currentUser }) {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   const [modalTask, setModalTask] = useState(null);
@@ -957,6 +961,7 @@ function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd,
             onUpdateTask?.(updated);
           }}
           onCommentsUpdated={() => { }}
+          currentUser={currentUser}
         />
       )}
 
@@ -1080,6 +1085,8 @@ export default function EncadrantStudentDetail() {
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
 
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
   const flash = (type, msg) => {
     if (type === "error") {
       setFormError(msg); setFormSuccess("");
@@ -1135,10 +1142,10 @@ export default function EncadrantStudentDetail() {
         .catch(() => setDetail(null)),
       api.get(`/encadrant/applications/${id}/tasks?per_page=50`)
         .then(r => { const raw = r.data?.data ?? r.data ?? []; setTasks(Array.isArray(raw) ? raw : []); })
-        .catch(() => {}),
+        .catch(() => { }),
       api.get(`/encadrant/applications/${id}/comments`)
         .then(r => setCommentsRes(r.data))
-        .catch(() => {}),
+        .catch(() => { }),
       api.get(`/encadrant/applications/${id}/evaluation`)
         .then(r => {
           const ev = r.data;
@@ -1149,7 +1156,7 @@ export default function EncadrantStudentDetail() {
             notes: ev.notes || "",
           });
         })
-        .catch(() => {}),
+        .catch(() => { }),
     ]).finally(() => setLoading(false));
   }, [id]);
 
@@ -1343,6 +1350,7 @@ export default function EncadrantStudentDetail() {
           onDelete={handleDeleteTask}
           onAdd={handleAddTask}
           onUpdateTask={handleUpdateTask}
+          currentUser={currentUser}
         />
 
         {/* ── GENERAL COMMENTS ── */}

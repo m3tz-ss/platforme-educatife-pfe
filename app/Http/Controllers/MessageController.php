@@ -9,7 +9,9 @@ use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
-    public function __construct(private MessageService $service) {}
+    public function __construct(private MessageService $service)
+    {
+    }
 
     /**
      * GET /api/messages/conversations
@@ -36,15 +38,15 @@ class MessageController extends Controller
             ->orderBy('created_at')
             ->get()
             ->map(fn($msg) => [
-                'id'         => $msg->id,
-                'body'       => $msg->body,
+                'id' => $msg->id,
+                'body' => $msg->body,
                 'attachment' => $msg->attachment ? url('storage/' . $msg->attachment) : null,
                 'attachment_name' => $msg->attachment_name,
-                'is_edited'  => $msg->is_edited,
+                'is_edited' => $msg->is_edited,
                 'is_deleted' => $msg->is_deleted,
-                'sender'     => $msg->sender,
-                'is_mine'    => $msg->sender_id === $user->id,
-                'read_at'    => $msg->read_at,
+                'sender' => $msg->sender,
+                'is_mine' => $msg->sender_id === $user->id,
+                'read_at' => $msg->read_at,
                 'created_at' => $msg->created_at,
             ]);
 
@@ -57,13 +59,13 @@ class MessageController extends Controller
     public function send(Request $request)
     {
         $request->validate([
-            'receiver_id'     => 'required|exists:users,id',
-            'body'            => 'required|string|max:2000',
+            'receiver_id' => 'required|exists:users,id',
+            'body' => 'required|string|max:2000',
             'conversation_id' => 'nullable|exists:conversations,id',
-            'attachment'      => 'nullable|file|max:5120', // 5MB max
+            'attachment' => 'nullable|file|max:5120', // 5MB max
         ]);
 
-        $sender   = $request->user();
+        $sender = $request->user();
         $receiver = User::findOrFail($request->receiver_id);
 
         if (!$this->service->canSendTo($sender, $receiver)) {
@@ -90,14 +92,14 @@ class MessageController extends Controller
 
         return response()->json([
             'conversation_id' => $conversation->id,
-            'message'         => [
-                'id'         => $message->id,
-                'body'       => $message->body,
+            'message' => [
+                'id' => $message->id,
+                'body' => $message->body,
                 'attachment' => $message->attachment ? url('storage/' . $message->attachment) : null,
                 'attachment_name' => $message->attachment_name,
-                'is_edited'  => false,
+                'is_edited' => false,
                 'is_deleted' => false,
-                'is_mine'    => true,
+                'is_mine' => true,
                 'created_at' => $message->created_at,
             ],
         ], 201);
@@ -146,9 +148,9 @@ class MessageController extends Controller
         if ($user->role === 'rh') {
 
             $contacts = User::where('id', '!=', $user->id)
-                ->where(function($query) {
+                ->where(function ($query) {
                     $query->where('role', '!=', 'rh')
-                          ->orWhereNull('role');
+                        ->orWhereNull('role');
                 })
                 ->select('id', 'name', 'role', 'type')
                 ->get();
@@ -163,7 +165,7 @@ class MessageController extends Controller
 
             $contacts = $applications->map(function ($app) {
                 return [
-                    'id'   => $app->student->id,
+                    'id' => $app->student->id,
                     'name' => $app->student->name,
                     'role' => 'student',
                     'type' => 'student'
@@ -183,7 +185,7 @@ class MessageController extends Controller
             if ($application && $application->encadrant) {
                 $contacts = collect([
                     [
-                        'id'   => $application->encadrant->id,
+                        'id' => $application->encadrant->id,
                         'name' => $application->encadrant->name,
                         'role' => 'encadrant',
                         'type' => 'enterprise'
