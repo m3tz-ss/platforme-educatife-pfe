@@ -66,6 +66,16 @@ export default function ChatBox() {
   const [editBody, setEditBody] = useState("");
   const [editSending, setEditSending] = useState(false);
 
+  // Contacts & Deletion states
+  const [toast, setToast] = useState(null); // { msg, type }
+  const [deletingConvId, setDeletingConvId] = useState(null);
+  const [hoveredMsgId, setHoveredMsgId] = useState(null);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -131,6 +141,57 @@ export default function ChatBox() {
       const res = await api.get("/messages/contacts");
       setContacts(Array.isArray(res.data) ? res.data : res.data?.data ?? []);
     } catch { /* silent */ }
+  };
+
+  const isContactSaved = (userId) =>
+    contacts.some((c) => (c.id === userId || c.contact_user_id === userId) && c.is_saved);
+
+  const handleAddContact = async () => {
+    if (!receiverId) return;
+    try {
+      await api.post("/messages/contacts", { contact_user_id: receiverId });
+      await fetchContacts();
+      showToast(`${receiverName} ajouté aux contacts`);
+    } catch (e) {
+      const msg = e?.response?.data?.message || "Erreur lors de l'ajout";
+      showToast(msg, "error");
+    }
+  };
+
+  const handleRemoveContact = async (contactUserId, contactName) => {
+    try {
+      await api.delete(`/messages/contacts/${contactUserId}`);
+      await fetchContacts();
+      showToast(`${contactName} retiré des contacts`);
+    } catch { showToast("Erreur lors de la suppression", "error"); }
+  };
+
+  const handleDeleteConversation = async (convId, e) => {
+    e.stopPropagation();
+    setDeletingConvId(convId);
+    try {
+      await api.delete(`/messages/conversations/${convId}`);
+      setConvs((prev) => prev.filter((c) => c.id !== convId));
+      if (activeConvId === convId) {
+        setActiveConvId(null); activeConvIdRef.current = null;
+        setReceiverId(null);
+        setReceiverName("");
+        setMessages([]);
+      }
+      showToast("Conversation supprimée");
+    } catch { showToast("Erreur lors de la suppression", "error"); }
+    finally { setDeletingConvId(null); }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    if (String(msgId).startsWith("temp-")) return;
+    try {
+      await api.delete(`/messages/${msgId}`);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      showToast("Message supprimé");
+    } catch {
+      showToast("Erreur lors de la suppression du message", "error");
+    }
   };
 
   // Refs for polling (avoid stale closure issues)
@@ -544,6 +605,18 @@ export default function ChatBox() {
                             {conv.unread_count > 0 && (
                               <span style={css.unread}>{conv.unread_count > 9 ? "9+" : conv.unread_count}</span>
                             )}
+                            {hov && (
+                              <button
+                                title="Supprimer la conversation"
+                                style={{
+                                  background: "transparent", border: "none", color: "#ef4444", cursor: "pointer",
+                                  padding: 4, display: "flex", alignItems: "center", justifyContent: "center"
+                                }}
+                                onClick={(e) => handleDeleteConversation(conv.id, e)}
+                              >
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            )}
                           </div>
                         );
                       })
@@ -577,6 +650,18 @@ export default function ChatBox() {
                                 <p style={{ fontSize: 13, fontWeight: 600, color: "#1e1e2e", margin: 0 }}>{c.name}</p>
                                 <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>{c.role || c.type || ""}</p>
                               </div>
+                              {c.is_saved && hovContact === c.id && (
+                                <button
+                                  title="Retirer des contacts"
+                                  style={{
+                                    background: "transparent", border: "none", color: "#ef4444", cursor: "pointer",
+                                    padding: 4, display: "flex", alignItems: "center", justifyContent: "center"
+                                  }}
+                                  onClick={(e) => { e.stopPropagation(); handleRemoveContact(c.id, c.name); }}
+                                >
+                                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                              )}
                             </div>
                           ))}
                         </>
@@ -606,6 +691,27 @@ export default function ChatBox() {
                     <p style={css.chatName}>{receiverName || "Conversation"}</p>
                     <p style={css.chatSub}>Message privé</p>
                   </div>
+                  {receiverId && (
+                    isContactSaved(receiverId) ? (
+                      <button style={{ ...css.iconBtn(false), color: "#059669", background: "#ecfdf5" }} disabled title="Dans mes contacts">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        title="Ajouter aux contacts"
+                        style={{ ...css.iconBtn(hovFab), color: "#6366f1" }}
+                        onMouseEnter={() => setHovFab(true)}
+                        onMouseLeave={() => setHovFab(false)}
+                        onClick={handleAddContact}
+                      >
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.3} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                        </svg>
+                      </button>
+                    )
+                  )}
                   <button
                     style={css.iconBtn(hovClose)}
                     onMouseEnter={() => setHovClose(true)}
@@ -688,7 +794,7 @@ export default function ChatBox() {
                                   <button onClick={() => { setEditingMsgId(m.id); setEditBody(m.body); }} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: 2 }} title="Modifier">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                   </button>
-                                  <button onClick={() => handleDelete(m.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 2 }} title="Supprimer">
+                                  <button onClick={() => handleDeleteMessage(m.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 2 }} title="Supprimer">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                   </button>
                                 </div>
@@ -786,6 +892,21 @@ export default function ChatBox() {
           )}
         </button>
       </div>
+
+      {/* ── Toast notification ── */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, left: "24px",
+          background: toast.type === "error" ? "#ef4444" : "#10b981",
+          color: "#fff", padding: "10px 22px", borderRadius: 12,
+          fontSize: 13, fontWeight: 600,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+          zIndex: 999999, pointerEvents: "none",
+          animation: "cb-in .25s ease",
+        }}>
+          {toast.msg}
+        </div>
+      )}
     </>
   );
 }

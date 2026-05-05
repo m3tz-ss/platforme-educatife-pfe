@@ -74,4 +74,20 @@ class ApplicationController extends Controller
             'application' => $application
         ]);
     }
+
+    /**
+     * 🧑‍🎓 Étudiant — Annuler une candidature (si en attente)
+     */
+    public function destroy($id)
+    {
+        $result = $this->service->cancelApplication(auth()->id(), $id);
+
+        if (isset($result['error'])) {
+            return response()->json(['message' => $result['error']], $result['code']);
+        }
+
+        return response()->json([
+            'message' => 'Candidature annulée avec succès'
+        ]);
+    }
 }

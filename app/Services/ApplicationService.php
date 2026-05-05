@@ -227,4 +227,39 @@ class ApplicationService
             return $this->repository->getByEnterprise($enterpriseId, $perPage);
         });
     }
+
+    /**
+     * ✅ Annuler une candidature (si status == 'nouveau')
+     */
+    public function cancelApplication(int $studentId, int $applicationId)
+    {
+        $application = $this->repository->findOrFail($applicationId);
+
+        if ($application->student_id !== $studentId) {
+            return ['error' => 'Non autorisé', 'code' => 403];
+        }
+
+        if ($application->status !== 'nouveau') {
+            return ['error' => 'Impossible d\'annuler une candidature qui n\'est plus en attente', 'code' => 400];
+        }
+
+        $application->load('offer.user');
+
+        // Delete application
+        $application->delete();
+
+        // Invalidate caches
+        Cache::forget("applications_student_{$studentId}");
+
+        if ($application->offer && $application->offer->user) {
+            $enterpriseUser = $application->offer->user;
+            $managedIds = User::where('manager_id', $enterpriseUser->id)->pluck('id')->toArray();
+            $cacheIdsToClear = array_merge([$enterpriseUser->id], $managedIds);
+            foreach ($cacheIdsToClear as $cid) {
+                Cache::forget("applications_enterprise_{$cid}");
+            }
+        }
+
+        return ['data' => true, 'code' => 200];
+    }
 }

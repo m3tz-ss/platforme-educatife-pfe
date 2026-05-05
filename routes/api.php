@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/applications', [ApplicationController::class, 'store']);
     Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
+    Route::delete('/applications/{id}', [ApplicationController::class, 'destroy']);
     Route::get('/enterprise/applications', [ApplicationController::class, 'receivedApplications']);
     Route::patch('/applications/{id}', [ApplicationController::class, 'updateStatus']);
     Route::post('/enterprise/interviews', [InterviewController::class, 'store']);
@@ -133,10 +134,13 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->prefix('messages')->group(function () {
     Route::get('/conversations', [MessageController::class, 'conversations']);
     Route::get('/conversations/{conversationId}', [MessageController::class, 'show']);
+    Route::delete('/conversations/{conversationId}', [MessageController::class, 'deleteConversation']);
     Route::post('/send', [MessageController::class, 'send']);
     Route::put('/{messageId}', [MessageController::class, 'update']);
     Route::delete('/{messageId}', [MessageController::class, 'destroy']);
     Route::get('/contacts', [MessageController::class, 'contacts']);
+    Route::post('/contacts', [MessageController::class, 'addContact']);
+    Route::delete('/contacts/{contactUserId}', [MessageController::class, 'removeContact']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
