@@ -44,71 +44,71 @@ const SKILLS_CATALOG = [
     category: "💻 Développement",
     color: "blue",
     skills: [
-      "Python","JavaScript","TypeScript","Java","PHP","C++","C#","Go","Rust","Swift",
-      "Kotlin","React","Vue.js","Angular","Node.js","Laravel","Django","Spring Boot",
-      "Next.js","Express.js","Flutter","React Native",
+      "Python", "JavaScript", "TypeScript", "Java", "PHP", "C++", "C#", "Go", "Rust", "Swift",
+      "Kotlin", "React", "Vue.js", "Angular", "Node.js", "Laravel", "Django", "Spring Boot",
+      "Next.js", "Express.js", "Flutter", "React Native",
     ],
   },
   {
     category: "🗄️ Base de données",
     color: "indigo",
     skills: [
-      "MySQL","PostgreSQL","MongoDB","Redis","SQLite","Oracle","Firebase",
-      "Elasticsearch","MariaDB","Cassandra",
+      "MySQL", "PostgreSQL", "MongoDB", "Redis", "SQLite", "Oracle", "Firebase",
+      "Elasticsearch", "MariaDB", "Cassandra",
     ],
   },
   {
     category: "📊 Data & IA",
     color: "purple",
     skills: [
-      "Machine Learning","Deep Learning","TensorFlow","PyTorch","Scikit-learn",
-      "Power BI","Tableau","Excel","Pandas","NumPy","Data Analysis","SQL",
-      "NLP","Computer Vision","Keras",
+      "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "Scikit-learn",
+      "Power BI", "Tableau", "Excel", "Pandas", "NumPy", "Data Analysis", "SQL",
+      "NLP", "Computer Vision", "Keras",
     ],
   },
   {
     category: "☁️ DevOps & Cloud",
     color: "cyan",
     skills: [
-      "Docker","Kubernetes","AWS","Azure","Google Cloud","Linux","CI/CD",
-      "Git","GitHub","GitLab","Nginx","Jenkins","Ansible","Terraform",
+      "Docker", "Kubernetes", "AWS", "Azure", "Google Cloud", "Linux", "CI/CD",
+      "Git", "GitHub", "GitLab", "Nginx", "Jenkins", "Ansible", "Terraform",
     ],
   },
   {
     category: "🎨 Design & UX",
     color: "pink",
     skills: [
-      "Figma","Adobe XD","Photoshop","Illustrator","InDesign","UI/UX Design",
-      "Wireframing","Prototypage","Canva","After Effects",
+      "Figma", "Adobe XD", "Photoshop", "Illustrator", "InDesign", "UI/UX Design",
+      "Wireframing", "Prototypage", "Canva", "After Effects",
     ],
   },
   {
     category: "🌐 Réseaux & Sécurité",
     color: "orange",
     skills: [
-      "Cisco","TCP/IP","Sécurité informatique","Cybersécurité","VPN","Firewall",
-      "Pénétration Test","Wireshark","CCNA",
+      "Cisco", "TCP/IP", "Sécurité informatique", "Cybersécurité", "VPN", "Firewall",
+      "Pénétration Test", "Wireshark", "CCNA",
     ],
   },
   {
     category: "🤝 Soft Skills",
     color: "green",
     skills: [
-      "Communication","Leadership","Travail en équipe","Gestion de projet",
-      "Résolution de problèmes","Créativité","Adaptabilité","Autonomie",
-      "Gestion du temps","Prise de décision","Présentation","Négociation",
+      "Communication", "Leadership", "Travail en équipe", "Gestion de projet",
+      "Résolution de problèmes", "Créativité", "Adaptabilité", "Autonomie",
+      "Gestion du temps", "Prise de décision", "Présentation", "Négociation",
     ],
   },
 ];
 
 const COLOR_MAP = {
-  blue:   { bg: "bg-blue-50",   border: "border-blue-200",   text: "text-blue-700",   selected: "bg-blue-500 text-white border-blue-500" },
+  blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", selected: "bg-blue-500 text-white border-blue-500" },
   indigo: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", selected: "bg-indigo-500 text-white border-indigo-500" },
   purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", selected: "bg-purple-500 text-white border-purple-500" },
-  cyan:   { bg: "bg-cyan-50",   border: "border-cyan-200",   text: "text-cyan-700",   selected: "bg-cyan-500 text-white border-cyan-500" },
-  pink:   { bg: "bg-pink-50",   border: "border-pink-200",   text: "text-pink-700",   selected: "bg-pink-500 text-white border-pink-500" },
+  cyan: { bg: "bg-cyan-50", border: "border-cyan-200", text: "text-cyan-700", selected: "bg-cyan-500 text-white border-cyan-500" },
+  pink: { bg: "bg-pink-50", border: "border-pink-200", text: "text-pink-700", selected: "bg-pink-500 text-white border-pink-500" },
   orange: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", selected: "bg-orange-500 text-white border-orange-500" },
-  green:  { bg: "bg-green-50",  border: "border-green-200",  text: "text-green-700",  selected: "bg-green-500 text-white border-green-500" },
+  green: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", selected: "bg-green-500 text-white border-green-500" },
 };
 
 export default function StudentProfile() {
@@ -312,20 +312,20 @@ export default function StudentProfile() {
   const completionPct = Math.round((completionFields.filter(Boolean).length / completionFields.length) * 100);
 
   const menuItems = [
-    { icon: HomeIcon,           label: "Tableau de bord",     path: "/student" },
-    { icon: BriefcaseIcon,      label: "Offres de stage",     path: "/student/offers" },
-    { icon: CheckCircleIcon,    label: "Mes candidatures",    path: "/student/applications" },
-    { icon: BookmarkIcon,       label: "Offres sauvegardées", path: "/student/saved" },
-    { icon: ChatBubbleLeftIcon, label: "Messages",            path: "/student/messages" },
-    { icon: UserCircleIcon,     label: "Mon profil",          path: "/student/profile" },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/student" },
+    { icon: BriefcaseIcon, label: "Offres de stage", path: "/student/offers" },
+    { icon: CheckCircleIcon, label: "Mes candidatures", path: "/student/applications" },
+    { icon: BookmarkIcon, label: "Offres sauvegardées", path: "/student/saved" },
+    { icon: ChatBubbleLeftIcon, label: "Messages", path: "/student/messages" },
+    { icon: UserCircleIcon, label: "Mon profil", path: "/student/profile" },
   ];
 
   const sections = [
-    { id: "personal",     label: "Infos personnelles", icon: UserCircleIcon },
-    { id: "skills",       label: "Mes compétences",    icon: SparklesIcon },
-    { id: "cv",           label: "CV & Documents",     icon: DocumentArrowUpIcon },
-    { id: "applications", label: "Historique",         icon: BriefcaseIcon },
-    { id: "password",     label: "Mot de passe",       icon: LockClosedIcon },
+    { id: "personal", label: "Infos personnelles", icon: UserCircleIcon },
+    { id: "skills", label: "Mes compétences", icon: SparklesIcon },
+    { id: "cv", label: "CV & Documents", icon: DocumentArrowUpIcon },
+    { id: "applications", label: "Historique", icon: BriefcaseIcon },
+    { id: "password", label: "Mot de passe", icon: LockClosedIcon },
   ];
 
   if (initialLoading) {
@@ -486,13 +486,12 @@ export default function StudentProfile() {
                   <button
                     key={s.id}
                     onClick={() => setActiveSection(s.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-                      activeSection === s.id
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${activeSection === s.id
                         ? s.id === "skills"
                           ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
                           : "bg-blue-500 text-white shadow-md"
                         : "bg-white text-blue-gray-700 border border-blue-gray-200 hover:bg-blue-50"
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     {s.label}
@@ -529,13 +528,13 @@ export default function StudentProfile() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                      { label: "Nom complet",       name: "name",            icon: UserCircleIcon,  type: "text",   placeholder: "Votre nom complet" },
-                      { label: "Email",              name: "email",           icon: EnvelopeIcon,    type: "email",  placeholder: "votre@email.com" },
-                      { label: "Téléphone",          name: "phone",           icon: PhoneIcon,       type: "tel",    placeholder: "+216 XX XXX XXX" },
-                      { label: "Adresse",            name: "address",         icon: MapPinIcon,      type: "text",   placeholder: "Ville, Pays" },
-                      { label: "Établissement",      name: "school",          icon: AcademicCapIcon, type: "text",   placeholder: "Nom de votre école" },
-                      { label: "Domaine d'études",   name: "field",           icon: BriefcaseIcon,   type: "text",   placeholder: "Ex: Informatique" },
-                      { label: "Année de diplôme",   name: "graduation_year", icon: AcademicCapIcon, type: "number", placeholder: "2025" },
+                      { label: "Nom complet", name: "name", icon: UserCircleIcon, type: "text", placeholder: "Votre nom complet" },
+                      { label: "Email", name: "email", icon: EnvelopeIcon, type: "email", placeholder: "votre@email.com" },
+                      { label: "Téléphone", name: "phone", icon: PhoneIcon, type: "tel", placeholder: "+216 XX XXX XXX" },
+                      { label: "Adresse", name: "address", icon: MapPinIcon, type: "text", placeholder: "Ville, Pays" },
+                      { label: "Établissement", name: "school", icon: AcademicCapIcon, type: "text", placeholder: "Nom de votre école" },
+                      { label: "Domaine d'études", name: "field", icon: BriefcaseIcon, type: "text", placeholder: "Ex: Informatique" },
+                      { label: "Année de diplôme", name: "graduation_year", icon: AcademicCapIcon, type: "number", placeholder: "2025" },
                     ].map(({ label, name, icon: Icon, type, placeholder }) => (
                       <div key={name}>
                         <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">{label}</Typography>
@@ -675,11 +674,10 @@ export default function StudentProfile() {
                                 <button
                                   key={skill}
                                   onClick={() => toggleSkill(skill)}
-                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 transform hover:scale-105 ${
-                                    isSelected
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 transform hover:scale-105 ${isSelected
                                       ? colors.selected
                                       : `${colors.bg} ${colors.border} ${colors.text} hover:opacity-80`
-                                  }`}
+                                    }`}
                                 >
                                   {isSelected && <span className="mr-1">✓</span>}
                                   {skill}

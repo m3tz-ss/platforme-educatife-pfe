@@ -21,13 +21,31 @@ class ApplicationRepository
 
     public function getByStudent(int $studentId, ?int $perPage = null)
     {
-        $query = Application::with(['offer.user:id,name,email', 'encadrant:id,name,email'])
+        $query = Application::with(['offer.user.manager', 'encadrant:id,name,email'])
             ->where('student_id', $studentId)
             ->orderBy('created_at', 'desc');
 
-        return $perPage && $perPage > 0
+        $results = $perPage && $perPage > 0
             ? $query->paginate($perPage)
             : $query->get();
+
+        $transform = fn($app) => [
+            'id' => $app->id,
+            'status' => $app->status,
+            'cv' => $app->cv,
+            'cv_path' => $app->cv,
+            'created_at' => $app->created_at,
+            'offer_id' => $app->offer_id,
+            'encadrant' => $app->encadrant,
+            'offer' => $app->offer ? \App\Http\Resources\OfferResource::make($app->offer)->resolve() : null,
+        ];
+
+        if ($results instanceof \Illuminate\Contracts\Pagination\Paginator) {
+            $results->getCollection()->transform($transform);
+            return $results;
+        }
+
+        return $results->map($transform);
     }
 
     public function getByEnterprise(int $userId, ?int $perPage = null)

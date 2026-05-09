@@ -210,7 +210,7 @@ const AIRecommendationCard = memo(
             {offer.title}
           </Typography>
           <Typography variant="small" className="opacity-90">
-            {offer.enterprise?.name}
+            {offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}
           </Typography>
         </div>
 
@@ -886,7 +886,7 @@ export function StudentDashboard() {
             <div className="space-y-6">
               {/* Tags */}
               <div className="flex flex-wrap gap-2">
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">🏢 {selectedOffer.enterprise?.name || "Non spécifiée"}</span>
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">🏢 {selectedOffer.enterprise?.company_name || selectedOffer.enterprise?.name || "Non spécifiée"}</span>
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">📍 {selectedOffer.location || "N/A"}</span>
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">⏱️ {selectedOffer.duration || "N/A"}</span>
                 <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">📅 Début : {formatDate(selectedOffer.start_date)}</span>

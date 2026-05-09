@@ -868,7 +868,12 @@ export default function MyApplications() {
                             }`} />
                           <CardHeader floated={false} shadow={false} className="p-4 border-b border-blue-gray-100">
                             <Typography variant="h6" className="font-bold mb-1">{app.offer?.title || "Offre inconnue"}</Typography>
-                            <Typography variant="small" className="text-blue-500 font-medium">{app.offer?.enterprise?.name || "Entreprise"}</Typography>
+                            <div className="flex flex-col">
+                              <Typography variant="small" className="text-blue-500 font-medium">{app.offer?.enterprise?.name || "Entreprise"}</Typography>
+                              {app.offer?.enterprise?.email && app.offer.enterprise.email !== 'N/A' && (
+                                <Typography variant="small" className="text-blue-gray-500">{app.offer.enterprise.email}</Typography>
+                              )}
+                            </div>
                           </CardHeader>
                           <CardBody className="space-y-3 p-4">
                             <div className="flex flex-wrap gap-3 text-sm text-blue-gray-600">
@@ -940,6 +945,7 @@ export default function MyApplications() {
                       {[
                         { label: "Titre", value: selectedApp.offer?.title },
                         { label: "Entreprise", value: selectedApp.offer?.enterprise?.name },
+                        { label: "Email", value: selectedApp.offer?.enterprise?.email !== 'N/A' ? selectedApp.offer?.enterprise?.email : null },
                         { label: "Localisation", value: selectedApp.offer?.location },
                         { label: "Durée", value: selectedApp.offer?.duration },
                         { label: "Date de début", value: formatDate(selectedApp.offer?.start_date) },
