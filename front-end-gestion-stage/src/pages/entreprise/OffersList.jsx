@@ -44,6 +44,16 @@ export default function EnterpriseDashboard() {
   // ✅ Nom et email de l'entreprise
   const enterpriseName  = user.company_name || user.company_name || user.name || "Mon Entreprise";
   const enterpriseEmail = user.email || "N/A";
+  const [userData, setUserData] = useState(null);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch {
+      setUserData(user);
+    }
+  };
 
   const roleConfig = {
     manager:   { label: "Manager",   color: "blue",   icon: "🏢", greeting: "Bienvenue sur votre tableau de bord" },
@@ -54,6 +64,7 @@ export default function EnterpriseDashboard() {
 
   useEffect(() => {
     fetchAll();
+    fetchUserData();
   }, []);
 
   const fetchAll = async () => {
@@ -114,7 +125,13 @@ export default function EnterpriseDashboard() {
         { offers: offers.length, applications: applications.length, interviewApps: interviewApps },
         role
       )}
-      sidebarHeader={<EnterpriseSidebarHeader enterpriseName={enterpriseName} enterpriseEmail={enterpriseEmail} roleConfig={currentRole} />}
+      sidebarHeader={
+        <EnterpriseSidebarHeader 
+          enterpriseName={userData?.company_name || enterpriseName} 
+          logoUrl={userData?.logo_url} 
+          roleConfig={currentRole} 
+        />
+      }
       sidebarExtra={sidebarExtra}
       headerActions={
         <>

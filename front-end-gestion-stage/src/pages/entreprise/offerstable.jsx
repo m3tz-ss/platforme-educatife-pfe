@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
@@ -50,6 +50,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
+import BaseLayout from "../../components/layout/BaseLayout";
+import { EnterpriseSidebarHeader } from "../../components/layout/SidebarHeaders";
+import NotificationBell from "../../components/layout/NotificationBell";
 
 export default function Offertable() {
   const navigate = useNavigate();
@@ -63,6 +66,10 @@ export default function Offertable() {
   const [editOffer, setEditOffer] = useState(null);
   const [activeTab, setActiveTab] = useState("description");
   const [submitting, setSubmitting] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const enterpriseRole = localStorage.getItem("entrepriseRole") || user.type || "rh";
 
   // 🤖 IA – Recommandations étudiants
   const [aiStudents, setAiStudents] = useState([]);
@@ -84,7 +91,17 @@ export default function Offertable() {
 
   useEffect(() => {
     fetchOffers();
+    fetchUserData();
   }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch {
+      setUserData(user);
+    }
+  };
 
   // ✅ Format date
   const formatDate = (dateStr) => {
@@ -100,7 +117,7 @@ export default function Offertable() {
     try {
       setLoading(true);
       const res = await api.get("/offers?per_page=10&page=1");
-setOffers(res.data.data);
+      setOffers(res.data.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -123,15 +140,15 @@ setOffers(res.data.data);
   const handleOpenEdit = (offer) => {
     setEditOffer(offer);
     setForm({
-      title:           offer.title || "",
-      domain:          offer.domain || "",
-      location:        offer.location || "",
-      duration:        offer.duration || "",
-      startDate:       offer.start_date || "",
+      title: offer.title || "",
+      domain: offer.domain || "",
+      location: offer.location || "",
+      duration: offer.duration || "",
+      startDate: offer.start_date || "",
       availablePlaces: offer.available_places || "",
-      description:     offer.description || "",
-      requirements:    offer.requirements || "",
-      advantages:      offer.advantages || "",
+      description: offer.description || "",
+      requirements: offer.requirements || "",
+      advantages: offer.advantages || "",
     });
     setOpenFormModal(true);
   };
@@ -180,8 +197,8 @@ setOffers(res.data.data);
     try {
       setSendingProposal(true);
       await api.post("/rh/offer-proposals", {
-        offer_id:         offer.id,
-        student_id:       student.id,
+        offer_id: offer.id,
+        student_id: student.id,
         personal_message: personalMessage,
       });
       setProposedStudentIds(prev => new Set([...prev, student.id]));
@@ -267,76 +284,53 @@ setOffers(res.data.data);
     { icon: UserCircleIcon,     label: "Mon profil",        path: "/enterprise/profile",          badge: null },
   ];
 
+  const roleConfigs = {
+    manager:   { label: "Manager",   color: "blue",   icon: "🏢" },
+    rh:        { label: "RH",        color: "green",  icon: "👥" },
+    encadrant: { label: "Encadrant", color: "purple", icon: "🎓" },
+    enterprise: { label: "Entreprise", color: "blue", icon: "🏢" },
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-0"} bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col`}>
-        <div className="p-6 border-b border-blue-gray-100">
-          <Typography variant="h5" className="font-bold text-blue-500">🏢 MyStage</Typography>
-          <Typography variant="small" className="text-blue-gray-500">Espace Entreprise</Typography>
+    <>
+    <BaseLayout
+      title="Mes Offres"
+      menuItems={menuItems}
+      sidebarHeader={
+        <EnterpriseSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url}
+          enterpriseName={userData?.company_name}
+          logoUrl={userData?.logo_url}
+          roleConfig={roleConfigs[enterpriseRole]}
+        />
+      }
+      sidebarExtra={
+        <div className="bg-blue-50 rounded-lg p-4">
+          <Typography variant="small" className="text-blue-gray-600 mb-1">Offres publiées</Typography>
+          <Progress value={offers.length > 0 ? 75 : 0} color="blue" className="h-2" />
+          <Typography variant="caption" className="text-blue-gray-500 mt-2">{offers.length} offre(s)</Typography>
         </div>
-
-        <nav className="p-6 space-y-2 flex-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.path} to={item.path}>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">
-                  <Icon className="w-5 h-5 text-blue-gray-600 group-hover:text-blue-500" />
-                  <span className="text-sm font-medium text-blue-gray-700 group-hover:text-blue-600">{item.label}</span>
-                  {item.badge !== null && item.badge > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{item.badge}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mx-6 border-t border-blue-gray-100"></div>
-
-        <div className="p-6 space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <Typography variant="small" className="text-blue-gray-600 mb-1">Offres publiées</Typography>
-            <Progress value={offers.length > 0 ? 75 : 0} color="blue" className="h-2" />
-            <Typography variant="caption" className="text-blue-gray-500 mt-2">{offers.length} offre(s)</Typography>
-          </div>
-          <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
+      }
+      headerActions={
+        <div className="flex items-center gap-2">
+           <Button onClick={handleOpenCreate} color="blue" size="sm" className="flex items-center gap-2">
+             <PlusIcon className="w-4 h-4" /> Nouvelle offre
+           </Button>
+           <NotificationBell apiPrefix="rh" />
         </div>
-
-        <div className="p-6 border-t border-blue-gray-100">
-          <Link to="/auth/sign-in">
-            <Button fullWidth color="red" variant="outlined" size="sm" className="flex items-center justify-center gap-2">
-              <ArrowRightOnRectangleIcon className="w-4 h-4" /> Déconnexion
-            </Button>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm border-b border-blue-gray-100">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-gray-50 rounded-lg transition-colors">
-              {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
-            </button>
-            <Typography variant="h5" className="font-bold text-blue-gray-900">Mes Offres</Typography>
-            <Button onClick={handleOpenCreate} color="blue" size="sm" className="flex items-center gap-2">
-              <PlusIcon className="w-4 h-4" /> Nouvelle offre
-            </Button>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-8">
+      }
+    >
+      <div className="p-0">
 
             {/* ✅ Statistiques */}
             <div className="mb-8 grid gap-4 grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Total offres",       value: offers.length,   color: "text-blue-gray-900", sub: "Publiées",   subColor: "text-blue-500" },
+                { label: "Total offres", value: offers.length, color: "text-blue-gray-900", sub: "Publiées", subColor: "text-blue-500" },
                 { label: "Places disponibles", value: offers.reduce((a, o) => a + (o.available_places || 0), 0), color: "text-green-500", sub: "Total", subColor: "text-green-500" },
-                { label: "Domaines couverts",  value: [...new Set(offers.map((o) => o.domain).filter(Boolean))].length, color: "text-purple-500", sub: "Catégories", subColor: "text-purple-500" },
-                { label: "Ce mois",            value: offers.filter((o) => new Date(o.created_at).getMonth() === new Date().getMonth()).length, color: "text-orange-500", sub: "Nouvelles", subColor: "text-orange-500" },
+                { label: "Domaines couverts", value: [...new Set(offers.map((o) => o.domain).filter(Boolean))].length, color: "text-purple-500", sub: "Catégories", subColor: "text-purple-500" },
+                { label: "Ce mois", value: offers.filter((o) => new Date(o.created_at).getMonth() === new Date().getMonth()).length, color: "text-orange-500", sub: "Nouvelles", subColor: "text-orange-500" },
               ].map((stat) => (
                 <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
                   <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
@@ -470,8 +464,7 @@ setOffers(res.data.data);
               </CardBody>
             </Card>
           </div>
-        </main>
-      </div>
+    </BaseLayout>
 
       {/* ✅ Modal Détail */}
       <Dialog open={openDetailModal} handler={() => setOpenDetailModal(false)} size="lg">
@@ -509,7 +502,7 @@ setOffers(res.data.data);
                 <TabsHeader>
                   <Tab value="description" onClick={() => setActiveTab("description")} className="cursor-pointer">Description</Tab>
                   <Tab value="requirements" onClick={() => setActiveTab("requirements")} className="cursor-pointer">Prérequis</Tab>
-                  <Tab value="advantages"   onClick={() => setActiveTab("advantages")}   className="cursor-pointer">Avantages</Tab>
+                  <Tab value="advantages" onClick={() => setActiveTab("advantages")} className="cursor-pointer">Avantages</Tab>
                   <Tab value="ai" onClick={handleAiTabClick} className="cursor-pointer">
                     <span className="flex items-center gap-1">
                       <SparklesIcon className="w-4 h-4 text-purple-500" />
@@ -647,13 +640,12 @@ setOffers(res.data.data);
                           {/* Score badge */}
                           <div className="flex flex-col items-end flex-shrink-0">
                             <span
-                              className={`text-lg font-extrabold ${
-                                rec.score >= 80
+                              className={`text-lg font-extrabold ${rec.score >= 80
                                   ? "text-green-600"
                                   : rec.score >= 60
-                                  ? "text-yellow-600"
-                                  : "text-red-500"
-                              }`}
+                                    ? "text-yellow-600"
+                                    : "text-red-500"
+                                }`}
                             >
                               {rec.score}%
                             </span>
@@ -665,13 +657,12 @@ setOffers(res.data.data);
                         <div className="mb-3">
                           <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                             <div
-                              className={`h-2 rounded-full transition-all duration-700 ${
-                                rec.score >= 80
+                              className={`h-2 rounded-full transition-all duration-700 ${rec.score >= 80
                                   ? "bg-green-500"
                                   : rec.score >= 60
-                                  ? "bg-yellow-400"
-                                  : "bg-red-400"
-                              }`}
+                                    ? "bg-yellow-400"
+                                    : "bg-red-400"
+                                }`}
                               style={{ width: `${rec.score}%` }}
                             />
                           </div>
@@ -743,11 +734,10 @@ setOffers(res.data.data);
                           <button
                             onClick={() => handleOpenContact(rec.student, selectedOffer)}
                             disabled={proposedStudentIds.has(rec.student?.id)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition ${
-                              proposedStudentIds.has(rec.student?.id)
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition ${proposedStudentIds.has(rec.student?.id)
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
-                            }`}
+                              }`}
                           >
                             {proposedStudentIds.has(rec.student?.id) ? (
                               <>✅ Proposé</>
@@ -939,7 +929,6 @@ setOffers(res.data.data);
           </Button>
         </DialogFooter>
       </Dialog>
-
-    </div>
+    </>
   );
 }

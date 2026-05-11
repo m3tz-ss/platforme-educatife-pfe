@@ -43,6 +43,8 @@ import api from "../../services/api";
 import PlanInterviewModal from "../../components/interviews/PlanInterviewModal";
 import InterviewHistoryModal from "../../components/interviews/InterviewHistoryModal";
 import NotificationBell from "../../components/layout/NotificationBell";
+import BaseLayout from "../../components/layout/BaseLayout";
+import { EnterpriseSidebarHeader } from "../../components/layout/SidebarHeaders";
 
 export default function ReceivedApplications() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -58,6 +60,10 @@ export default function ReceivedApplications() {
   const [encadrants, setEncadrants] = useState([]);
   const [selectedEncadrant, setSelectedEncadrant] = useState("");
   const [assignLoading, setAssignLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const enterpriseRole = localStorage.getItem("entrepriseRole") || user.type || "rh";
 
   // Manager evaluation state
   const [evaluation, setEvaluation] = useState(null);
@@ -67,7 +73,17 @@ export default function ReceivedApplications() {
   useEffect(() => {
     fetchApplications();
     fetchEncadrants();
+    fetchUserData();
   }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch {
+      setUserData(user);
+    }
+  };
 
   useEffect(() => {
     filterApplications();
@@ -277,11 +293,11 @@ export default function ReceivedApplications() {
 
   // ✅ Statut helpers
   const statusConfig = {
-    nouveau:        { label: "Nouveau",           color: "blue",   bg: "bg-blue-100 text-blue-700" },
-    preselectionnee:{ label: "Présélectionnée",   color: "amber",  bg: "bg-amber-100 text-amber-700" },
-    entretien:      { label: "Entretien planifié", color: "purple", bg: "bg-purple-100 text-purple-700" },
-    acceptee:       { label: "Acceptée",           color: "green",  bg: "bg-green-100 text-green-700" },
-    refusee:        { label: "Refusée",            color: "red",    bg: "bg-red-100 text-red-700" },
+    nouveau: { label: "Nouveau", color: "blue", bg: "bg-blue-100 text-blue-700" },
+    preselectionnee: { label: "Présélectionnée", color: "amber", bg: "bg-amber-100 text-amber-700" },
+    entretien: { label: "Entretien planifié", color: "purple", bg: "bg-purple-100 text-purple-700" },
+    acceptee: { label: "Acceptée", color: "green", bg: "bg-green-100 text-green-700" },
+    refusee: { label: "Refusée", color: "red", bg: "bg-red-100 text-red-700" },
   };
   const getStatus = (status) => statusConfig[status] || { label: "N/A", color: "gray", bg: "bg-gray-100 text-gray-700" };
 
@@ -290,103 +306,77 @@ export default function ReceivedApplications() {
   const getAvatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
   // Compteurs
-  const totalCount     = applications.length;
-  const newCount       = applications.filter((a) => a.status === "nouveau").length;
-  const preCount       = applications.filter((a) => a.status === "preselectionnee").length;
+  const totalCount = applications.length;
+  const newCount = applications.filter((a) => a.status === "nouveau").length;
+  const preCount = applications.filter((a) => a.status === "preselectionnee").length;
   const interviewCount = applications.filter((a) => a.status === "entretien").length;
-  const acceptedCount  = applications.filter((a) => a.status === "acceptee").length;
-  const rejectedCount  = applications.filter((a) => a.status === "refusee").length;
+  const acceptedCount = applications.filter((a) => a.status === "acceptee").length;
+  const rejectedCount = applications.filter((a) => a.status === "refusee").length;
 
   const filters = [
-    { label: "Toutes",         count: totalCount },
-    { label: "Nouveau",        count: newCount },
-    { label: "Présélectionnée",count: preCount },
-    { label: "Entretien",      count: interviewCount },
-    { label: "Acceptée",       count: acceptedCount },
-    { label: "Refusée",        count: rejectedCount },
+    { label: "Toutes", count: totalCount },
+    { label: "Nouveau", count: newCount },
+    { label: "Présélectionnée", count: preCount },
+    { label: "Entretien", count: interviewCount },
+    { label: "Acceptée", count: acceptedCount },
+    { label: "Refusée", count: rejectedCount },
   ];
 
   const menuItems = [
-    { icon: HomeIcon,           label: "Tableau de bord",  path: "/enterprise/offers",           badge: null },
-    { icon: HomeIcon,           label: "Publier une offre", path: "/enterprise/publish",          badge: null },
-    { icon: BriefcaseIcon,      label: "Mes offres",        path: "/enterprise/offersliste",      badge: null },
-    { icon: CheckCircleIcon,    label: "Candidatures",      path: "/enterprise/condidateurliste", badge: totalCount },
-    { icon: ChatBubbleLeftIcon, label: "Entretiens",        path: "/enterprise/enterview",        badge: interviewCount || null },
-    { icon: UserCircleIcon,     label: "Mon profil",        path: "/enterprise/profile",          badge: null },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/offers", badge: null },
+    { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
+    { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
+    { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: totalCount },
+    { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: interviewCount || null },
+    { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];
 
+  const roleConfigs = {
+    manager:   { label: "Manager",   color: "blue",   icon: "🏢" },
+    rh:        { label: "RH",        color: "green",  icon: "👥" },
+    encadrant: { label: "Encadrant", color: "purple", icon: "🎓" },
+    enterprise: { label: "Entreprise", color: "blue", icon: "🏢" },
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-0"} bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col`}>
-        <div className="p-6 border-b border-blue-gray-100">
-          <Typography variant="h5" className="font-bold text-blue-500">🏢 MyStage</Typography>
-          <Typography variant="small" className="text-blue-gray-500">Espace Entreprise</Typography>
+    <>
+    <BaseLayout
+      title="Candidatures reçues"
+      menuItems={menuItems}
+      sidebarHeader={
+        <EnterpriseSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url}
+          enterpriseName={userData?.company_name}
+          logoUrl={userData?.logo_url}
+          roleConfig={roleConfigs[enterpriseRole]}
+        />
+      }
+      sidebarExtra={
+        <div className="bg-blue-50 rounded-lg p-4">
+          <Typography variant="small" className="text-blue-gray-600 mb-1">En attente de traitement</Typography>
+          <Progress value={totalCount > 0 ? (newCount / totalCount) * 100 : 0} color="blue" className="h-2" />
+          <Typography variant="caption" className="text-blue-gray-500 mt-2">{newCount} nouvelle(s)</Typography>
         </div>
-
-        <nav className="p-6 space-y-2 flex-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.path} to={item.path}>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">
-                  <Icon className="w-5 h-5 text-blue-gray-600 group-hover:text-blue-500" />
-                  <span className="text-sm font-medium text-blue-gray-700 group-hover:text-blue-600">{item.label}</span>
-                  {item.badge !== null && item.badge > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{item.badge}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mx-6 border-t border-blue-gray-100"></div>
-
-        <div className="p-6 space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <Typography variant="small" className="text-blue-gray-600 mb-1">En attente de traitement</Typography>
-            <Progress value={totalCount > 0 ? (newCount / totalCount) * 100 : 0} color="blue" className="h-2" />
-            <Typography variant="caption" className="text-blue-gray-500 mt-2">{newCount} nouvelle(s)</Typography>
-          </div>
-          <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
+      }
+      headerActions={
+        <div className="flex items-center gap-2">
+          <NotificationBell apiPrefix="rh" />
+          <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
         </div>
-
-        <div className="p-6 border-t border-blue-gray-100">
-          <Link to="/auth/sign-in">
-            <Button fullWidth color="red" variant="outlined" size="sm" className="flex items-center justify-center gap-2">
-              <ArrowRightOnRectangleIcon className="w-4 h-4" /> Déconnexion
-            </Button>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm border-b border-blue-gray-100">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-gray-50 rounded-lg transition-colors">
-              {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
-            </button>
-            <Typography variant="h5" className="font-bold text-blue-gray-900">Candidatures reçues</Typography>
-            <div className="flex items-center gap-2">
-              <NotificationBell apiPrefix="rh" />
-              <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-8">
+      }
+    >
+      <div className="p-0">
 
             {/* ✅ Statistiques */}
             <div className="mb-8 grid gap-4 grid-cols-2 xl:grid-cols-5">
               {[
-                { label: "Total",          value: totalCount,     color: "text-blue-gray-900", subColor: "text-blue-500" },
-                { label: "Nouveau",        value: newCount,       color: "text-blue-500",      subColor: "text-blue-500" },
-                { label: "Présélectionnée",value: preCount,       color: "text-amber-500",     subColor: "text-amber-500" },
-                { label: "Entretien",      value: interviewCount, color: "text-purple-500",    subColor: "text-purple-500" },
-                { label: "Acceptée",       value: acceptedCount,  color: "text-green-500",     subColor: "text-green-500" },
+                { label: "Total", value: totalCount, color: "text-blue-gray-900", subColor: "text-blue-500" },
+                { label: "Nouveau", value: newCount, color: "text-blue-500", subColor: "text-blue-500" },
+                { label: "Présélectionnée", value: preCount, color: "text-amber-500", subColor: "text-amber-500" },
+                { label: "Entretien", value: interviewCount, color: "text-purple-500", subColor: "text-purple-500" },
+                { label: "Acceptée", value: acceptedCount, color: "text-green-500", subColor: "text-green-500" },
               ].map((stat) => (
                 <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
                   <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
@@ -539,9 +529,8 @@ export default function ReceivedApplications() {
                 )}
               </CardBody>
             </Card>
-          </div>
-        </main>
       </div>
+    </BaseLayout>
 
       {/* ✅ Modal Détails */}
       <Dialog open={openModal} handler={() => setOpenModal(false)} size="lg">
@@ -574,8 +563,8 @@ export default function ReceivedApplications() {
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: "Nom",       value: selectedApplication.student?.name },
-                    { label: "Email",     value: selectedApplication.student?.email },
+                    { label: "Nom", value: selectedApplication.student?.name },
+                    { label: "Email", value: selectedApplication.student?.email },
                     { label: "Téléphone", value: selectedApplication.student?.phone },
                     { label: "Date de candidature", value: formatDate(selectedApplication.created_at) },
                   ].map(({ label, value }) => (
@@ -636,12 +625,12 @@ export default function ReceivedApplications() {
                 <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">💼 Offre de stage</Typography>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: "Titre",      value: selectedApplication.offer?.title },
-                    { label: "Domaine",    value: selectedApplication.offer?.domain },
-                    { label: "Lieu",       value: selectedApplication.offer?.location },
-                    { label: "Durée",      value: selectedApplication.offer?.duration },
+                    { label: "Titre", value: selectedApplication.offer?.title },
+                    { label: "Domaine", value: selectedApplication.offer?.domain },
+                    { label: "Lieu", value: selectedApplication.offer?.location },
+                    { label: "Durée", value: selectedApplication.offer?.duration },
                     { label: "Date début", value: formatDate(selectedApplication.offer?.start_date) },
-                    { label: "Places",     value: selectedApplication.offer?.available_places ? `${selectedApplication.offer.available_places} place(s)` : "N/A" },
+                    { label: "Places", value: selectedApplication.offer?.available_places ? `${selectedApplication.offer.available_places} place(s)` : "N/A" },
                   ].map(({ label, value }) => (
                     <div key={label}>
                       <Typography variant="small" className="font-bold text-blue-gray-900">{label} :</Typography>
@@ -757,7 +746,7 @@ export default function ReceivedApplications() {
                           <input type="number" min={0} max={20} step={0.5}
                             value={evalForm.score}
                             onChange={(e) => setEvalForm(f => ({ ...f, score: e.target.value }))}
-                            className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-blue-gray-600 mb-1.5 uppercase tracking-wide">Décision Finale</label>
@@ -778,7 +767,7 @@ export default function ReceivedApplications() {
                           value={evalForm.notes}
                           onChange={(e) => setEvalForm(f => ({ ...f, notes: e.target.value }))}
                           rows={3}
-                          className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
+                          className="w-full rounded-xl border border-blue-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
                       </div>
                       <Button onClick={() => saveEvaluation(selectedApplication.id)} disabled={evalLoading} color="green" className="w-full mt-2">
                         {evalLoading ? "Enregistrement..." : (evaluation ? "Mettre à jour l'évaluation" : "Valider le stage")}
@@ -825,6 +814,6 @@ export default function ReceivedApplications() {
         onClose={() => setHistoryAppId(null)}
       />
       <ChatBox />
-    </div>
+    </>
   );
 }
