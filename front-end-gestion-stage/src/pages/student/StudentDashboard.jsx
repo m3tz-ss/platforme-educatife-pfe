@@ -474,6 +474,7 @@ export function StudentDashboard() {
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cvFile, setCvFile] = useState(null);
+  const [userData, setUserData] = useState(null);
 
   // ── État IA ────────────────────────────────────────────────────────────────
   const [aiLoading, setAiLoading] = useState(false);
@@ -535,15 +536,27 @@ export function StudentDashboard() {
     } catch (err) { console.error("Erreur propositions:", err); }
   }, []);
 
+  const fetchUserData = useCallback(async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch (err) {
+      console.error("Erreur profil:", err);
+      const saved = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserData(saved);
+    }
+  }, []);
+
   useEffect(() => {
-    // ✅ Lancer les 4 appels en PARALLÈLE
+    // ✅ Lancer les appels en PARALLÈLE
     Promise.allSettled([
       fetchOffers(),
       fetchApplications(),
       fetchAIRecommendations(),
       fetchProposals(),
+      fetchUserData(),
     ]);
-  }, [fetchOffers, fetchApplications, fetchAIRecommendations, fetchProposals]);
+  }, [fetchOffers, fetchApplications, fetchAIRecommendations, fetchProposals, fetchUserData]);
 
   const handleProposalResponse = useCallback(async (proposalId, response) => {
     try {
@@ -701,7 +714,13 @@ export function StudentDashboard() {
     <BaseLayout
       title="Tableau de Bord"
       menuItems={menuItems}
-      sidebarHeader={<StudentSidebarHeader />}
+      sidebarHeader={
+        <StudentSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url} 
+        />
+      }
       sidebarExtra={sidebarExtra}
       headerActions={headerActions}
     >

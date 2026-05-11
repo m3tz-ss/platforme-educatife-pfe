@@ -41,6 +41,9 @@ import {
 import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
 import StudentNotificationBell from "../../components/student/StudentNotificationBell";
+import BaseLayout from "../../components/layout/BaseLayout";
+import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
+import { getStudentMenuItems } from "../../config/sidebarConfig";
 
 // ─── Constantes statuts tâches ────────────────────────────────────────────────
 const TASK_STATUS_OPTS = [
@@ -479,21 +482,25 @@ function EvaluationSection({ evaluation }) {
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function MyApplications() {
   const [applications, setApplications] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [openModal, setOpenModal] = useState(false);
-  const [interviews, setInterviews] = useState([]);
-  const [loadingInterviews, setLoadingInterviews] = useState(false);
-  const [activeTab, setActiveTab] = useState("info");
-  const [supervision, setSupervision] = useState(null);
   const [loadingSupervision, setLoadingSupervision] = useState(false);
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     fetchApplications();
+    fetchUserData();
     const interval = setInterval(fetchApplications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch (err) {
+      const saved = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserData(saved);
+    }
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -731,66 +738,32 @@ export default function MyApplications() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-0"} bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col`}>
-        <div className="p-6 border-b border-blue-gray-100">
-          <Typography variant="h5" className="font-bold text-blue-500">🎓 MyStage</Typography>
-          <Typography variant="small" className="text-blue-gray-500">Plateforme de stages</Typography>
+    <BaseLayout
+      title="Mes Candidatures"
+      menuItems={getStudentMenuItems({ offers: 0, applications: applications.length })}
+      sidebarHeader={
+        <StudentSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url} 
+        />
+      }
+      sidebarExtra={
+        <div className="bg-blue-50 rounded-lg p-4">
+          <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
+          <Progress value={65} color="blue" className="h-2" />
+          <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
         </div>
-        <nav className="p-6 space-y-2 flex-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.path} to={item.path}>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">
-                  <Icon className="w-5 h-5 text-blue-gray-600 group-hover:text-blue-500" />
-                  <span className="text-sm font-medium text-blue-gray-700 group-hover:text-blue-600">{item.label}</span>
-                  {item.badge !== null && item.badge > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{item.badge}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mx-6 border-t border-blue-gray-100" />
-        <div className="p-6 space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
-            <Progress value={65} color="blue" className="h-2" />
-            <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
-          </div>
-          <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
+      }
+      headerActions={
+        <div className="flex gap-3 items-center">
+          <StudentNotificationBell />
+          <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
+          <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
         </div>
-        <div className="p-6 border-t border-blue-gray-100">
-          <Link to="/auth/sign-in">
-            <Button fullWidth color="red" variant="outlined" size="sm" className="flex items-center justify-center gap-2">
-              <ArrowRightOnRectangleIcon className="w-4 h-4" />
-              Déconnexion
-            </Button>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm border-b border-blue-gray-100">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-gray-50 rounded-lg transition-colors">
-              {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
-            </button>
-            <Typography variant="h5" className="font-bold text-blue-gray-900">Mes Candidatures</Typography>
-            <div className="flex gap-3 items-center">
-              <StudentNotificationBell />
-              <IconButton variant="text" color="blue-gray"><ChatBubbleLeftIcon className="w-5 h-5" /></IconButton>
-              <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6">
+      }
+    >
+      <div className="p-0">
             {/* Statistiques */}
             <div className="mb-8 grid gap-4 grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
               {[
@@ -1067,6 +1040,7 @@ export default function MyApplications() {
           )}
         </DialogFooter>
       </Dialog>
-    </div>
+      </div>
+    </BaseLayout>
   );
 }

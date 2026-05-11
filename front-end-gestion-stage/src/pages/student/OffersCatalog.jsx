@@ -56,12 +56,26 @@ export default function OffersCatalog() {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [cvFile, setCvFile] = useState(null);
+  const [userData, setUserData] = useState(null);
   const itemsPerPage = 6;
 
   useEffect(() => {
     fetchOffers();
     fetchApplications();
+    fetchUserData();
   }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch (err) {
+      console.error("Erreur chargement profil:", err);
+      // Fallback au localstorage
+      const saved = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserData(saved);
+    }
+  };
 
   const fetchOffers = async () => {
     try {
@@ -258,7 +272,13 @@ export default function OffersCatalog() {
     <BaseLayout
       title="Catalogue d'Offres"
       menuItems={getStudentMenuItems({ offers: offers.length, applications: applications.length })}
-      sidebarHeader={<StudentSidebarHeader />}
+      sidebarHeader={
+        <StudentSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url} 
+        />
+      }
       sidebarExtra={sidebarExtra}
       headerActions={
         <>
@@ -403,6 +423,14 @@ export default function OffersCatalog() {
                           className="bg-green-100 text-green-700 text-xs"
                         />
                       )}
+                      {offer.is_full && (
+                        <Chip
+                          value="⚠️ Complet"
+                          variant="ghost"
+                          size="sm"
+                          className="bg-red-100 text-red-700 text-xs"
+                        />
+                      )}
                     </div>
                   </CardHeader>
 
@@ -442,13 +470,13 @@ export default function OffersCatalog() {
                     </div>
 
                     <Button
-                      color={applied ? "green" : "blue"}
+                      color={applied ? "green" : offer.is_full ? "red" : "blue"}
                       fullWidth
                       onClick={() => handleOpenDetails(offer)}
                       className="mt-auto"
-                      variant={applied ? "outlined" : "filled"}
+                      variant={applied || offer.is_full ? "outlined" : "filled"}
                     >
-                      {applied ? "✓ Déjà postulé" : "Voir & Postuler"}
+                      {applied ? "✓ Déjà postulé" : offer.is_full ? "⚠️ Offre Complète" : "Voir & Postuler"}
                     </Button>
                   </CardBody>
                 </Card>
@@ -525,6 +553,11 @@ export default function OffersCatalog() {
                 <span className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-medium">
                   💼 {selectedOffer.domain || "N/A"}
                 </span>
+                {selectedOffer.is_full && (
+                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                    ⚠️ OFFRE COMPLÈTE
+                  </span>
+                )}
               </div>
 
               {/* Tabs */}
@@ -683,15 +716,17 @@ export default function OffersCatalog() {
 
             <Button
               size="sm"
-              color={hasApplied(selectedOffer?.id) ? "green" : "blue"}
+              color={hasApplied(selectedOffer?.id) ? "green" : selectedOffer?.is_full ? "red" : "blue"}
               onClick={() => applyToOffer(selectedOffer?.id)}
-              disabled={loading || hasApplied(selectedOffer?.id)}
+              disabled={loading || hasApplied(selectedOffer?.id) || selectedOffer?.is_full}
             >
               {hasApplied(selectedOffer?.id)
                 ? "✓ Déjà postulé"
-                : loading
-                  ? "Envoi en cours..."
-                  : "✅ Postuler"}
+                : selectedOffer?.is_full
+                  ? "Désolé, quota atteint"
+                  : loading
+                    ? "Envoi en cours..."
+                    : "✅ Postuler"}
             </Button>
 
           </div>

@@ -37,6 +37,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
+import BaseLayout from "../../components/layout/BaseLayout";
+import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
+import { getStudentMenuItems } from "../../config/sidebarConfig";
 
 // ─── Catégories de compétences prédéfinies ─────────────────────────────────
 const SKILLS_CATALOG = [
@@ -340,53 +343,24 @@ export default function StudentProfile() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-0"} bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col`}>
-        <div className="p-6 border-b border-blue-gray-100">
-          <Typography variant="h5" className="font-bold text-blue-500">🎓 MyStage</Typography>
-          <Typography variant="small" className="text-blue-gray-500">Plateforme de stages</Typography>
+    <BaseLayout
+      title="Mon Profil"
+      menuItems={getStudentMenuItems({ offers: 0, applications: applications.length })}
+      sidebarHeader={
+        <StudentSidebarHeader 
+          name={profile?.name} 
+          email={profile?.email} 
+          photoUrl={profile?.photo_url} 
+        />
+      }
+      sidebarExtra={
+        <div className="bg-blue-50 rounded-lg p-4">
+          <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
+          <Progress value={completionPct} color="blue" className="h-2" />
+          <Typography variant="caption" className="text-blue-gray-500 mt-2">{completionPct}% de profil complet</Typography>
         </div>
-        <nav className="p-6 space-y-2 flex-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.path} to={item.path}>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">
-                  <Icon className="w-5 h-5 text-blue-gray-600 group-hover:text-blue-500" />
-                  <span className="text-sm font-medium text-blue-gray-700 group-hover:text-blue-600">{item.label}</span>
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="p-6 space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <Typography variant="small" className="text-blue-gray-600 mb-1">Votre progression</Typography>
-            <Progress value={completionPct} color="blue" className="h-2" />
-            <Typography variant="caption" className="text-blue-gray-500 mt-2">{completionPct}% de profil complet</Typography>
-          </div>
-        </div>
-        <div className="p-6 border-t border-blue-gray-100">
-          <Link to="/auth/sign-in">
-            <Button fullWidth color="red" variant="outlined" size="sm" className="flex items-center justify-center gap-2">
-              <ArrowRightOnRectangleIcon className="w-4 h-4" /> Déconnexion
-            </Button>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm border-b border-blue-gray-100">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-gray-50 rounded-lg transition-colors">
-              {sidebarOpen ? <XMarkIcon className="w-6 h-6 text-blue-gray-600" /> : <Bars3Icon className="w-6 h-6 text-blue-gray-600" />}
-            </button>
-            <Typography variant="h5" className="font-bold text-blue-gray-900">Mon Profil</Typography>
-            <div className="w-10" />
-          </div>
-        </header>
+      }
+    >
 
         <main className="flex-1 overflow-y-auto">
           <div className="p-8 max-w-5xl mx-auto">
@@ -917,7 +891,6 @@ export default function StudentProfile() {
             )}
           </div>
         </main>
-      </div>
-    </div>
+    </BaseLayout>
   );
 }

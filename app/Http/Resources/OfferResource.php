@@ -57,6 +57,8 @@ class OfferResource extends JsonResource
             'requirements'     => $offer->requirements,
             'advantages'       => $offer->advantages,
             'created_at'       => $offer->created_at,
+            'accepted_count'   => $offer->accepted_count ?? 0,
+            'is_full'          => ($offer->accepted_count ?? 0) >= ($offer->available_places ?? 0),
             'enterprise' => [
                 'name'                => $companyName    ?? 'N/A',
                 'company_name'        => $companyName    ?? 'N/A',

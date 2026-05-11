@@ -125,15 +125,51 @@ export default function ReceivedApplications() {
   };
 
   const handleStatusChange = async (appId, newStatus) => {
+    const app = applications.find((a) => a.id === appId);
+
+    // ✅ Vérifier le quota de places disponibles si on accepte
+    if (newStatus === "acceptee" && app?.offer) {
+      const offerId = app.offer.id;
+      const availablePlaces = app.offer.available_places || 0;
+
+      // Compter combien sont déjà acceptés pour cette offre précise
+      const currentlyAccepted = applications.filter(
+        (a) => a.offer?.id === offerId && a.status === "acceptee"
+      ).length;
+
+      if (currentlyAccepted >= availablePlaces) {
+        Swal.fire({
+          icon: "warning",
+          title: "Quota de places atteint",
+          text: `Cette offre ne dispose que de ${availablePlaces} place(s). Vous avez déjà accepté ${currentlyAccepted} candidat(s).`,
+          confirmButtonColor: "#f59e0b",
+        });
+        return;
+      }
+    }
+
     try {
       await api.patch(`/applications/${appId}`, { status: newStatus });
-      setApplications((prev) => prev.map((app) => app.id === appId ? { ...app, status: newStatus } : app));
+      setApplications((prev) =>
+        prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app))
+      );
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => ({ ...prev, status: newStatus }));
       }
-      Swal.fire({ icon: "success", title: "Statut mis à jour !", timer: 1500, timerProgressBar: true, showConfirmButton: false });
+      Swal.fire({
+        icon: "success",
+        title: "Statut mis à jour !",
+        timer: 1500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Erreur", text: err.response?.data?.message || "Erreur changement statut.", confirmButtonColor: "#ef4444" });
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: err.response?.data?.message || "Erreur changement statut.",
+        confirmButtonColor: "#ef4444",
+      });
     }
   };
 

@@ -41,7 +41,7 @@ export function getEnterpriseMenuItems(counts = {}, role = "rh") {
   if (role === "manager") {
     base.splice(2, 0, { icon: UsersIcon, label: "Gestion équipe", path: "/enterprise/manager", badge: null });
   }
-  return base;  
+  return base;
 }
 export function getAdminMenuItems(counts = {}) {
   return [

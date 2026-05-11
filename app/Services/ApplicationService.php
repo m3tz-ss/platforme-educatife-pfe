@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\ApplicationRepository;
 use App\Models\Offer;
 use App\Models\User;
+use App\Models\Application;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
@@ -67,7 +68,7 @@ class ApplicationService
             foreach ($usersToMail as $rhUser) {
                 if ($rhUser->email) {
                     Mail::to($rhUser->email)
-                        ->send(new NewApplicationReceivedRHMail($rhUser, $student, $offer));
+                        ->queue(new NewApplicationReceivedRHMail($rhUser, $student, $offer));
                 }
             }
         }
@@ -81,6 +82,21 @@ class ApplicationService
     public function updateStatus(int $applicationId, string $status)
     {
         $application = $this->repository->findOrFail($applicationId);
+
+        // ✅ Vérifier le quota de places disponibles si on passe au statut "acceptée"
+        if ($status === 'acceptee' && $application->status !== 'acceptee') {
+            $offer = $application->offer;
+            if ($offer) {
+                $acceptedCount = \App\Models\Application::where('offer_id', $offer->id)
+                    ->where('status', 'acceptee')
+                    ->count();
+
+                if ($acceptedCount >= $offer->available_places) {
+                    throw new \Exception("Le quota de places disponibles pour cette offre est déjà atteint ({$offer->available_places}).");
+                }
+            }
+        }
+
         $oldStatus   = $application->status;
         $updated     = $this->repository->updateStatus($application, $status);
 
@@ -121,7 +137,7 @@ class ApplicationService
             $offerTitle = $fresh->offer?->title ?? 'Offre';
 
             Mail::to($student->email)
-                ->send(new ApplicationStatusUpdatedMail($student, $label, $offerTitle, $status));
+                ->queue(new ApplicationStatusUpdatedMail($student, $label, $offerTitle, $status));
         }
 
         return $updated;

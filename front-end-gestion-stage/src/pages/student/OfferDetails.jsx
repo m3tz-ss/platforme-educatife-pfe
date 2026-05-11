@@ -146,6 +146,11 @@ export function OfferDetails() {
                       💰 {offer.salary}
                     </span>
                   )}
+                  {offer.is_full && (
+                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                      ⚠️ OFFRE COMPLÈTE
+                    </span>
+                  )}
                 </div>
 
                 {/* Onglets */}
@@ -239,8 +244,14 @@ export function OfferDetails() {
             {/* Card d'action */}
             <Card className="shadow-sm border border-blue-gray-100">
               <CardBody className="space-y-4">
-                <Button fullWidth color="blue" variant="gradient" size="lg">
-                  ✉️ Postuler maintenant
+                <Button
+                  fullWidth
+                  color={offer.is_full ? "red" : "blue"}
+                  variant={offer.is_full ? "outlined" : "gradient"}
+                  size="lg"
+                  disabled={offer.is_full}
+                >
+                  {offer.is_full ? "⚠️ Quota atteint" : "✉️ Postuler maintenant"}
                 </Button>
                 <Button
                   fullWidth

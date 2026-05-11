@@ -15,7 +15,9 @@ class OfferController extends Controller
     // ✅ Détail d'une offre publique (étudiants)
     public function publicShow(Offer $offer)
     {
-        $offer->load('user');
+        $offer->load(['user', 'user.manager'])->loadCount(['applications as accepted_count' => function($q) {
+            $q->where('status', 'acceptee');
+        }]);
         return new OfferResource($offer);
     }
 
@@ -24,7 +26,11 @@ class OfferController extends Controller
     {
         $perPage = request()->integer('per_page', 40);
 
-        $query = Offer::with(['user', 'user.manager'])->latest();
+        $query = Offer::with(['user', 'user.manager'])
+            ->withCount(['applications as accepted_count' => function($q) {
+                $q->where('status', 'acceptee');
+            }])
+            ->latest();
         $offers = $query->paginate($perPage);
 
         return OfferResource::collection($offers);
@@ -88,20 +94,8 @@ class OfferController extends Controller
             'advantages'       => $request->advantages,
         ]);
 
-        // ✉️ Envoyer un email à tous les étudiants (par chunks de 50 pour éviter la surcharge mémoire)
-        User::where('type', 'student')
-            ->whereNotNull('email')
-            ->orderBy('id')
-            ->chunk(50, function ($students) use ($offer) {
-                foreach ($students as $student) {
-                    try {
-                        Mail::to($student->email)
-                            ->send(new NewOfferPublishedMail($offer, $student));
-                    } catch (\Throwable $e) {
-                        Log::error("Mail new offer failed for {$student->email}: " . $e->getMessage());
-                    }
-                }
-            });
+        // ✉️ Notifier les étudiants en arrière-plan (Job)
+        \App\Jobs\NotifyStudentsOfNewOffer::dispatch($offer);
 
         return response()->json([
             'message' => 'Offre publiée avec succès',
