@@ -861,10 +861,10 @@ export default function MyApplications() {
                           }}
                         >
                           <div className={`h-1 rounded-t-xl bg-gradient-to-r ${statusColor(app.status) === "green" ? "from-green-500 to-green-600" :
-                              statusColor(app.status) === "red" ? "from-red-500 to-red-600" :
-                                statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600" :
-                                  statusColor(app.status) === "amber" ? "from-amber-500 to-amber-600" :
-                                    "from-orange-500 to-orange-600"
+                            statusColor(app.status) === "red" ? "from-red-500 to-red-600" :
+                              statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600" :
+                                statusColor(app.status) === "amber" ? "from-amber-500 to-amber-600" :
+                                  "from-orange-500 to-orange-600"
                             }`} />
                           <CardHeader floated={false} shadow={false} className="p-4 border-b border-blue-gray-100">
                             <Typography variant="h6" className="font-bold mb-1">{app.offer?.title || "Offre inconnue"}</Typography>

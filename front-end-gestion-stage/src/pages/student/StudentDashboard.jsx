@@ -110,12 +110,27 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
     });
   };
 
+  const companyInitial = offer.enterprise?.company_name?.charAt(0)?.toUpperCase()
+    || offer.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
+
   return (
     <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-      <div className="flex items-start justify-between mb-1">
+      <div className="flex items-center gap-3 mb-1">
+        {/* ✅ Logo entreprise */}
+        <div className="w-9 h-9 rounded-lg overflow-hidden border border-blue-gray-100 flex-shrink-0 flex items-center justify-center bg-blue-50">
+          {offer.enterprise?.logo_url ? (
+            <img
+              src={offer.enterprise.logo_url}
+              alt={offer.enterprise?.company_name || "Logo"}
+              className="w-full h-full object-contain p-0.5"
+            />
+          ) : (
+            <span className="text-blue-700 font-bold text-sm">{companyInitial}</span>
+          )}
+        </div>
         <Typography variant="h6" className="text-blue-gray-900 font-bold">{offer.title}</Typography>
       </div>
-      <Typography className="text-sm text-blue-500 font-medium mb-2">{offer.enterprise?.name || "Entreprise"}</Typography>
+      <Typography className="text-sm text-blue-500 font-medium mb-2 ml-12">{offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}</Typography>
 
       <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-3">
         <span className="flex items-center gap-1"><MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}</span>
@@ -206,7 +221,18 @@ const AIRecommendationCard = memo(
               Score {rec.score}%
             </span>
           </div>
-          <Typography variant="h6" className="font-bold mb-2 line-clamp-2">
+          {/* ✅ Logo entreprise dans le header de la carte recommandation */}
+          {offer.enterprise?.logo_url && (
+            <div className="absolute bottom-4 right-4 w-10 h-10 rounded-lg overflow-hidden bg-white/90 border border-white/50 shadow flex items-center justify-center p-0.5">
+              <img
+                src={offer.enterprise.logo_url}
+                alt={offer.enterprise?.company_name || "Logo"}
+                className="w-full h-full object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          <Typography variant="h6" className="font-bold mb-2 line-clamp-2 pr-12">
             {offer.title}
           </Typography>
           <Typography variant="small" className="opacity-90">

@@ -169,13 +169,13 @@ export default function OffersCatalog() {
     if (!result.isConfirmed) return;
 
     try {
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("offer_id", offerId);
-    formData.append("cv", cvFile);
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("offer_id", offerId);
+      formData.append("cv", cvFile);
 
-    // ✅ Supprimer le header Content-Type — Axios le gère seul
-    await api.post("/applications", formData);
+      // ✅ Supprimer le header Content-Type — Axios le gère seul
+      await api.post("/applications", formData);
 
       await Swal.fire({
         icon: "success",
@@ -267,219 +267,227 @@ export default function OffersCatalog() {
         </>
       }
     >
-            <div className="mb-8">
-              <Typography variant="h4" className="font-bold text-blue-gray-900 mb-2">
-                Rechercher des stages
-              </Typography>
-              <Typography variant="small" className="text-blue-500 font-medium">
-                {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} trouvée
-                {filteredOffers.length > 1 ? "s" : ""}
-              </Typography>
-            </div>
+      <div className="mb-8">
+        <Typography variant="h4" className="font-bold text-blue-gray-900 mb-2">
+          Rechercher des stages
+        </Typography>
+        <Typography variant="small" className="text-blue-500 font-medium">
+          {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} trouvée
+          {filteredOffers.length > 1 ? "s" : ""}
+        </Typography>
+      </div>
 
-            {/* Filters */}
-            <Card className="mb-8 shadow-sm border border-blue-gray-100">
-              <CardBody className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                  <Input
-                    placeholder="Rechercher par titre ou entreprise..."
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    icon={<MagnifyingGlassIcon className="h-5 w-5" />}
-                    className="!border-blue-gray-200"
-                  />
-                  <Menu placement="bottom-start">
-                    <MenuHandler>
-                      <Button variant="outlined" className="flex items-center justify-between" fullWidth>
-                        <MapPinIcon className="w-5 h-5" />
-                        <span>{locationFilter}</span>
-                      </Button>
-                    </MenuHandler>
-                    <MenuList>
-                      {["Tous", "Tunis", "Ariana", "Sfax", "Sousse", "Autre"].map((loc) => (
-                        <MenuItem key={loc} onClick={() => { setLocationFilter(loc); setCurrentPage(1); }}>
-                          {loc}
-                        </MenuItem>
-                      ))}
-                    </MenuList>
-                  </Menu>
-                  <Menu placement="bottom-start">
-                    <MenuHandler>
-                      <Button variant="outlined" className="flex items-center justify-between" fullWidth>
-                        <ClockIcon className="w-5 h-5" />
-                        <span>{durationFilter}</span>
-                      </Button>
-                    </MenuHandler>
-                    <MenuList>
-                      {["Toutes", "1 mois", "2 mois", "3 mois", "4 mois", "6 mois"].map((dur) => (
-                        <MenuItem key={dur} onClick={() => { setDurationFilter(dur); setCurrentPage(1); }}>
-                          {dur}
-                        </MenuItem>
-                      ))}
-                    </MenuList>
-                  </Menu>
-                  <Menu placement="bottom-start">
-                    <MenuHandler>
-                      <Button variant="outlined" className="flex items-center justify-between" fullWidth>
-                        <FunnelIcon className="w-5 h-5" />
-                        <span>{categoryFilter}</span>
-                      </Button>
-                    </MenuHandler>
-                    <MenuList>
-                      {["Tous", "Informatique", "Data", "Design", "Marketing", "Finance", "Ingénierie"].map((cat) => (
-                        <MenuItem key={cat} onClick={() => { setCategoryFilter(cat); setCurrentPage(1); }}>
-                          {cat}
-                        </MenuItem>
-                      ))}
-                    </MenuList>
-                  </Menu>
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* Offers Grid */}
-            {paginatedOffers.length === 0 ? (
-              <div className="text-center py-12">
-                <Typography className="text-blue-gray-500 mb-4">
-                  Aucune offre trouvée avec vos critères de recherche.
-                </Typography>
-                <Button
-                  color="blue"
-                  variant="outlined"
-                  onClick={() => {
-                    setSearch("");
-                    setLocationFilter("Tous");
-                    setDurationFilter("Toutes");
-                    setCategoryFilter("Tous");
-                    setCurrentPage(1);
-                  }}
-                >
-                  Réinitialiser les filtres
+      {/* Filters */}
+      <Card className="mb-8 shadow-sm border border-blue-gray-100">
+        <CardBody className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <Input
+              placeholder="Rechercher par titre ou entreprise..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              icon={<MagnifyingGlassIcon className="h-5 w-5" />}
+              className="!border-blue-gray-200"
+            />
+            <Menu placement="bottom-start">
+              <MenuHandler>
+                <Button variant="outlined" className="flex items-center justify-between" fullWidth>
+                  <MapPinIcon className="w-5 h-5" />
+                  <span>{locationFilter}</span>
                 </Button>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  {paginatedOffers.map((offer) => {
-                    const initial = getInitial(offer.enterprise?.name);
-                    const colorClass = getColorByLetter(initial);
-                    const categoryStyle = getCategoryStyle(offer.domain);
-                    const applied = hasApplied(offer.id);
+              </MenuHandler>
+              <MenuList>
+                {["Tous", "Tunis", "Ariana", "Sfax", "Sousse", "Autre"].map((loc) => (
+                  <MenuItem key={loc} onClick={() => { setLocationFilter(loc); setCurrentPage(1); }}>
+                    {loc}
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Menu>
+            <Menu placement="bottom-start">
+              <MenuHandler>
+                <Button variant="outlined" className="flex items-center justify-between" fullWidth>
+                  <ClockIcon className="w-5 h-5" />
+                  <span>{durationFilter}</span>
+                </Button>
+              </MenuHandler>
+              <MenuList>
+                {["Toutes", "1 mois", "2 mois", "3 mois", "4 mois", "6 mois"].map((dur) => (
+                  <MenuItem key={dur} onClick={() => { setDurationFilter(dur); setCurrentPage(1); }}>
+                    {dur}
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Menu>
+            <Menu placement="bottom-start">
+              <MenuHandler>
+                <Button variant="outlined" className="flex items-center justify-between" fullWidth>
+                  <FunnelIcon className="w-5 h-5" />
+                  <span>{categoryFilter}</span>
+                </Button>
+              </MenuHandler>
+              <MenuList>
+                {["Tous", "Informatique", "Data", "Design", "Marketing", "Finance", "Ingénierie"].map((cat) => (
+                  <MenuItem key={cat} onClick={() => { setCategoryFilter(cat); setCurrentPage(1); }}>
+                    {cat}
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Menu>
+          </div>
+        </CardBody>
+      </Card>
 
-                    return (
-                      <Card
-                        key={offer.id}
-                        className="shadow-sm border border-blue-gray-100 hover:shadow-lg transition overflow-hidden flex flex-col"
-                      >
-                        <CardHeader
-                          floated={false}
-                          shadow={false}
-                          color="transparent"
-                          className="m-0 p-6 flex items-start justify-between"
-                        >
-                          <div className={`w-12 h-12 rounded-lg ${colorClass} flex items-center justify-center font-bold text-lg`}>
-                            {initial}
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Chip
-                              value={offer.domain || "Autre"}
-                              variant="ghost"
-                              size="sm"
-                              className={`${categoryStyle} text-xs`}
-                            />
-                            {applied && (
-                              <Chip
-                                value="✓ Postulé"
-                                variant="ghost"
-                                size="sm"
-                                className="bg-green-100 text-green-700 text-xs"
-                              />
-                            )}
-                          </div>
-                        </CardHeader>
+      {/* Offers Grid */}
+      {paginatedOffers.length === 0 ? (
+        <div className="text-center py-12">
+          <Typography className="text-blue-gray-500 mb-4">
+            Aucune offre trouvée avec vos critères de recherche.
+          </Typography>
+          <Button
+            color="blue"
+            variant="outlined"
+            onClick={() => {
+              setSearch("");
+              setLocationFilter("Tous");
+              setDurationFilter("Toutes");
+              setCategoryFilter("Tous");
+              setCurrentPage(1);
+            }}
+          >
+            Réinitialiser les filtres
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {paginatedOffers.map((offer) => {
+              const initial = getInitial(offer.enterprise?.name);
+              const colorClass = getColorByLetter(initial);
+              const categoryStyle = getCategoryStyle(offer.domain);
+              const applied = hasApplied(offer.id);
 
-                        <CardBody className="p-6 flex-1 flex flex-col">
-                          <Typography variant="h6" className="font-bold text-blue-gray-900 mb-1">
-                            {offer.title}
-                          </Typography>
-                          <Typography className="text-sm text-blue-500 font-medium mb-3">
-{offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}
-                          </Typography>
-                          <Typography className="text-sm text-blue-gray-600 mb-4 line-clamp-2 flex-1">
-                            {offer.description}
-                          </Typography>
+              return (
+                <Card
+                  key={offer.id}
+                  className="shadow-sm border border-blue-gray-100 hover:shadow-lg transition overflow-hidden flex flex-col"
+                >
+                  <CardHeader
+                    floated={false}
+                    shadow={false}
+                    color="transparent"
+                    className="m-0 p-6 flex items-start justify-between"
+                  >
+                    <div className={`w-12 h-12 rounded-lg overflow-hidden border border-blue-gray-100 flex items-center justify-center font-bold text-lg ${offer.enterprise?.logo_url ? "bg-white" : colorClass}`}>
+                      {offer.enterprise?.logo_url ? (
+                        <img
+                          src={offer.enterprise.logo_url}
+                          alt={offer.enterprise?.company_name || "Logo"}
+                          className="w-full h-full object-contain p-1"
+                        />
+                      ) : (
+                        initial
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Chip
+                        value={offer.domain || "Autre"}
+                        variant="ghost"
+                        size="sm"
+                        className={`${categoryStyle} text-xs`}
+                      />
+                      {applied && (
+                        <Chip
+                          value="✓ Postulé"
+                          variant="ghost"
+                          size="sm"
+                          className="bg-green-100 text-green-700 text-xs"
+                        />
+                      )}
+                    </div>
+                  </CardHeader>
 
-                          {/* ✅ Tous les champs en snake_case */}
-                          <div className="space-y-2 mb-4 text-sm text-blue-gray-600">
-                            <div className="flex items-center gap-2">
-                              <MapPinIcon className="w-4 h-4 text-blue-400" />
-                              <span>{offer.location || "N/A"}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <ClockIcon className="w-4 h-4 text-blue-400" />
-                              <span>{offer.duration || "N/A"}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="w-4 h-4 text-blue-400" />
-                              <span>Début : {formatDate(offer.start_date)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <UsersIcon className="w-4 h-4 text-blue-400" />
-                              <span>
-                                {offer.available_places
-                                  ? `${offer.available_places} place(s) disponible(s)`
-                                  : "Places N/A"}
-                              </span>
-                            </div>
-                          </div>
+                  <CardBody className="p-6 flex-1 flex flex-col">
+                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-1">
+                      {offer.title}
+                    </Typography>
+                    <Typography className="text-sm text-blue-500 font-medium mb-3">
+                      {offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}
+                    </Typography>
+                    <Typography className="text-sm text-blue-gray-600 mb-4 line-clamp-2 flex-1">
+                      {offer.description}
+                    </Typography>
 
-                          <Button
-                            color={applied ? "green" : "blue"}
-                            fullWidth
-                            onClick={() => handleOpenDetails(offer)}
-                            className="mt-auto"
-                            variant={applied ? "outlined" : "filled"}
-                          >
-                            {applied ? "✓ Déjà postulé" : "Voir & Postuler"}
-                          </Button>
-                        </CardBody>
-                      </Card>
-                    );
-                  })}
-                </div>
+                    {/* ✅ Tous les champs en snake_case */}
+                    <div className="space-y-2 mb-4 text-sm text-blue-gray-600">
+                      <div className="flex items-center gap-2">
+                        <MapPinIcon className="w-4 h-4 text-blue-400" />
+                        <span>{offer.location || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ClockIcon className="w-4 h-4 text-blue-400" />
+                        <span>{offer.duration || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-blue-400" />
+                        <span>Début : {formatDate(offer.start_date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <UsersIcon className="w-4 h-4 text-blue-400" />
+                        <span>
+                          {offer.available_places
+                            ? `${offer.available_places} place(s) disponible(s)`
+                            : "Places N/A"}
+                        </span>
+                      </div>
+                    </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 py-6">
-                    <IconButton
-                      variant="outlined"
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(currentPage - 1)}
+                    <Button
+                      color={applied ? "green" : "blue"}
+                      fullWidth
+                      onClick={() => handleOpenDetails(offer)}
+                      className="mt-auto"
+                      variant={applied ? "outlined" : "filled"}
                     >
-                      ←
-                    </IconButton>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "filled" : "outlined"}
-                        color={currentPage === page ? "blue" : "blue-gray"}
-                        onClick={() => setCurrentPage(page)}
-                        className="w-10 h-10 p-0"
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                    <IconButton
-                      variant="outlined"
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                      →
-                    </IconButton>
-                  </div>
-                )}
-              </>
-            )}
+                      {applied ? "✓ Déjà postulé" : "Voir & Postuler"}
+                    </Button>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 py-6">
+              <IconButton
+                variant="outlined"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                ←
+              </IconButton>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "filled" : "outlined"}
+                  color={currentPage === page ? "blue" : "blue-gray"}
+                  onClick={() => setCurrentPage(page)}
+                  className="w-10 h-10 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+              <IconButton
+                variant="outlined"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                →
+              </IconButton>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Modal Détails */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
@@ -596,6 +604,18 @@ export default function OffersCatalog() {
 
                 {activeTab === "company" && (
                   <div>
+                    {/* Logo entreprise dans le modal */}
+                    {selectedOffer.enterprise?.logo_url && (
+                      <div className="flex justify-center mb-5">
+                        <div className="w-24 h-24 rounded-xl overflow-hidden border border-blue-gray-100 shadow-sm bg-white flex items-center justify-center p-2">
+                          <img
+                            src={selectedOffer.enterprise.logo_url}
+                            alt={selectedOffer.enterprise?.company_name || "Logo entreprise"}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
                     <Typography variant="h6" className="mb-3 font-semibold">
                       À propos de l'entreprise
                     </Typography>
@@ -612,8 +632,12 @@ export default function OffersCatalog() {
                         {selectedOffer.enterprise?.phone || "N/A"}
                       </Typography>
                       <Typography className="text-sm text-blue-gray-600">
-                        <strong>Secteur :</strong>{" "}
-                        {selectedOffer.enterprise?.sector || "N/A"}
+                        <strong>Site web :</strong>{" "}
+                        {selectedOffer.enterprise?.company_website && selectedOffer.enterprise.company_website !== "N/A" ? (
+                          <a href={selectedOffer.enterprise.company_website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            {selectedOffer.enterprise.company_website}
+                          </a>
+                        ) : "N/A"}
                       </Typography>
                     </div>
                   </div>
@@ -666,10 +690,10 @@ export default function OffersCatalog() {
               {hasApplied(selectedOffer?.id)
                 ? "✓ Déjà postulé"
                 : loading
-                ? "Envoi en cours..."
-                : "✅ Postuler"}
+                  ? "Envoi en cours..."
+                  : "✅ Postuler"}
             </Button>
-            
+
           </div>
         </DialogFooter>
       </Dialog>

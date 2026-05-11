@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class OfferResource extends JsonResource
 {
@@ -14,12 +15,14 @@ class OfferResource extends JsonResource
 
         if (!$user) {
             $companyName = $companyEmail = $companyPhone = $companyDesc = $companyWebsite = null;
+            $logoPath = null;
         } elseif ($user->role === 'manager') {
             $companyName    = $user->company_name;
             $companyEmail   = $user->email;
             $companyPhone   = $user->phone;
             $companyDesc    = $user->company_description;
             $companyWebsite = $user->company_website;
+            $logoPath       = $user->logo_path;
         } elseif (in_array($user->role, ['rh', 'encadrant'])) {
             // ✅ FIX N+1: use relationLoaded manager instead of User::find()
             $manager        = $user->relationLoaded('manager') ? $user->manager : null;
@@ -28,13 +31,19 @@ class OfferResource extends JsonResource
             $companyPhone   = $manager?->phone ?? $user->phone;
             $companyDesc    = $manager?->company_description;
             $companyWebsite = $manager?->company_website;
+            // ✅ Logo : priorité au logo du RH, sinon celui du manager
+            $logoPath       = $user->logo_path ?? $manager?->logo_path;
         } else {
             $companyName    = $user->company_name ?? $user->name;
             $companyEmail   = $user->email;
             $companyPhone   = $user->phone;
             $companyDesc    = $user->company_description;
             $companyWebsite = $user->company_website;
+            $logoPath       = $user->logo_path;
         }
+
+        // ✅ Génère l'URL publique absolue du logo (APP_URL + /storage/)
+        $logoUrl = $logoPath ? Storage::disk('public')->url($logoPath) : null;
 
         return [
             'id'               => $offer->id,
@@ -55,6 +64,7 @@ class OfferResource extends JsonResource
                 'phone'               => $companyPhone   ?? 'N/A',
                 'company_description' => $companyDesc    ?? 'N/A',
                 'company_website'     => $companyWebsite ?? 'N/A',
+                'logo_url'            => $logoUrl,
             ],
         ];
     }

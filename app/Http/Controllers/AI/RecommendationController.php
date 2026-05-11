@@ -209,7 +209,7 @@ class RecommendationController extends Controller
                     }
                 }
 
-                $logoUrl = $companyLogoPath ? Storage::url($companyLogoPath) : null;
+                $logoUrl = $companyLogoPath ? Storage::disk('public')->url($companyLogoPath) : null;
 
                 return [
                     'id' => $offer->id,
@@ -297,7 +297,7 @@ PROMPT;
                             }
                         }
 
-                        $logoUrl = $companyLogoPath ? Storage::url($companyLogoPath) : null;
+                        $logoUrl = $companyLogoPath ? Storage::disk('public')->url($companyLogoPath) : null;
 
                         return [
                             'offer_id' => $rec['offer_id'],

@@ -39,8 +39,8 @@ class ProfileController extends Controller
             'company_website' => $user->company_website,
 
             // Photos
-            'photo_url' => $user->photo_path ? Storage::url($user->photo_path) : null,
-            'logo_url' => $user->logo_path ? Storage::url($user->logo_path) : null,
+            'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
+            'logo_url'  => $user->logo_path  ? Storage::disk('public')->url($user->logo_path)  : null,
         ]);
     }
 
@@ -126,10 +126,10 @@ class ProfileController extends Controller
         return response()->json([
             'message' => 'Profil mis à jour avec succès',
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'photo_url' => $user->photo_path ? Storage::url($user->photo_path) : null,
+                'id'        => $user->id,
+                'name'      => $user->name,
+                'email'     => $user->email,
+                'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
             ],
         ]);
     }
