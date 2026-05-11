@@ -377,6 +377,17 @@ export default function StudentTaskDetail() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState("");
+  const [userData, setUserData] = useState(null);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch (err) {
+      const saved = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserData(saved);
+    }
+  };
 
   const [showEdit, setShowEdit] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -389,6 +400,7 @@ export default function StudentTaskDetail() {
 
   useEffect(() => {
     loadData();
+    fetchUserData();
   }, [applicationId, taskId]);
 
   const loadData = async (silent = false) => {
@@ -532,7 +544,13 @@ export default function StudentTaskDetail() {
   if (loading || !task) {
     return (
       <BaseLayout
-        sidebarHeader={<StudentSidebarHeader />}
+        sidebarHeader={
+          <StudentSidebarHeader 
+            name={userData?.name} 
+            email={userData?.email} 
+            photoUrl={userData?.photo_url} 
+          />
+        }
         menuItems={getStudentMenuItems()}
         headerActions={
           <div className="flex items-center gap-4">
@@ -558,7 +576,13 @@ export default function StudentTaskDetail() {
 
   return (
     <BaseLayout
-      sidebarHeader={<StudentSidebarHeader />}
+      sidebarHeader={
+        <StudentSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url} 
+        />
+      }
       menuItems={getStudentMenuItems()}
       headerActions={
         <div className="flex items-center gap-4">

@@ -482,7 +482,14 @@ function EvaluationSection({ evaluation }) {
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function MyApplications() {
   const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingInterviews, setLoadingInterviews] = useState(false);
   const [loadingSupervision, setLoadingSupervision] = useState(false);
+  const [interviews, setInterviews] = useState([]);
+  const [supervision, setSupervision] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [activeTab, setActiveTab] = useState("info");
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
@@ -876,8 +883,6 @@ export default function MyApplications() {
               </CardBody>
             </Card>
           </div>
-        </main>
-      </div>
 
       {/* ─── MODAL ─────────────────────────────────────────────────────────── */}
       <Dialog open={openModal} handler={() => setOpenModal(false)} size="xl">
@@ -1040,7 +1045,6 @@ export default function MyApplications() {
           )}
         </DialogFooter>
       </Dialog>
-      </div>
     </BaseLayout>
   );
 }

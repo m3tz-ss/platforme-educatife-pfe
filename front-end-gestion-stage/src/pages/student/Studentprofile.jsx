@@ -362,7 +362,6 @@ export default function StudentProfile() {
       }
     >
 
-        <main className="flex-1 overflow-y-auto">
           <div className="p-8 max-w-5xl mx-auto">
 
             {/* ✅ Photo + Nom + Progression */}
@@ -890,7 +889,6 @@ export default function StudentProfile() {
               </Card>
             )}
           </div>
-        </main>
     </BaseLayout>
   );
 }

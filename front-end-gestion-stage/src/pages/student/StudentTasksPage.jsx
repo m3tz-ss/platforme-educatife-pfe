@@ -376,6 +376,17 @@ export default function StudentTasksPage() {
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [newTask, setNewTask] = useState({ title: "", description: "", due_date: "" });
   const [creating, setCreating] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch (err) {
+      const saved = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserData(saved);
+    }
+  }, []);
 
   // Load candidatures
   useEffect(() => {
@@ -386,7 +397,8 @@ export default function StudentTasksPage() {
       })
       .catch(() => setApplications([]))
       .finally(() => setLoading(false));
-  }, []);
+    fetchUserData();
+  }, [fetchUserData]);
 
   useEffect(() => {
     const withEnc = applications.filter(a => a.encadrant_id || a.encadrant);
@@ -521,7 +533,13 @@ export default function StudentTasksPage() {
       title="Mes tâches"
       headerSubtitle="Suivi avec votre encadrant"
       menuItems={getStudentMenuItems({ applications: applications.length })}
-      sidebarHeader={<StudentSidebarHeader />}
+      sidebarHeader={
+        <StudentSidebarHeader 
+          name={userData?.name} 
+          email={userData?.email} 
+          photoUrl={userData?.photo_url} 
+        />
+      }
       sidebarExtra={sidebarExtra}
       headerActions={<StudentNotificationBell />}
     >
