@@ -423,8 +423,17 @@ export default function ReceivedApplications() {
                         <div key={app.id} className="flex items-center justify-between p-5 hover:bg-blue-gray-50 transition">
                           {/* Avatar + Infos */}
                           <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className={`w-12 h-12 rounded-full ${getAvatarColor(app.student?.name)} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
-                              {initial}
+                            {/* ✅ Photo étudiant avec fallback initiale */}
+                            <div className={`w-12 h-12 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${app.student?.photo_url ? '' : getAvatarColor(app.student?.name)}`}>
+                              {app.student?.photo_url ? (
+                                <img
+                                  src={app.student.photo_url}
+                                  alt={app.student?.name || "Photo"}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                initial
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5">
@@ -515,6 +524,18 @@ export default function ReceivedApplications() {
               {/* 👤 Candidat */}
               <div>
                 <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">👤 Informations du candidat</Typography>
+                {/* ✅ Photo du candidat dans le modal */}
+                {selectedApplication.student?.photo_url && (
+                  <div className="flex justify-center mb-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-100 shadow-md">
+                      <img
+                        src={selectedApplication.student.photo_url}
+                        alt={selectedApplication.student?.name || "Photo"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: "Nom",       value: selectedApplication.student?.name },

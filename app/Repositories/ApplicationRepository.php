@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Application;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationRepository
 {
@@ -54,7 +55,7 @@ class ApplicationRepository
 
         // Eager load only needed columns based on the transformer
         $query = Application::with([
-            'student:id,name,email,phone', // Basic fields
+            'student:id,name,email,phone,photo_path', // ✅ photo_path pour générer la photo_url
             'offer:id,title,domain,location,duration,start_date,available_places,enterprise_id',
             'encadrant:id,name,email'
         ]);
@@ -86,7 +87,12 @@ class ApplicationRepository
                          'cv_path'    => $app->cv, // ✅ alias
                          'created_at' => $app->created_at,
                          'offer_id'   => $app->offer_id,
-                         'student'    => $app->student,
+                         'student'    => $app->student ? array_merge($app->student->only(['id','name','email','phone']), [
+                             // ✅ URL absolue de la photo étudiant
+                             'photo_url' => $app->student->photo_path
+                                 ? Storage::disk('public')->url($app->student->photo_path)
+                                 : null,
+                         ]) : null,
                          'encadrant'  => $app->encadrant,
                          'offer'      => $app->offer ? [
                              'id'               => $app->offer->id,
