@@ -23,6 +23,7 @@ export default function BaseLayout({
   sidebarExtra,
   headerActions,
   headerSubtitle,
+  variant = "default", // "default" or "encadrant"
   children,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -32,9 +33,8 @@ export default function BaseLayout({
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`${
-            sidebarOpen ? "w-64" : "w-0"
-          } bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col flex-shrink-0`}
+          className={`${sidebarOpen ? "w-64" : "w-0"
+            } bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col flex-shrink-0`}
         >
           <div className="p-6 border-b border-blue-gray-100">
             {sidebarHeader || (
@@ -49,9 +49,41 @@ export default function BaseLayout({
             )}
           </div>
 
-          <nav className="p-6 space-y-2 flex-1 overflow-y-auto">
+          <nav className={variant === "encadrant" ? "p-4 space-y-1 flex-1 overflow-y-auto" : "p-6 space-y-2 flex-1 overflow-y-auto"}>
             {menuItems.map((item) => {
               const Icon = item.icon;
+              const isActive = window.location.pathname === item.path || window.location.pathname.startsWith(item.path + "/");
+              
+              if (variant === "encadrant") {
+                return (
+                  <Link key={item.path} to={item.path}>
+                    <div className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group cursor-pointer mb-1.5
+                      ${isActive 
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200/50 scale-[1.02]" 
+                        : "text-slate-500 hover:bg-slate-50 hover:text-indigo-600 hover:translate-x-1"}`}>
+                      
+                      {/* Active Indicator Bar */}
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+                      )}
+
+                      <Icon className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${isActive ? "text-white scale-110" : "text-slate-400 group-hover:text-indigo-500 group-hover:scale-110"}`} />
+                      
+                      <span className={`text-sm font-bold tracking-tight truncate transition-colors ${isActive ? "text-white" : "group-hover:text-indigo-600"}`}>
+                        {item.label}
+                      </span>
+
+                      {item.badge != null && item.badge > 0 && (
+                        <span className={`ml-auto text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 transition-all
+                          ${isActive ? "bg-white/20 text-white ring-1 ring-white/30" : "bg-indigo-500 text-white shadow-md group-hover:scale-110"}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              }
+
               return (
                 <Link key={item.path} to={item.path}>
                   <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer">

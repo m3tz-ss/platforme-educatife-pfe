@@ -20,6 +20,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
+import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
 import "./css/ManagerDashboard.css";
 
 const AVATAR_COLORS = ["blue", "violet", "emerald", "orange", "rose", "cyan"];
@@ -32,6 +33,16 @@ export function ManagerDashboard() {
   const [editUser, setEditUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "rh" });
+  const [user, setUser] = useState(null);
+
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUser(res.data);
+    } catch (err) {
+      console.error("Erreur profil:", err);
+    }
+  };
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -45,7 +56,10 @@ export function ManagerDashboard() {
     }
   };
 
-  useEffect(() => { fetchAccounts(); }, []);
+  useEffect(() => { 
+    fetchAccounts(); 
+    fetchUser();
+  }, []);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -112,9 +126,16 @@ export function ManagerDashboard() {
     <div className="dashboard-container flex h-screen overflow-hidden bg-gray-50">
       {/* ── Sidebar ── */}
       <aside className="w-64 bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col z-10 flex-shrink-0 border-r border-blue-gray-100">
-        <div className="p-6 border-b border-blue-gray-100 flex flex-col items-start gap-1">
-          <p className="font-bold text-blue-600 text-xl flex items-center gap-2">🏢 Espace Manager</p>
-          <p className="text-xs text-blue-gray-500 font-medium">Administration</p>
+        <div className="p-6 border-b border-blue-gray-100">
+          <InternalSidebarHeader 
+            name={user?.name} 
+            email={user?.email} 
+            role={user?.role || 'manager'} 
+            photoUrl={user?.photo_url} 
+            logoUrl={user?.logo_url}
+            logo={user?.logo}
+            enterpriseName={user?.company_name}
+          />
         </div>
 
         <nav className="p-4 space-y-2 flex-1 overflow-y-auto">

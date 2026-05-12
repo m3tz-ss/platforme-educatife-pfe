@@ -20,6 +20,7 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
+import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
 import "./css/ManagerDashboard.css";
 
 /* ── Constants ── */
@@ -80,14 +81,16 @@ const MENU_ITEMS = [
 
 /* ── Sub-components ── */
 
-function Sidebar() {
+function Sidebar({ user }) {
   return (
     <aside className="w-64 bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col z-10 flex-shrink-0 border-r border-blue-gray-100">
-      <div className="p-6 border-b border-blue-gray-100 flex flex-col items-start gap-1">
-        <p className="font-bold text-blue-600 text-xl flex items-center gap-2">
-          🏢 Espace Manager
-        </p>
-        <p className="text-xs text-blue-gray-500 font-medium">Administration</p>
+      <div className="p-6 border-b border-blue-gray-100">
+        <InternalSidebarHeader 
+          name={user?.name} 
+          email={user?.email} 
+          role={user?.role || 'manager'} 
+          photoUrl={user?.photo_url} 
+        />
       </div>
 
       <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
@@ -438,6 +441,16 @@ export default function ManagerApplications() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUser(res.data);
+    } catch (err) {
+      console.error("Erreur profil:", err);
+    }
+  };
 
   // Evaluation state
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -581,6 +594,7 @@ export default function ManagerApplications() {
   /* ── Effects ── */
   useEffect(() => {
     fetchApplications();
+    fetchUser();
   }, [fetchApplications]);
 
   useEffect(() => {
@@ -589,7 +603,7 @@ export default function ManagerApplications() {
 
   return (
     <div className="dashboard-container flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
+      <Sidebar user={user} />
 
       <div className="flex-1 relative overflow-y-auto w-full">
         {/* ── Background blobs ── */}

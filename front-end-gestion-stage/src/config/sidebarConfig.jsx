@@ -20,7 +20,6 @@ export function getStudentMenuItems(counts = {}) {
     { icon: BriefcaseIcon, label: "Offres de stage", path: "/student/offers", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "Mes candidatures", path: "/student/applications", badge: counts.applications ?? null },
     { icon: ClipboardDocumentListIcon, label: "Mes tâches", path: "/student/tasks", badge: null },
-    { icon: BookmarkIcon, label: "Offres sauvegardées", path: "/student/saved", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Messages", path: "/message", badge: null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/student/profile", badge: null },
   ];
@@ -30,6 +29,12 @@ export function getStudentMenuItems(counts = {}) {
  * Menu items pour l'espace entreprise (manager, rh, encadrant)
  */
 export function getEnterpriseMenuItems(counts = {}, role = "rh") {
+  if (role === "encadrant") {
+    return [
+      { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/encadrant", badge: null },
+    ];
+  }
+
   const base = [
     { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/offers", badge: null },
     { icon: PlusIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
@@ -50,8 +55,5 @@ export function getAdminMenuItems(counts = {}) {
     { icon: UsersIcon, label: "Utilisateurs", path: "/admin/users", badge: counts.users ?? null },
     { icon: BriefcaseIcon, label: "Offres", path: "/admin/offers", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "entreprises", path: "/admin/enterprise", badge: counts.enterprises ?? null },
-    { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/admin/interviews", badge: counts.interviews ?? null },
-    { icon: ChatBubbleLeftIcon, label: "Messages", path: "/message", badge: null },
-    { icon: UserCircleIcon, label: "Profil Admin", path: "/admin/profile", badge: null },
   ];
 }

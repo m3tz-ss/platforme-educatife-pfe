@@ -350,6 +350,7 @@ export default function ReceivedApplications() {
           photoUrl={userData?.photo_url}
           enterpriseName={userData?.company_name}
           logoUrl={userData?.logo_url}
+          logo={userData?.logo}
           roleConfig={roleConfigs[enterpriseRole]}
         />
       }

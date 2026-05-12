@@ -29,7 +29,9 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'type' => 'enterprise',
             'role' => 'manager',
-            'manager_id' => $request->user()->id, // 👈 lié à l'entreprise connectée
+            'manager_id' => $request->user()->id,
+            'company_name' => $request->user()->company_name,
+            'logo_path' => $request->user()->logo_path,
         ]);
 
         // Assigner le rôle Spatie
@@ -85,7 +87,8 @@ class UserController extends Controller
             'role' => $request->role,
             'manager_id' => $request->user()->id,
             'enterprise_id' => $request->user()->enterprise_id,
-            'company_name' => $request->user()->company_name, // ✅ hérite du manager
+            'company_name' => $request->user()->company_name,
+            'logo_path' => $request->user()->logo_path,
         ]);
 
         return response()->json([

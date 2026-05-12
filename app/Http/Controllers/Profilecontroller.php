@@ -12,6 +12,31 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
+        // ✅ Résolution du logo (si l'utilisateur n'en a pas, on prend celui du manager ou d'un collègue)
+        $logoPath = $user->logo_path;
+        if (!$logoPath) {
+            // 1. Chercher chez le manager
+            if ($user->manager_id) {
+                $manager = \App\Models\User::find($user->manager_id);
+                $logoPath = $manager?->logo_path;
+            }
+            
+            // 2. Si toujours rien, chercher chez n'importe quel collègue ayant le même manager
+            if (!$logoPath && $user->manager_id) {
+                $colleague = \App\Models\User::where('manager_id', $user->manager_id)
+                    ->whereNotNull('logo_path')
+                    ->first();
+                $logoPath = $colleague?->logo_path;
+            }
+
+            // 3. Cas particulier : l'utilisateur est lui-même le manager, chercher chez ses subordonnés
+            if (!$logoPath && $user->role === 'manager') {
+                $subordinate = \App\Models\User::where('manager_id', $user->id)
+                    ->whereNotNull('logo_path')
+                    ->first();
+                $logoPath = $subordinate?->logo_path;
+            }
+        }
 
         return response()->json([
             'id' => $user->id,
@@ -34,13 +59,13 @@ class ProfileController extends Controller
             // Entreprise
             'position' => $user->position,
             'department' => $user->department,
-            'company_name' => $user->company_name,
+            'company_name' => $user->company_name ?? (\App\Models\User::find($user->manager_id)?->company_name),
             'company_description' => $user->company_description,
             'company_website' => $user->company_website,
 
             // Photos
             'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
-            'logo_url'  => $user->logo_path  ? Storage::disk('public')->url($user->logo_path)  : null,
+            'logo_url'  => $logoPath  ? Storage::disk('public')->url($logoPath)  : null,
         ]);
     }
 

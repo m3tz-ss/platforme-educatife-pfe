@@ -825,60 +825,92 @@ export default function MyApplications() {
                     <Link to="/student/offers"><Button color="blue" size="sm">🔍 Découvrir les offres</Button></Link>
                   </div>
                 ) : (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {applications.map((app) => {
-                      const statusMsg = getStatusMessage(app.status);
-                      return (
-                        <Card
-                          key={app.id}
-                          className="border border-blue-gray-100 shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => {
-                            setSelectedApp(app);
-                            setOpenModal(true);
-                            setActiveTab("info");
-                            setSupervision(null);
-                            fetchInterviews(app.id);
-                          }}
-                        >
-                          <div className={`h-1 rounded-t-xl bg-gradient-to-r ${statusColor(app.status) === "green" ? "from-green-500 to-green-600" :
-                            statusColor(app.status) === "red" ? "from-red-500 to-red-600" :
-                              statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600" :
-                                statusColor(app.status) === "amber" ? "from-amber-500 to-amber-600" :
-                                  "from-orange-500 to-orange-600"
-                            }`} />
-                          <CardHeader floated={false} shadow={false} className="p-4 border-b border-blue-gray-100">
-                            <Typography variant="h6" className="font-bold mb-1">{app.offer?.title || "Offre inconnue"}</Typography>
-                            <div className="flex flex-col">
-                              <Typography variant="small" className="text-blue-500 font-medium">{app.offer?.enterprise?.name || "Entreprise"}</Typography>
-                              {app.offer?.enterprise?.email && app.offer.enterprise.email !== 'N/A' && (
-                                <Typography variant="small" className="text-blue-gray-500">{app.offer.enterprise.email}</Typography>
-                              )}
-                            </div>
-                          </CardHeader>
-                          <CardBody className="space-y-3 p-4">
-                            <div className="flex flex-wrap gap-3 text-sm text-blue-gray-600">
-                              <span className="flex items-center gap-1"><MapPinIcon className="w-4 h-4 text-blue-400" />{app.offer?.location || "N/A"}</span>
-                              <span className="flex items-center gap-1"><ClockOutline className="w-4 h-4 text-blue-400" />{app.offer?.duration || "N/A"}</span>
-                            </div>
-                            <div className="flex flex-wrap gap-3 text-sm text-blue-gray-600">
-                              <span>📅 Début : {formatDate(app.offer?.start_date)}</span>
-                              <span>👥 {app.offer?.available_places ? `${app.offer.available_places} place(s)` : "Places N/A"}</span>
-                            </div>
-                            <div className="border-t border-blue-gray-100" />
-                            <div className="flex justify-between items-center">
-                              <Chip value={statusLabel(app.status)} color={statusColor(app.status)} size="sm" className="font-semibold" />
-                              <Typography variant="small" className="text-blue-gray-500">{formatDate(app.created_at)}</Typography>
-                            </div>
-                            <div className={`${statusMsg.bgColor} border ${statusMsg.borderColor} rounded-lg p-3`}>
-                              <Typography variant="small" className={`${statusMsg.textColor} font-medium`}>
-                                {statusMsg.icon} {statusMsg.message}
-                              </Typography>
-                            </div>
-                          </CardBody>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {applications.map((app) => {
+                        const statusMsg = getStatusMessage(app.status);
+                        const offer = app.offer;
+                        const companyInitial = offer?.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
+
+                        return (
+                          <Card
+                            key={app.id}
+                            className="group border border-blue-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
+                            onClick={() => {
+                              setSelectedApp(app);
+                              setOpenModal(true);
+                              setActiveTab("info");
+                              setSupervision(null);
+                              fetchInterviews(app.id);
+                            }}
+                          >
+                            <div className={`h-1.5 bg-gradient-to-r ${statusColor(app.status) === "green" ? "from-green-500 to-green-600" :
+                              statusColor(app.status) === "red" ? "from-red-500 to-red-600" :
+                                statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600" :
+                                  statusColor(app.status) === "amber" ? "from-amber-500 to-amber-600" :
+                                    "from-orange-500 to-orange-600"
+                              }`} />
+                            
+                            <CardBody className="p-5 flex-1 flex flex-col">
+                              <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-gray-100 flex-shrink-0 flex items-center justify-center bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                                  {offer?.enterprise?.logo_url ? (
+                                    <img
+                                      src={offer.enterprise.logo_url}
+                                      alt={offer.enterprise?.name || "Logo"}
+                                      className="w-full h-full object-contain p-1"
+                                    />
+                                  ) : (
+                                    <span className="text-blue-700 font-bold text-lg">{companyInitial}</span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <Typography variant="h6" className="text-blue-gray-900 font-bold truncate group-hover:text-blue-600 transition-colors">
+                                    {offer?.title || "Offre inconnue"}
+                                  </Typography>
+                                  <Typography className="text-sm text-blue-500 font-medium">
+                                    {offer?.enterprise?.name || "Entreprise"}
+                                  </Typography>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-[11px] font-bold border border-blue-100">
+                                  📍 {offer?.location || "N/A"}
+                                </span>
+                                <span className="flex items-center gap-1.5 bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-[11px] font-bold border border-purple-100">
+                                  ⏱️ {offer?.duration || "N/A"}
+                                </span>
+                              </div>
+
+                              <div className={`${statusMsg.bgColor} border ${statusMsg.borderColor} rounded-xl p-3 mb-4 flex-1`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-lg">{statusMsg.icon}</span>
+                                  <Typography variant="small" className={`${statusMsg.textColor} font-bold`}>
+                                    {statusMsg.title}
+                                  </Typography>
+                                </div>
+                                <Typography variant="small" className={`${statusMsg.textColor} opacity-90 leading-tight text-xs`}>
+                                  {statusMsg.message}
+                                </Typography>
+                              </div>
+
+                              <div className="flex items-center justify-between mt-auto pt-3 border-t border-blue-gray-50">
+                                <Chip 
+                                  value={statusLabel(app.status)} 
+                                  color={statusColor(app.status)} 
+                                  size="sm" 
+                                  variant="ghost"
+                                  className="rounded-full font-bold"
+                                />
+                                <Typography variant="small" className="text-blue-600 font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  Détails <span className="text-lg">→</span>
+                                </Typography>
+                              </div>
+                            </CardBody>
+                          </Card>
+                        );
+                      })}
+                    </div>
                 )}
               </CardBody>
             </Card>
@@ -886,19 +918,37 @@ export default function MyApplications() {
 
       {/* ─── MODAL ─────────────────────────────────────────────────────────── */}
       <Dialog open={openModal} handler={() => setOpenModal(false)} size="xl">
-        <DialogHeader className="flex justify-between items-center border-b border-blue-gray-100">
-          <Typography variant="h5" className="font-bold">
-            {selectedApp?.offer?.title || "Détails de la candidature"}
-          </Typography>
-          <IconButton variant="text" color="blue-gray" onClick={() => setOpenModal(false)}>
-            <XMarkIcon className="w-6 h-6" />
-          </IconButton>
+        <DialogHeader className={`flex flex-col p-0 overflow-hidden rounded-t-xl`}>
+          <div className={`w-full bg-gradient-to-r from-blue-600 to-indigo-700 p-6 relative min-h-[120px] flex flex-col justify-end`}>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <IconButton variant="text" color="white" onClick={() => setOpenModal(false)} className="rounded-full bg-white/10 hover:bg-white/20">
+                <XMarkIcon className="w-5 h-5" />
+              </IconButton>
+            </div>
+            
+            {selectedApp?.offer?.enterprise?.logo_url && (
+              <div className="absolute -bottom-6 right-8 w-20 h-20 rounded-2xl overflow-hidden bg-white shadow-xl border-4 border-white flex items-center justify-center p-2 z-10">
+                <img
+                  src={selectedApp.offer.enterprise.logo_url}
+                  alt={selectedApp.offer.enterprise?.name || "Logo"}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+
+            <Typography variant="h4" className="text-white font-bold pr-24 line-clamp-2">
+              {selectedApp?.offer?.title || "Détails de la candidature"}
+            </Typography>
+            <Typography variant="small" className="text-blue-100 font-medium mt-1">
+              {selectedApp?.offer?.enterprise?.name}
+            </Typography>
+          </div>
         </DialogHeader>
 
-        <DialogBody divider className="p-0 max-h-[75vh] overflow-y-auto">
+        <DialogBody divider className="p-0 max-h-[75vh] overflow-y-auto border-none">
           {selectedApp && (
             <Tabs value={activeTab} className="w-full">
-              <TabsHeader>
+              <TabsHeader className="mx-6 mt-4">
                 <Tab value="info" onClick={() => setActiveTab("info")}>💼 Informations</Tab>
                 <Tab
                   value="encadrement"

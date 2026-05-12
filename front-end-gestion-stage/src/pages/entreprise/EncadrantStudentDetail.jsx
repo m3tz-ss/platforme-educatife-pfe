@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import ChatBox from "@/components/ChatBox";
+import BaseLayout from "../../components/layout/BaseLayout";
+import { EnterpriseSidebarHeader } from "../../components/layout/SidebarHeaders";
+import { getEnterpriseMenuItems } from "../../config/sidebarConfig";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/api\/?$/, "");
 function storageUrl(path) { return path ? `${API_ORIGIN}/storage/${path}` : null; }
@@ -758,8 +761,9 @@ function TaskModal({ task, col, onClose, onDelete, onUpdateStatus, onUpdateTask,
 }
 
 // ── TaskCard ──────────────────────────────────────────────────────────────────
-function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
+function TaskCard({ task, col, busy, onDragStart, onDragEnd, applicationId }) {
   const [isDragging, setIsDragging] = useState(false);
+  const navigate = useNavigate();
 
   const isOverdue = task.due_date && task.status !== "done" && new Date(task.due_date) < new Date();
   const commentCount = (task.taskComments || []).length;
@@ -769,7 +773,7 @@ function TaskCard({ task, col, busy, onDragStart, onDragEnd, onOpenModal }) {
       draggable
       onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; onDragStart(task.id); setIsDragging(true); }}
       onDragEnd={() => { onDragEnd(); setIsDragging(false); }}
-      onClick={() => onOpenModal(task)}
+      onClick={() => navigate(`/enterprise/encadrant/student/${applicationId}/task/${task.id}`)}
       className={`group relative bg-white rounded-xl border ${col.border} shadow-sm
         hover:shadow-lg hover:border-slate-300 transition-all duration-200 select-none
         ${isDragging ? "opacity-40 scale-95 rotate-1 shadow-none" : "cursor-pointer active:scale-[.98]"}`}
@@ -909,10 +913,9 @@ function AddTaskInline({ onAdd, busy }) {
 }
 
 // ── KanbanBoard ───────────────────────────────────────────────────────────────
-function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask, currentUser }) {
+function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd, onUpdateTask, currentUser, applicationId }) {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
-  const [modalTask, setModalTask] = useState(null);
 
   const grouped = TASK_COLUMNS.reduce((acc, col) => {
     acc[col.key] = (tasks || [])
@@ -941,29 +944,8 @@ function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd,
     setDragOverCol(null);
   };
 
-  const syncedModalTask = modalTask ? tasks.find(t => t.id === modalTask.id) || modalTask : null;
-  const modalCol = syncedModalTask ? TASK_COLUMNS.find(c => c.key === syncedModalTask.status) : null;
-
   return (
     <section className="space-y-5">
-      {syncedModalTask && (
-        <TaskModal
-          task={syncedModalTask}
-          col={modalCol}
-          busy={busy}
-          onClose={() => setModalTask(null)}
-          onDelete={onDelete}
-          onUpdateStatus={onUpdateStatus}
-          onUpdateTask={(updated) => {
-            // Update modal's local task view immediately
-            setModalTask(prev => prev ? { ...prev, ...updated } : null);
-            // Propagate to parent to update the tasks list
-            onUpdateTask?.(updated);
-          }}
-          onCommentsUpdated={() => { }}
-          currentUser={currentUser}
-        />
-      )}
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -1054,9 +1036,9 @@ function KanbanBoard({ tasks, evaluation, busy, onUpdateStatus, onDelete, onAdd,
                     task={task}
                     col={col}
                     busy={busy}
+                    applicationId={applicationId}
                     onDragStart={(taskId) => setDraggingId(taskId)}
                     onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
-                    onOpenModal={setModalTask}
                   />
                 ))}
                 {col.key === "todo" && <AddTaskInline onAdd={onAdd} busy={busy} />}
@@ -1084,6 +1066,18 @@ export default function EncadrantStudentDetail() {
   const [evalForm, setEvalForm] = useState({ score: "", final_decision: "pending", notes: "" });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [userData, setUserData] = useState(null);
+  const [activeTab, setActiveTab] = useState("tasks"); // tasks, feedback, evaluation, interviews
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/user/profile");
+      setUserData(res.data);
+    } catch (err) {
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserData(stored);
+    }
+  };
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -1158,6 +1152,7 @@ export default function EncadrantStudentDetail() {
         })
         .catch(() => { }),
     ]).finally(() => setLoading(false));
+    fetchUserData();
   }, [id]);
 
   const patchAppStatus = (status) => {
@@ -1268,226 +1263,272 @@ export default function EncadrantStudentDetail() {
   const comments = commentsRes.data || [];
   const currentStatus = APP_STATUSES.find(a => a.value === detail.status);
 
+  const roleConfig = { label: "Encadrant", color: "purple", icon: "🎓" };
+  const menuItems = getEnterpriseMenuItems({}, "encadrant");
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20">
-      <Toast error={formError} success={formSuccess} />
+    <BaseLayout
+      variant="encadrant"
+      title={s?.name || "Détails Étudiant"}
+      headerSubtitle={s?.email || "Chargement..."}
+      menuItems={menuItems}
+      sidebarHeader={
+        <EnterpriseSidebarHeader
+          enterpriseName={userData?.company_name}
+          logoUrl={userData?.logo_url}
+          logo={userData?.logo}
+          roleConfig={roleConfig}
+          name={userData?.name}
+          email={userData?.email}
+        />
+      }
+      headerActions={
+        <div className="flex items-center gap-2">
+          {currentStatus && (
+            <span className={`hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${currentStatus.color}`}>
+              {currentStatus.label}
+            </span>
+          )}
+          <select
+            value={detail.status}
+            disabled={busy}
+            onChange={(e) => patchAppStatus(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-200 shadow-sm"
+          >
+            {APP_STATUSES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          {cv && (
+            <a href={cv} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition border border-indigo-200">
+              CV
+            </a>
+          )}
+        </div>
+      }
+    >
+      <div className="p-0 space-y-8">
+        <Toast error={formError} success={formSuccess} />
 
-      {/* ── Sticky Header ── */}
-      <div className="border-b border-slate-200 bg-white/90 backdrop-blur sticky top-0 z-30 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-          <Link to="/enterprise/encadrant"
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1 mb-3 group">
-            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Retour au tableau de bord
-          </Link>
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-lg">
-                {s?.name?.[0]?.toUpperCase() || "?"}
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-slate-900">{s?.name}</h1>
-                <p className="text-sm text-slate-500">{s?.email}{s?.school && ` · ${s.school}`}</p>
-              </div>
+        {/* ── Sub Header Infos ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg">
+              {s?.name?.[0]?.toUpperCase() || "?"}
             </div>
-
-            <div className="flex items-center gap-3 flex-wrap">
-              {currentStatus && (
-                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border ${currentStatus.color}`}>
-                  {currentStatus.label}
-                </span>
-              )}
-              <select
-                value={detail.status}
-                disabled={busy}
-                onChange={(e) => patchAppStatus(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-200 shadow-sm"
-              >
-                {APP_STATUSES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              {cv && (
-                <a href={cv} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition border border-indigo-200">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  CV
-                </a>
-              )}
+            <div>
+              <h2 className="text-base font-black text-slate-900">{s?.name}</h2>
+              <p className="text-xs text-slate-500">{s?.school || "Étudiant"}</p>
             </div>
           </div>
-
           {offer && (
-            <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl px-4 py-2">
-              <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span className="font-bold text-sm text-indigo-900">{offer.title}</span>
-              {(offer.domain || offer.location) && (
-                <span className="text-xs text-indigo-500">
-                  · {[offer.domain, offer.location].filter(Boolean).join(" · ")}
-                </span>
-              )}
+            <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-1.5">
+              <span className="font-bold text-xs text-indigo-900">{offer.title}</span>
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Content ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-14">
-
-        {/* ── KANBAN ── */}
-        <KanbanBoard
-          tasks={tasks}
-          evaluation={evaluation}
-          busy={busy}
-          onUpdateStatus={handleUpdateTaskStatus}
-          onDelete={handleDeleteTask}
-          onAdd={handleAddTask}
-          onUpdateTask={handleUpdateTask}
-          currentUser={currentUser}
-        />
-
-        {/* ── GENERAL COMMENTS ── */}
-        <section className="space-y-5">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            Feedback général du stagiaire
-          </h2>
-
-          <form onSubmit={addComment} className="rounded-2xl border-2 border-slate-200 bg-white p-5 space-y-3 shadow-sm">
-            <textarea
-              placeholder="Votre feedback général pour le suivi du stagiaire…"
-              value={commentBody}
-              onChange={(e) => setCommentBody(e.target.value)}
-              rows={3}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition resize-none"
-            />
-            <button type="submit" disabled={busy}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition shadow-sm">
-              Enregistrer le feedback
+        {/* ── Tabs Navigation ── */}
+        <div className="flex items-center gap-1 border-b border-slate-200">
+          {[
+            { id: "tasks", label: "Tâches", icon: "📋" },
+            { id: "feedback", label: "Feedback", icon: "💬" },
+            { id: "evaluation", label: "Évaluation", icon: "🎓" },
+            { id: "interviews", label: "Entretiens", icon: "📅" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-bold transition-all border-b-2 -mb-[2px] ${activeTab === tab.id
+                ? "border-indigo-600 text-indigo-600 bg-indigo-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
             </button>
-          </form>
+          ))}
+        </div>
 
-          <div className="space-y-2.5">
-            {comments.length === 0 && <p className="text-sm text-slate-400 italic">Aucun feedback général.</p>}
-            {comments.map(c => (
-              <div key={c.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                <div className="flex justify-between items-center text-xs text-slate-500 mb-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold">
-                      {(c.encadrant?.name || "E")[0].toUpperCase()}
-                    </div>
-                    <span className="font-semibold text-slate-700">{c.encadrant?.name || "Encadrant"}</span>
+        {/* ── Tab Content ── */}
+        <div className="mt-6">
+          {activeTab === "tasks" && (
+            <KanbanBoard
+              tasks={tasks}
+              evaluation={evaluation}
+              busy={busy}
+              onUpdateStatus={handleUpdateTaskStatus}
+              onDelete={handleDeleteTask}
+              onAdd={handleAddTask}
+              onUpdateTask={handleUpdateTask}
+              currentUser={currentUser}
+              applicationId={applicationId}
+            />
+          )}
+
+          {activeTab === "feedback" && (
+            <section className="space-y-6 max-w-4xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <span className="p-2 bg-amber-100 rounded-lg text-amber-600 text-lg">💬</span>
+                  Feedback général
+                </h2>
+              </div>
+
+              <form onSubmit={addComment} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm focus-within:border-indigo-300 transition-colors">
+                <textarea
+                  placeholder="Votre feedback général pour le suivi du stagiaire…"
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 transition resize-none"
+                />
+                <div className="flex justify-end">
+                  <button type="submit" disabled={busy}
+                    className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition shadow-md active:scale-95">
+                    Enregistrer le feedback
+                  </button>
+                </div>
+              </form>
+
+              <div className="space-y-4">
+                {comments.length === 0 ? (
+                  <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <p className="text-slate-400 text-sm">Aucun feedback enregistré pour le moment.</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span>{c.created_at ? new Date(c.created_at).toLocaleString("fr-FR") : ""}</span>
-                    <button onClick={() => deleteComment(c.id)} disabled={busy}
-                      className="text-rose-300 hover:text-rose-600 transition-colors disabled:opacity-40">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                ) : (
+                  comments.map(c => (
+                    <div key={c.id} className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm hover:border-slate-300 transition-colors">
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-black">
+                            {(c.encadrant?.name || "E")[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{c.encadrant?.name || "Encadrant"}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">{c.created_at ? new Date(c.created_at).toLocaleString("fr-FR") : ""}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => deleteComment(c.id)} disabled={busy}
+                          className="p-2 rounded-lg text-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50/50 p-4 rounded-xl border border-slate-100">{c.body}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "evaluation" && (
+            <section className="space-y-6 max-w-2xl">
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <span className="p-2 bg-emerald-100 rounded-lg text-emerald-600 text-lg">🎓</span>
+                Évaluation finale
+              </h2>
+
+              <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 mb-6">
+                <p className="text-sm text-indigo-700 leading-relaxed">
+                  Cette section permet d'attribuer une note finale, une décision officielle et une appréciation globale qui sera visible par l'étudiant et l'administration.
+                </p>
+              </div>
+
+              <form onSubmit={saveEvaluation}
+                className="rounded-2xl border border-slate-200 bg-white p-8 space-y-6 shadow-md relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-indigo-500" />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Note sur 20</label>
+                    <div className="relative">
+                      <input type="number" min={0} max={20} step={0.5}
+                        value={evalForm.score}
+                        onChange={(e) => setEvalForm(f => ({ ...f, score: e.target.value }))}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-lg font-black text-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-400 transition-all" />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">/ 20</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Décision Finale</label>
+                    <select
+                      value={evalForm.final_decision}
+                      onChange={(e) => setEvalForm(f => ({ ...f, final_decision: e.target.value }))}
+                      className="w-full h-[52px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-400 transition-all appearance-none">
+                      {DECISIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
                   </div>
                 </div>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{c.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
 
-        {/* ── EVALUATION ── */}
-        <section className="space-y-5">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-            Évaluation de fin de stage
-          </h2>
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Appréciation détaillée</label>
+                  <textarea
+                    value={evalForm.notes}
+                    onChange={(e) => setEvalForm(f => ({ ...f, notes: e.target.value }))}
+                    rows={6}
+                    placeholder="Décrivez les points forts, les axes d'amélioration et le comportement général du stagiaire durant sa mission..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-400 transition-all resize-none" />
+                </div>
 
-          <form onSubmit={saveEvaluation}
-            className="rounded-2xl border-2 border-slate-200 bg-white p-6 space-y-4 max-w-xl shadow-sm">
-            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5">
-              La note, la décision et l'appréciation sont enregistrées ensemble.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Note /20</label>
-                <input type="number" min={0} max={20} step={0.5}
-                  value={evalForm.score}
-                  onChange={(e) => setEvalForm(f => ({ ...f, score: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Décision</label>
-                <select
-                  value={evalForm.final_decision}
-                  onChange={(e) => setEvalForm(f => ({ ...f, final_decision: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                  {DECISIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Appréciation</label>
-              <textarea
-                value={evalForm.notes}
-                onChange={(e) => setEvalForm(f => ({ ...f, notes: e.target.value }))}
-                rows={4}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 resize-none" />
-            </div>
-            <button type="submit" disabled={busy}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 text-white text-sm font-black hover:bg-emerald-700 disabled:opacity-50 transition shadow-md">
-              {evaluation ? "Mettre à jour" : "Enregistrer l'évaluation"}
-            </button>
-          </form>
-        </section>
-
-        {/* ── INTERVIEWS ── */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            Historique des entretiens
-          </h2>
-          {interviews.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">Aucun entretien enregistré.</p>
-          ) : (
-            <ol className="relative border-l border-slate-200 ml-3 space-y-5 pl-6">
-              {interviews.map(it => (
-                <li key={it.id} className="relative">
-                  <span className="absolute -left-[1.36rem] top-2 h-3 w-3 rounded-full bg-indigo-500 ring-4 ring-white" />
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p className="font-bold text-slate-900">{it.date} · {it.time}</p>
-                    {(it.location || it.meeting_link) && <p className="text-sm text-slate-600 mt-1">{it.location || it.meeting_link}</p>}
-                    {it.result && <p className="text-sm mt-2">Résultat : <span className="font-bold text-indigo-700">{it.result}</span></p>}
-                    {it.comment && <p className="text-sm text-slate-600 mt-1">{it.comment}</p>}
-                  </div>
-                </li>
-              ))}
-            </ol>
+                <button type="submit" disabled={busy}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-sm font-black hover:from-indigo-700 hover:to-indigo-800 transition shadow-lg active:scale-[0.98] disabled:opacity-50">
+                  {evaluation ? "Mettre à jour l'évaluation" : "Confirmer l'évaluation"}
+                </button>
+              </form>
+            </section>
           )}
-        </section>
 
+          {activeTab === "interviews" && (
+            <section className="space-y-6 max-w-4xl">
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <span className="p-2 bg-blue-100 rounded-lg text-blue-600 text-lg">📅</span>
+                Historique des entretiens
+              </h2>
+
+              {interviews.length === 0 ? (
+                <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-slate-500 font-medium">Aucun entretien enregistré.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {interviews.map(it => (
+                    <div key={it.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-black uppercase">
+                          {it.date}
+                        </div>
+                        <span className="text-xs font-bold text-slate-400">{it.time}</span>
+                      </div>
+                      <h3 className="font-black text-slate-800 mb-2">Entretien de suivi</h3>
+                      <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-4">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                        {it.location || it.meeting_link || "Lieu non précisé"}
+                      </p>
+                      {it.result && (
+                        <div className="mt-4 pt-4 border-t border-slate-50">
+                          <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
+                            RÉSULTAT : {it.result.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
       </div>
       <ChatBox />
-    </div>
+    </BaseLayout>
   );
 }

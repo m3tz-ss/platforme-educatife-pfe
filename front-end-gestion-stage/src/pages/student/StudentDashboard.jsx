@@ -114,83 +114,145 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
     || offer.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-      <div className="flex items-center gap-3 mb-1">
+    <div 
+      className="group p-4 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer"
+      onClick={() => onOpen(offer)}
+    >
+      <div className="flex items-center gap-4 mb-3">
         {/* ✅ Logo entreprise */}
-        <div className="w-9 h-9 rounded-lg overflow-hidden border border-blue-gray-100 flex-shrink-0 flex items-center justify-center bg-blue-50">
+        <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-gray-100 flex-shrink-0 flex items-center justify-center bg-white shadow-sm group-hover:shadow-md transition-shadow">
           {offer.enterprise?.logo_url ? (
             <img
               src={offer.enterprise.logo_url}
               alt={offer.enterprise?.company_name || "Logo"}
-              className="w-full h-full object-contain p-0.5"
+              className="w-full h-full object-contain p-1"
             />
           ) : (
-            <span className="text-blue-700 font-bold text-sm">{companyInitial}</span>
+            <span className="text-blue-700 font-bold text-lg">{companyInitial}</span>
           )}
         </div>
-        <Typography variant="h6" className="text-blue-gray-900 font-bold">{offer.title}</Typography>
+        <div className="flex-1 min-w-0">
+          <Typography variant="h6" className="text-blue-gray-900 font-bold truncate group-hover:text-blue-600 transition-colors">
+            {offer.title}
+          </Typography>
+          <Typography className="text-sm text-blue-500 font-medium">
+            {offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}
+          </Typography>
+        </div>
+        {applied && (
+          <Chip value="Postulé" color="green" size="sm" variant="ghost" className="rounded-full" />
+        )}
       </div>
-      <Typography className="text-sm text-blue-500 font-medium mb-2 ml-12">{offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}</Typography>
 
-      <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-3">
-        <span className="flex items-center gap-1"><MapPinIcon className="w-3 h-3" /> {offer.location || "N/A"}</span>
-        <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" /> {offer.duration || "N/A"}</span>
-        <span className="flex items-center gap-1">📅 {formatDate(offer.start_date)}</span>
-        <span className="flex items-center gap-1">👥 {offer.available_places ? `${offer.available_places} place(s)` : "N/A"}</span>
+      <div className="flex flex-wrap gap-3 text-xs text-blue-gray-600 mb-3 ml-1">
+        <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-md border border-blue-gray-50">
+          <MapPinIcon className="w-3.5 h-3.5 text-blue-400" /> {offer.location || "N/A"}
+        </span>
+        <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-md border border-blue-gray-50">
+          <ClockIcon className="w-3.5 h-3.5 text-purple-400" /> {offer.duration || "N/A"}
+        </span>
+        <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-md border border-blue-gray-50">
+          <CalendarIcon className="w-3.5 h-3.5 text-green-400" /> {formatDate(offer.start_date)}
+        </span>
       </div>
 
-      {/* ✅ Email et Téléphone */}
-      {(offer.enterprise?.email || offer.enterprise?.phone) && (
-        <div className="bg-gray-50 p-2 rounded mb-3 space-y-1">
-          {offer.enterprise?.email && (
-            <Tooltip title="Cliquez pour copier" placement="bottom">
-              <div
+      <div className="flex items-center justify-between mt-2">
+        <div className="flex gap-2">
+           {offer.enterprise?.email && (
+            <Tooltip content="Copier l'email">
+              <IconButton 
+                size="sm" 
+                variant="text" 
+                color="blue" 
+                className="bg-blue-50 rounded-lg h-8 w-8"
                 onClick={(e) => copyToClipboard(offer.enterprise.email, "Email", e)}
-                className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-1 rounded transition text-xs"
               >
-                <EnvelopeIcon className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                <span className="text-blue-700 font-semibold truncate">{offer.enterprise.email}</span>
-              </div>
+                <EnvelopeIcon className="w-4 h-4" />
+              </IconButton>
             </Tooltip>
           )}
           {offer.enterprise?.phone && (
-            <Tooltip title="Cliquez pour copier" placement="bottom">
-              <div
+            <Tooltip content="Copier le téléphone">
+              <IconButton 
+                size="sm" 
+                variant="text" 
+                color="green" 
+                className="bg-green-50 rounded-lg h-8 w-8"
                 onClick={(e) => copyToClipboard(offer.enterprise.phone, "Téléphone", e)}
-                className="flex items-center gap-2 cursor-pointer hover:bg-green-100 p-1 rounded transition text-xs"
               >
-                <PhoneIcon className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                <span className="text-green-700 font-semibold truncate">{offer.enterprise.phone}</span>
-              </div>
+                <PhoneIcon className="w-4 h-4" />
+              </IconButton>
             </Tooltip>
           )}
         </div>
-      )}
-
-      <Button size="sm" color={applied ? "green" : "blue"} variant="outlined" className="text-xs" onClick={() => onOpen(offer)} disabled={applied}>
-        {applied ? "✓ Déjà postulé" : "Postuler"}
-      </Button>
+        <Typography variant="small" className="text-blue-600 font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          Voir détails <span className="text-lg">→</span>
+        </Typography>
+      </div>
     </div>
   );
 });
 OfferCard.displayName = "OfferCard";
 
 // ─── ApplicationCard ──────────────────────────────────────────────────────────
-const ApplicationCard = memo(({ app }) => (
-  <div className="pb-4 border-b border-blue-gray-50 last:border-b-0 last:pb-0">
-    <Typography variant="h6" className="text-blue-gray-900 font-bold mb-1">{app.offer?.title || "Offre inconnue"}</Typography>
-    <Typography className="text-sm text-blue-500 font-medium mb-1">{app.offer?.enterprise?.name || "Entreprise"}</Typography>
-    <div className="flex flex-wrap gap-2 text-xs text-blue-gray-600 mb-2">
-      <span>📍 {app.offer?.location || "N/A"}</span>
-      <span>⏱️ {app.offer?.duration || "N/A"}</span>
-      <span>📅 Début : {formatDate(app.offer?.start_date)}</span>
+const ApplicationCard = memo(({ app, onOpen }) => {
+  const offer = app.offer;
+  const companyInitial = offer?.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
+
+  return (
+    <div 
+      className="group p-4 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer"
+      onClick={() => onOpen(offer)}
+    >
+      <div className="flex items-center gap-4 mb-3">
+        <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-gray-100 flex-shrink-0 flex items-center justify-center bg-white shadow-sm group-hover:shadow-md transition-shadow">
+          {offer?.enterprise?.logo_url ? (
+            <img
+              src={offer.enterprise.logo_url}
+              alt={offer.enterprise?.name || "Logo"}
+              className="w-full h-full object-contain p-1"
+            />
+          ) : (
+            <span className="text-blue-700 font-bold text-lg">{companyInitial}</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <Typography variant="h6" className="text-blue-gray-900 font-bold truncate group-hover:text-blue-600 transition-colors">
+            {offer?.title || "Offre inconnue"}
+          </Typography>
+          <Typography className="text-sm text-blue-500 font-medium">
+            {offer?.enterprise?.name || "Entreprise"}
+          </Typography>
+        </div>
+        <Chip 
+          value={statusLabel(app.status)} 
+          color={statusColor(app.status)} 
+          size="sm" 
+          variant="ghost" 
+          className="rounded-full font-bold"
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-xs text-blue-gray-600 mb-3 ml-1">
+        <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-md border border-blue-gray-50">
+          <MapPinIcon className="w-3.5 h-3.5 text-blue-400" /> {offer?.location || "N/A"}
+        </span>
+        <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-md border border-blue-gray-50">
+          <ClockIcon className="w-3.5 h-3.5 text-purple-400" /> {offer?.duration || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-blue-gray-50/50">
+        <Typography className="text-[10px] uppercase tracking-wider text-blue-gray-400 font-bold">
+          Postulé le {formatDate(app.created_at)}
+        </Typography>
+        <Typography variant="small" className="text-blue-600 font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          Détails <span className="text-lg">→</span>
+        </Typography>
+      </div>
     </div>
-    <div className="flex items-center justify-between">
-      <Typography className="text-xs text-blue-gray-500">Postulé le {formatDate(app.created_at)}</Typography>
-      <Chip value={statusLabel(app.status)} color={statusColor(app.status)} size="sm" variant="ghost" />
-    </div>
-  </div>
-));
+  );
+});
 ApplicationCard.displayName = "ApplicationCard";
 
 // ─── AIRecommendationCard (AVEC EMAIL ET TÉLÉPHONE) ──────────────────────────
@@ -212,7 +274,7 @@ const AIRecommendationCard = memo(
     return (
       <div
         className="rounded-lg overflow-hidden text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full flex flex-col"
-        onClick={() => onOpenDetails(offer)}
+        onClick={() => onOpenDetails(offer, rec)}
       >
         {/* Header gradient */}
         <div className={`bg-gradient-to-br ${gradient.card} p-6 pb-12 relative flex-shrink-0`}>
@@ -305,7 +367,7 @@ const AIRecommendationCard = memo(
               color="blue"
               onClick={(e) => {
                 e.stopPropagation();
-                onOpenDetails(offer);
+                onOpenDetails(offer, rec);
               }}
             >
               Détails
@@ -477,6 +539,7 @@ export function StudentDashboard() {
   const [userData, setUserData] = useState(null);
 
   // ── État IA ────────────────────────────────────────────────────────────────
+  const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState([]);
   const [aiError, setAiError] = useState(null);
@@ -612,8 +675,9 @@ export function StudentDashboard() {
     interview: interviewCount, accepted: acceptedCount,
   }), [applications.length, offers.length, interviewCount, acceptedCount]);
 
-  const handleOpenDetails = useCallback((offer) => {
+  const handleOpenDetails = useCallback((offer, recommendation = null) => {
     setSelectedOffer(offer);
+    setSelectedRecommendation(recommendation);
     setOpenModal(true);
     setActiveTab("description");
     setIsSaved(false);
@@ -730,7 +794,7 @@ export function StudentDashboard() {
           Bonjour, {userName} 👋
         </Typography>
         <Typography variant="small" className="text-blue-gray-500">
-          Voici un aperçu de votre activité
+         
         </Typography>
       </div>
 
@@ -786,7 +850,7 @@ export function StudentDashboard() {
               <Typography className="text-center text-blue-gray-500 py-4">Aucune candidature encore</Typography>
             ) : (
               topApplications.map((app) => (
-                <ApplicationCard key={app.id} app={app} />
+                <ApplicationCard key={app.id} app={app} onOpen={handleOpenDetails} />
               ))
             )}
           </CardBody>
@@ -919,24 +983,75 @@ export function StudentDashboard() {
 
       {/* ✅ MODAL AVEC COORDONNÉES COMPLÈTES */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
-        <DialogHeader className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6">
-          <Typography variant="h5" className="font-bold">{selectedOffer?.title}</Typography>
-          <IconButton variant="text" color="white" onClick={handleCloseModal}>
-            <XMarkIcon className="w-6 h-6" />
-          </IconButton>
+        <DialogHeader className={`flex flex-col p-0 overflow-hidden rounded-t-xl`}>
+          <div className={`w-full bg-gradient-to-r from-blue-600 to-indigo-700 p-6 relative min-h-[120px] flex flex-col justify-end`}>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              {selectedRecommendation && (
+                <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-white/30">
+                  AI Score {selectedRecommendation.score}%
+                </div>
+              )}
+              <IconButton variant="text" color="white" onClick={handleCloseModal} className="rounded-full bg-white/10 hover:bg-white/20">
+                <XMarkIcon className="w-5 h-5" />
+              </IconButton>
+            </div>
+            
+            {selectedOffer?.enterprise?.logo_url && (
+              <div className="absolute -bottom-6 right-8 w-20 h-20 rounded-2xl overflow-hidden bg-white shadow-xl border-4 border-white flex items-center justify-center p-2 z-10">
+                <img
+                  src={selectedOffer.enterprise.logo_url}
+                  alt={selectedOffer.enterprise?.company_name || "Logo"}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+
+            <Typography variant="h4" className="text-white font-bold pr-24 line-clamp-2">
+              {selectedOffer?.title}
+            </Typography>
+            <Typography variant="small" className="text-blue-100 font-medium mt-1">
+              {selectedOffer?.enterprise?.company_name || selectedOffer?.enterprise?.name}
+            </Typography>
+          </div>
         </DialogHeader>
 
-        <DialogBody divider className="max-h-[70vh] overflow-y-auto p-6">
+        <DialogBody divider className="max-h-[70vh] overflow-y-auto p-0 border-none">
           {selectedOffer && (
-            <div className="space-y-6">
+            <div className="p-6 space-y-6">
+              {/* 🤖 AI Reason if available */}
+              {selectedRecommendation && (
+                <div className="bg-gradient-to-r from-violet-50 to-indigo-50 p-4 rounded-xl border border-indigo-100 flex gap-4 items-start shadow-sm mb-4">
+                  <div className="p-2 bg-indigo-100 rounded-lg shrink-0">
+                    <SparklesIcon className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <Typography variant="small" className="font-bold text-indigo-900 mb-1">
+                      Pourquoi cette offre vous correspond :
+                    </Typography>
+                    <Typography variant="small" className="text-indigo-800 leading-relaxed italic">
+                      "{selectedRecommendation.reason}"
+                    </Typography>
+                  </div>
+                </div>
+              )}
+
               {/* Tags */}
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">🏢 {selectedOffer.enterprise?.company_name || selectedOffer.enterprise?.name || "Non spécifiée"}</span>
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">📍 {selectedOffer.location || "N/A"}</span>
-                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">⏱️ {selectedOffer.duration || "N/A"}</span>
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">📅 Début : {formatDate(selectedOffer.start_date)}</span>
-                <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium">👥 {selectedOffer.available_places ? `${selectedOffer.available_places} place(s)` : "N/A"}</span>
-                <span className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-medium">💼 {selectedOffer.domain || "N/A"}</span>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-100">
+                  📍 {selectedOffer.location || "N/A"}
+                </span>
+                <span className="flex items-center gap-1.5 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-purple-100">
+                  ⏱️ {selectedOffer.duration || "N/A"}
+                </span>
+                <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-green-100">
+                  📅 Début : {formatDate(selectedOffer.start_date)}
+                </span>
+                <span className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-100">
+                  👥 {selectedOffer.available_places ? `${selectedOffer.available_places} places` : "N/A"}
+                </span>
+                <span className="flex items-center gap-1.5 bg-cyan-50 text-cyan-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-cyan-100">
+                  💼 {selectedOffer.domain || "N/A"}
+                </span>
               </div>
 
               {/* Tabs */}

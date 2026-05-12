@@ -129,7 +129,10 @@ export default function EnterpriseDashboard() {
         <EnterpriseSidebarHeader 
           enterpriseName={userData?.company_name || enterpriseName} 
           logoUrl={userData?.logo_url} 
+          logo={userData?.logo}
           roleConfig={currentRole} 
+          name={userData?.name}
+          email={userData?.email}
         />
       }
       sidebarExtra={sidebarExtra}

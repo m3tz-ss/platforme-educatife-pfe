@@ -35,6 +35,10 @@ import {
   ChatBubbleLeftIcon,
   UserCircleIcon,
   XMarkIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  SparklesIcon,
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -389,38 +393,39 @@ export default function OffersCatalog() {
               return (
                 <Card
                   key={offer.id}
-                  className="shadow-sm border border-blue-gray-100 hover:shadow-lg transition overflow-hidden flex flex-col"
+                  className="group shadow-sm border border-blue-gray-100 hover:shadow-xl hover:border-blue-100 hover:bg-blue-50/10 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
+                  onClick={() => handleOpenDetails(offer)}
                 >
                   <CardHeader
                     floated={false}
                     shadow={false}
                     color="transparent"
-                    className="m-0 p-6 flex items-start justify-between"
+                    className="m-0 p-5 flex items-start justify-between"
                   >
-                    <div className={`w-12 h-12 rounded-lg overflow-hidden border border-blue-gray-100 flex items-center justify-center font-bold text-lg ${offer.enterprise?.logo_url ? "bg-white" : colorClass}`}>
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-blue-gray-100 flex items-center justify-center bg-white shadow-sm group-hover:shadow-md transition-shadow">
                       {offer.enterprise?.logo_url ? (
                         <img
                           src={offer.enterprise.logo_url}
                           alt={offer.enterprise?.company_name || "Logo"}
-                          className="w-full h-full object-contain p-1"
+                          className="w-full h-full object-contain p-1.5"
                         />
                       ) : (
-                        initial
+                        <span className="text-blue-700 font-bold text-xl">{initial}</span>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-2">
                       <Chip
                         value={offer.domain || "Autre"}
                         variant="ghost"
                         size="sm"
-                        className={`${categoryStyle} text-xs`}
+                        className={`${categoryStyle} text-[10px] font-bold uppercase px-2 rounded-lg`}
                       />
                       {applied && (
                         <Chip
                           value="✓ Postulé"
                           variant="ghost"
                           size="sm"
-                          className="bg-green-100 text-green-700 text-xs"
+                          className="bg-green-100 text-green-700 text-[10px] font-bold uppercase px-2 rounded-lg"
                         />
                       )}
                       {offer.is_full && (
@@ -428,56 +433,59 @@ export default function OffersCatalog() {
                           value="⚠️ Complet"
                           variant="ghost"
                           size="sm"
-                          className="bg-red-100 text-red-700 text-xs"
+                          className="bg-red-100 text-red-700 text-[10px] font-bold uppercase px-2 rounded-lg"
                         />
                       )}
                     </div>
                   </CardHeader>
 
-                  <CardBody className="p-6 flex-1 flex flex-col">
-                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-1">
+                  <CardBody className="px-6 pb-6 pt-0 flex-1 flex flex-col">
+                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                       {offer.title}
                     </Typography>
                     <Typography className="text-sm text-blue-500 font-medium mb-3">
                       {offer.enterprise?.company_name || offer.enterprise?.name || "Entreprise"}
                     </Typography>
-                    <Typography className="text-sm text-blue-gray-600 mb-4 line-clamp-2 flex-1">
-                      {offer.description}
+                    <Typography className="text-sm text-blue-gray-500 mb-5 line-clamp-2 leading-relaxed italic">
+                      "{offer.description}"
                     </Typography>
 
-                    {/* ✅ Tous les champs en snake_case */}
-                    <div className="space-y-2 mb-4 text-sm text-blue-gray-600">
-                      <div className="flex items-center gap-2">
-                        <MapPinIcon className="w-4 h-4 text-blue-400" />
-                        <span>{offer.location || "N/A"}</span>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-6">
+                      <div className="flex items-center gap-2 text-xs text-blue-gray-600 bg-white/50 px-2 py-1.5 rounded-lg border border-blue-gray-50">
+                        <MapPinIcon className="w-3.5 h-3.5 text-blue-400" />
+                        <span className="truncate">{offer.location || "N/A"}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <ClockIcon className="w-4 h-4 text-blue-400" />
-                        <span>{offer.duration || "N/A"}</span>
+                      <div className="flex items-center gap-2 text-xs text-blue-gray-600 bg-white/50 px-2 py-1.5 rounded-lg border border-blue-gray-50">
+                        <ClockIcon className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="truncate">{offer.duration || "N/A"}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-blue-400" />
-                        <span>Début : {formatDate(offer.start_date)}</span>
+                      <div className="flex items-center gap-2 text-xs text-blue-gray-600 bg-white/50 px-2 py-1.5 rounded-lg border border-blue-gray-50">
+                        <CalendarIcon className="w-3.5 h-3.5 text-green-400" />
+                        <span className="truncate">{formatDate(offer.start_date)}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <UsersIcon className="w-4 h-4 text-blue-400" />
-                        <span>
-                          {offer.available_places
-                            ? `${offer.available_places} place(s) disponible(s)`
-                            : "Places N/A"}
-                        </span>
+                      <div className="flex items-center gap-2 text-xs text-blue-gray-600 bg-white/50 px-2 py-1.5 rounded-lg border border-blue-gray-50">
+                        <UsersIcon className="w-3.5 h-3.5 text-orange-400" />
+                        <span className="truncate">{offer.available_places || 0} places</span>
                       </div>
                     </div>
 
-                    <Button
-                      color={applied ? "green" : offer.is_full ? "red" : "blue"}
-                      fullWidth
-                      onClick={() => handleOpenDetails(offer)}
-                      className="mt-auto"
-                      variant={applied || offer.is_full ? "outlined" : "filled"}
-                    >
-                      {applied ? "✓ Déjà postulé" : offer.is_full ? "⚠️ Offre Complète" : "Voir & Postuler"}
-                    </Button>
+                    <div className="flex items-center justify-between mt-auto">
+                       <Typography variant="small" className="text-blue-600 font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Détails <span className="text-lg">→</span>
+                      </Typography>
+                      <Button
+                        size="sm"
+                        color={applied ? "green" : offer.is_full ? "red" : "blue"}
+                        variant={applied || offer.is_full ? "outlined" : "filled"}
+                        className="rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDetails(offer);
+                        }}
+                      >
+                        {applied ? "✓ Déjà postulé" : offer.is_full ? "Offre Complète" : "Postuler"}
+                      </Button>
+                    </div>
                   </CardBody>
                 </Card>
               );
@@ -519,70 +527,83 @@ export default function OffersCatalog() {
 
       {/* Modal Détails */}
       <Dialog open={openModal} handler={handleCloseModal} size="lg">
-        <DialogHeader className="flex justify-between items-center">
-          <Typography variant="h5" className="font-bold">
-            {selectedOffer?.title}
-          </Typography>
-          <IconButton variant="text" color="blue-gray" onClick={handleCloseModal}>
-            <XMarkIcon className="w-6 h-6" />
-          </IconButton>
+        <DialogHeader className={`flex flex-col p-0 overflow-hidden rounded-t-xl`}>
+          <div className={`w-full bg-gradient-to-r from-blue-600 to-indigo-700 p-6 relative min-h-[120px] flex flex-col justify-end`}>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <IconButton variant="text" color="white" onClick={handleCloseModal} className="rounded-full bg-white/10 hover:bg-white/20">
+                <XMarkIcon className="w-5 h-5" />
+              </IconButton>
+            </div>
+            
+            {selectedOffer?.enterprise?.logo_url && (
+              <div className="absolute -bottom-6 right-8 w-20 h-20 rounded-2xl overflow-hidden bg-white shadow-xl border-4 border-white flex items-center justify-center p-2 z-10">
+                <img
+                  src={selectedOffer.enterprise.logo_url}
+                  alt={selectedOffer.enterprise?.company_name || "Logo"}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+
+            <Typography variant="h4" className="text-white font-bold pr-24 line-clamp-2">
+              {selectedOffer?.title}
+            </Typography>
+            <Typography variant="small" className="text-blue-100 font-medium mt-1">
+              {selectedOffer?.enterprise?.company_name || selectedOffer?.enterprise?.name}
+            </Typography>
+          </div>
         </DialogHeader>
 
-        <DialogBody divider className="max-h-[70vh] overflow-y-auto">
+        <DialogBody divider className="max-h-[70vh] overflow-y-auto p-0 border-none">
           {selectedOffer && (
-            <div className="space-y-6">
-              {/* ✅ Tous les badges avec snake_case */}
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-                  🏢 {selectedOffer.enterprise?.company_name || selectedOffer.enterprise?.name || "Non spécifiée"}
-                </span>
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
+            <div className="p-6 space-y-6">
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-100">
                   📍 {selectedOffer.location || "Non spécifié"}
                 </span>
-                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                <span className="flex items-center gap-1.5 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-purple-100">
                   ⏱️ {selectedOffer.duration || "N/A"}
                 </span>
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">
+                <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-green-100">
                   📅 Début : {formatDate(selectedOffer.start_date)}
                 </span>
-                <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium">
-                  👥 {selectedOffer.available_places
-                    ? `${selectedOffer.available_places} place(s)`
-                    : "Places N/A"}
+                <span className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-100">
+                  👥 {selectedOffer.available_places || 0} places
                 </span>
-                <span className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-medium">
+                <span className="flex items-center gap-1.5 bg-cyan-50 text-cyan-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-cyan-100">
                   💼 {selectedOffer.domain || "N/A"}
                 </span>
                 {selectedOffer.is_full && (
-                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                  <span className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold animate-pulse">
                     ⚠️ OFFRE COMPLÈTE
                   </span>
                 )}
               </div>
 
               {/* Tabs */}
-              <Tabs value={activeTab}>
-                <TabsHeader>
-                  <Tab value="description" onClick={() => setActiveTab("description")} className="cursor-pointer">
+              <Tabs value={activeTab} className="w-full">
+                <TabsHeader className="mx-6">
+                  <Tab value="description" onClick={() => setActiveTab("description")} className="font-bold text-xs">
                     Description
                   </Tab>
-                  <Tab value="requirements" onClick={() => setActiveTab("requirements")} className="cursor-pointer">
+                  <Tab value="requirements" onClick={() => setActiveTab("requirements")} className="font-bold text-xs">
                     Exigences
                   </Tab>
-                  <Tab value="advantages" onClick={() => setActiveTab("advantages")} className="cursor-pointer">
+                  <Tab value="advantages" onClick={() => setActiveTab("advantages")} className="font-bold text-xs">
                     Avantages
                   </Tab>
-                  <Tab value="company" onClick={() => setActiveTab("company")} className="cursor-pointer">
+                  <Tab value="company" onClick={() => setActiveTab("company")} className="font-bold text-xs">
                     Entreprise
                   </Tab>
                 </TabsHeader>
               </Tabs>
 
               {/* Tab Content */}
-              <div>
+              <div className="px-2">
                 {activeTab === "description" && (
-                  <div>
-                    <Typography variant="h6" className="mb-3 font-semibold">
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Typography variant="h6" className="mb-3 font-bold text-blue-gray-900">
                       À propos de cette offre
                     </Typography>
                     <Typography className="text-blue-gray-700 leading-relaxed">
@@ -592,20 +613,20 @@ export default function OffersCatalog() {
                 )}
 
                 {activeTab === "requirements" && (
-                  <div>
-                    <Typography variant="h6" className="mb-3 font-semibold">
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Typography variant="h6" className="mb-3 font-bold text-blue-gray-900">
                       Compétences requises
                     </Typography>
-                    <ul className="space-y-2">
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {selectedOffer.requirements ? (
                         selectedOffer.requirements.split(",").map((req, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <CheckCircleIcon className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-blue-gray-700">{req.trim()}</span>
+                          <li key={idx} className="flex items-center gap-3 bg-blue-gray-50/50 p-3 rounded-xl border border-blue-gray-100">
+                            <CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                            <span className="text-sm font-medium text-blue-gray-800">{req.trim()}</span>
                           </li>
                         ))
                       ) : (
-                        <Typography className="text-blue-gray-500">
+                        <Typography className="text-blue-gray-500 italic">
                           Aucune exigence spécifiée
                         </Typography>
                       )}
@@ -614,20 +635,20 @@ export default function OffersCatalog() {
                 )}
 
                 {activeTab === "advantages" && (
-                  <div>
-                    <Typography variant="h6" className="mb-3 font-semibold">
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Typography variant="h6" className="mb-3 font-bold text-blue-gray-900">
                       Avantages
                     </Typography>
-                    <ul className="space-y-2">
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {selectedOffer.advantages ? (
                         selectedOffer.advantages.split(",").map((adv, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-yellow-500 mt-0.5">⭐</span>
-                            <span className="text-blue-gray-700">{adv.trim()}</span>
+                          <li key={idx} className="flex items-center gap-3 bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                            <span className="text-xl">⭐</span>
+                            <span className="text-sm font-medium text-blue-gray-800">{adv.trim()}</span>
                           </li>
                         ))
                       ) : (
-                        <Typography className="text-blue-gray-500">
+                        <Typography className="text-blue-gray-500 italic">
                           Aucun avantage spécifié
                         </Typography>
                       )}
@@ -636,42 +657,32 @@ export default function OffersCatalog() {
                 )}
 
                 {activeTab === "company" && (
-                  <div>
-                    {/* Logo entreprise dans le modal */}
-                    {selectedOffer.enterprise?.logo_url && (
-                      <div className="flex justify-center mb-5">
-                        <div className="w-24 h-24 rounded-xl overflow-hidden border border-blue-gray-100 shadow-sm bg-white flex items-center justify-center p-2">
-                          <img
-                            src={selectedOffer.enterprise.logo_url}
-                            alt={selectedOffer.enterprise?.company_name || "Logo entreprise"}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <Typography variant="h6" className="mb-3 font-semibold">
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4">
+                    <Typography variant="h6" className="font-bold text-blue-gray-900">
                       À propos de l'entreprise
                     </Typography>
-                    <Typography className="text-blue-gray-700 leading-relaxed mb-4">
+                    <Typography className="text-blue-gray-700 leading-relaxed">
                       {selectedOffer.enterprise?.company_description || selectedOffer.enterprise?.bio || "Information non disponible"}
                     </Typography>
-                    <div className="space-y-2">
-                      <Typography className="text-sm text-blue-gray-600">
-                        <strong>Email :</strong>{" "}
-                        {selectedOffer.enterprise?.email || "N/A"}
-                      </Typography>
-                      <Typography className="text-sm text-blue-gray-600">
-                        <strong>Téléphone :</strong>{" "}
-                        {selectedOffer.enterprise?.phone || "N/A"}
-                      </Typography>
-                      <Typography className="text-sm text-blue-gray-600">
-                        <strong>Site web :</strong>{" "}
-                        {selectedOffer.enterprise?.company_website && selectedOffer.enterprise.company_website !== "N/A" ? (
-                          <a href={selectedOffer.enterprise.company_website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                            {selectedOffer.enterprise.company_website}
-                          </a>
-                        ) : "N/A"}
-                      </Typography>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedOffer.enterprise?.email && (
+                        <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                          <EnvelopeIcon className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-blue-400">Email</p>
+                            <p className="text-sm font-bold text-blue-900">{selectedOffer.enterprise.email}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedOffer.enterprise?.phone && (
+                        <div className="flex items-center gap-3 bg-green-50 p-3 rounded-xl border border-green-100">
+                          <PhoneIcon className="w-5 h-5 text-green-600" />
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-green-400">Téléphone</p>
+                            <p className="text-sm font-bold text-green-900">{selectedOffer.enterprise.phone}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
