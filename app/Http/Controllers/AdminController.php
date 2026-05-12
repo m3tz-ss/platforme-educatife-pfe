@@ -14,11 +14,11 @@ class AdminController extends Controller
     public function dashboard()
     {
         return response()->json([
-            'students'    => User::where('type', 'student')->count(),
+            'students' => User::where('type', 'student')->count(),
             'enterprises' => User::where('type', 'enterprise')->count(),
-            'offers'      => Offer::count(),
-            'applications'=> Application::count(),
-            'interviews'  => Interview::count(),
+            'offers' => Offer::count(),
+            'applications' => Application::count(),
+            'interviews' => Interview::count(),
 
             // Statuts des candidatures pour le doughnut chart
             'applications_by_status' => Application::selectRaw('status, count(*) as count')
@@ -36,9 +36,9 @@ class AdminController extends Controller
                 ->get(['id', 'name', 'email', 'created_at']),
 
             'latest_applications' => Application::with([
-                    'student:id,name,email',
-                    'offer:id,title',
-                ])
+                'student:id,name,email',
+                'offer:id,title',
+            ])
                 ->latest()
                 ->take(5)
                 ->get(['id', 'status', 'student_id', 'offer_id', 'created_at']),
@@ -106,24 +106,24 @@ class AdminController extends Controller
     public function createUser(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'type'     => 'required|in:student,enterprise',
-            'role'     => 'nullable|in:manager,rh,encadrant',
+            'type' => 'required|in:student,enterprise',
+            'role' => 'nullable|in:manager,rh,encadrant',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'type'     => $request->type,
-            'role'     => $request->type === 'enterprise' ? $request->role : null,
+            'type' => $request->type,
+            'role' => $request->type === 'enterprise' ? $request->role : null,
         ]);
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
-            'user'    => array_merge($user->toArray(), ['is_blocked' => false]),
+            'user' => array_merge($user->toArray(), ['is_blocked' => false]),
         ], 201);
     }
     // ── Statistiques avancées (Graphes) ────────────────────────────────────────
@@ -133,9 +133,9 @@ class AdminController extends Controller
 
         // Format de groupement PHP (Carbon)
         $format = match ($period) {
-            'day'   => 'Y-m-d',
+            'day' => 'Y-m-d',
             'month' => 'Y-m',
-            'year'  => 'Y',
+            'year' => 'Y',
             default => 'Y-m',
         };
 
@@ -145,19 +145,19 @@ class AdminController extends Controller
                 ->groupBy(function ($item) use ($format) {
                     return \Carbon\Carbon::parse($item->created_at)->format($format);
                 })
-                ->map(fn ($group) => $group->count());
+                ->map(fn($group) => $group->count());
         };
 
         $usersGroups = $groupAndCount(User::query());
         $offersGroups = $groupAndCount(Offer::query());
         $applicationsGroups = $groupAndCount(Application::query());
-        
+
         $acceptedApplicationsGroups = Application::where('status', 'acceptee')
             ->get(['id', 'created_at'])
             ->groupBy(function ($item) use ($format) {
                 return \Carbon\Carbon::parse($item->created_at)->format($format);
             })
-            ->map(fn ($group) => $group->count());
+            ->map(fn($group) => $group->count());
 
         // Compiler tous les labels (dates) uniques
         $allLabels = collect([
@@ -168,20 +168,20 @@ class AdminController extends Controller
 
         // Construire les datasets synchronisés sur les labels
         $data = [
-            'labels'      => $allLabels,
-            'users'       => [],
-            'offers'      => [],
-            'applications'=> [],
+            'labels' => $allLabels,
+            'users' => [],
+            'offers' => [],
+            'applications' => [],
             'acceptance_rate' => [],
         ];
 
         foreach ($allLabels as $label) {
             $data['users'][] = $usersGroups->get($label, 0);
             $data['offers'][] = $offersGroups->get($label, 0);
-            
+
             $appsCount = $applicationsGroups->get($label, 0);
             $data['applications'][] = $appsCount;
-            
+
             $acceptedCount = $acceptedApplicationsGroups->get($label, 0);
             $rate = $appsCount > 0 ? round(($acceptedCount / $appsCount) * 100, 1) : 0;
             $data['acceptance_rate'][] = $rate;

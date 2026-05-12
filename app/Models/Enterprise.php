@@ -44,9 +44,9 @@ class Enterprise extends Model
     {
         return $this->hasMany(Offer::class, 'enterprise_id');
     }
-     public function users()
+    public function users()
     {
-        return $this->hasMany(User::class, 'enterprise_id'); 
+        return $this->hasMany(User::class, 'enterprise_id');
         // 'enterprise_id' est la clé étrangère dans la table users
     }
 }

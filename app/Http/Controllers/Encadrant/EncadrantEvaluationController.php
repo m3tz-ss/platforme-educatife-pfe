@@ -16,19 +16,30 @@ class EncadrantEvaluationController extends Controller
     ) {}
 
     public function show(Request $request, int $applicationId)
-{
-    $user = $request->user();
-    $this->supervision->ensureEncadrant($user);
+    {
+        $user = $request->user();
+        $this->supervision->ensureEncadrant($user);
 
-    $evaluation = $this->evaluations->show($user->id, $applicationId);
+        $evaluation = $this->evaluations->show($user->id, $applicationId);
 
-    // ✅ Retourner null proprement si pas encore d'évaluation
-    if (!$evaluation) {
-        return response()->json(null, 200);
+        // ✅ Retourner null proprement si pas encore d'évaluation
+        if (!$evaluation) {
+            return response()->json(null, 200);
+        }
+
+        return new EvaluationResource($evaluation);
     }
 
-    return new EvaluationResource($evaluation);
-}
+    public function history(Request $request)
+    {
+        $user = $request->user();
+        $this->supervision->ensureEncadrant($user);
+
+        $perPage = (int) $request->query('per_page', 15);
+        $evaluations = $this->evaluations->history($user->id, $perPage);
+
+        return EvaluationResource::collection($evaluations);
+    }
 
 public function upsert(Request $request, int $applicationId)
 {

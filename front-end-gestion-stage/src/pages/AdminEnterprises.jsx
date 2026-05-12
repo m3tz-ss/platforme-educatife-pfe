@@ -161,11 +161,10 @@ function Toast({ toast }) {
   if (!toast) return null;
   return (
     <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-sm text-xs font-medium border transition-all ${
-        toast.type === "error"
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-sm text-xs font-medium border transition-all ${toast.type === "error"
           ? "bg-red-50 text-red-600 border-red-100"
           : "bg-green-50 text-green-700 border-green-100"
-      }`}
+        }`}
     >
       {toast.type === "error" ? (
         <XMarkIcon className="w-3.5 h-3.5 shrink-0" />
@@ -428,11 +427,10 @@ export default function AdminEnterprises() {
                     <button
                       key={p}
                       onClick={() => setPage(p)}
-                      className={`w-7 h-7 text-xs font-medium rounded-lg transition-colors ${
-                        safePage === p
+                      className={`w-7 h-7 text-xs font-medium rounded-lg transition-colors ${safePage === p
                           ? "bg-gray-900 text-white"
                           : "border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {p}
                     </button>

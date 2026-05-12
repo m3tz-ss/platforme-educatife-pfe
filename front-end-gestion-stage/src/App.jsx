@@ -33,6 +33,7 @@ const Manager = lazy(() => import("./pages/entreprise/CreateManager"));
 const EncadrantDashboard = lazy(() => import("./pages/entreprise/Encadrantdashboard"));
 const EncadrantStudentDetail = lazy(() => import("./pages/entreprise/EncadrantStudentDetail"));
 const EncadrantTaskDetail = lazy(() => import("./pages/entreprise/EncadrantTaskDetail"));
+const EncadrantEvaluationHistory = lazy(() => import("./pages/entreprise/EncadrantEvaluationHistory"));
 const StudentProfile = lazy(() => import("./pages/student/Studentprofile"));
 const EnterpriseProfile = lazy(() => import("./pages/entreprise/Enterpriseprofile"));
 const EnterpriseLogin = lazy(() => import("./pages/entreprise/EnterpriseLogin"));
@@ -100,6 +101,7 @@ function App() {
         <Route path="/enterprise/encadrant" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantDashboard /></ProtectedRoute>} />
         <Route path="/enterprise/encadrant/student/:applicationId" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantStudentDetail /></ProtectedRoute>} />
         <Route path="/enterprise/encadrant/student/:applicationId/task/:taskId" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantTaskDetail /></ProtectedRoute>} />
+        <Route path="/enterprise/encadrant/evaluations/history" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantEvaluationHistory /></ProtectedRoute>} />
 
         {/* Admin uniquement */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />

@@ -735,7 +735,7 @@ export default function ReceivedApplications() {
                   <div className="border-t border-blue-gray-100"></div>
                   <div>
                     <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">
-                      ✅ Validation du stage (Manager / RH)
+                      ✅ evaluation du stage
                     </Typography>
                     <div className="bg-white rounded-2xl border border-blue-gray-100 p-5 shadow-sm space-y-4">
                       <p className="text-xs text-blue-gray-500 bg-blue-gray-50 border border-blue-gray-100 rounded-xl px-4 py-2.5">

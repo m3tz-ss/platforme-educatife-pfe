@@ -12,12 +12,14 @@ const STATUS_STYLES = {
   nouveau: { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" },
   new_application: { bg: "bg-amber-100", text: "text-amber-700", dot: "bg-amber-500" },
   new_encadrant_assigned: { bg: "bg-cyan-100", text: "text-cyan-700", dot: "bg-cyan-500" },
+  evaluation_submitted: { bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500" },
 };
 
 const getStyle = (notif) => {
   const type = notif.data?.type;
   if (type === "new_application") return STATUS_STYLES.new_application;
   if (type === "new_encadrant_assigned") return STATUS_STYLES.new_encadrant_assigned;
+  if (type === "evaluation_submitted") return STATUS_STYLES.evaluation_submitted;
   const status = notif.data?.new_status;
   return STATUS_STYLES[status] ?? { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" };
 };
@@ -53,7 +55,8 @@ function NotifItem({ notif, onRead }) {
         <span className={`inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full mb-1 ${style.bg} ${style.text}`}>
           {notif.data?.type === "new_application" ? "📩 Candidature" :
             notif.data?.type === "application_status_changed" ? "📬 Statut" :
-              notif.data?.type === "new_encadrant_assigned" ? "👨‍🏫 Encadrant" : "🔔 Notif"}
+              notif.data?.type === "new_encadrant_assigned" ? "👨‍🏫 Encadrant" : 
+                notif.data?.type === "evaluation_submitted" ? "✅ Évaluation" : "🔔 Notif"}
         </span>
 
         {/* Message */}

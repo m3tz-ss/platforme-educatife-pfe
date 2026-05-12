@@ -21,6 +21,7 @@ import {
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
+import NotificationBell from "../../components/layout/NotificationBell";
 import "./css/ManagerDashboard.css";
 
 /* ── Constants ── */
@@ -630,12 +631,15 @@ export default function ManagerApplications() {
               )}
 
               {/* ── Header ── */}
-              <div className="dashboard-header flex-col items-start gap-2">
-                <div>
-                  <p className="dashboard-title">📁 Candidatures & Validations</p>
+              <div className="dashboard-header flex-row items-center justify-between gap-2">
+                <div className="flex-col items-start gap-2">
+                  <p className="dashboard-title">Candidatures & Validations</p>
                   <p className="dashboard-subtitle">
                     Gérez et validez les candidatures reçues par votre entreprise
                   </p>
+                </div>
+                <div className="flex items-center gap-3">
+                   <NotificationBell apiPrefix="rh" />
                 </div>
               </div>
 

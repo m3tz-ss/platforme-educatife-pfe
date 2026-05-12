@@ -53,11 +53,11 @@ const AVATAR_COLORS = [
 const getAvatarGradient = (i) => AVATAR_COLORS[i % AVATAR_COLORS.length];
 
 const STATUS_MAP = {
-  nouveau:          { label: "Nouveau",         cls: "bg-sky-100 text-sky-700 border border-sky-200",        icon: SparklesIcon },
-  preselectionnee:  { label: "Présélectionnée", cls: "bg-amber-100 text-amber-700 border border-amber-200",  icon: ClockIcon },
-  entretien:        { label: "Entretien",        cls: "bg-violet-100 text-violet-700 border border-violet-200", icon: CalendarDaysIcon },
-  acceptee:         { label: "Acceptée",         cls: "bg-emerald-100 text-emerald-700 border border-emerald-200", icon: CheckCircleIcon },
-  refusee:          { label: "Refusée",          cls: "bg-red-100 text-red-700 border border-red-200",       icon: XCircleIcon },
+  nouveau: { label: "Nouveau", cls: "bg-sky-100 text-sky-700 border border-sky-200", icon: SparklesIcon },
+  preselectionnee: { label: "Présélectionnée", cls: "bg-amber-100 text-amber-700 border border-amber-200", icon: ClockIcon },
+  entretien: { label: "Entretien", cls: "bg-violet-100 text-violet-700 border border-violet-200", icon: CalendarDaysIcon },
+  acceptee: { label: "Acceptée", cls: "bg-emerald-100 text-emerald-700 border border-emerald-200", icon: CheckCircleIcon },
+  refusee: { label: "Refusée", cls: "bg-red-100 text-red-700 border border-red-200", icon: XCircleIcon },
 };
 const getStatus = (s) => STATUS_MAP[s] ?? { label: s ?? "—", cls: "bg-gray-100 text-gray-500 border border-gray-200", icon: ClockIcon };
 
@@ -280,199 +280,199 @@ export default function AdminDashboard() {
 
   // ── Stat cards config ──────────────────────────────────────────────────────
   const statCards = [
-    { label: "Étudiants",       value: stats.students,     icon: UsersIcon,                 gradient: "from-blue-400 to-blue-600",    delay: 0   },
-    { label: "Entreprises",     value: stats.enterprises,  icon: BuildingOfficeIcon,        gradient: "from-emerald-400 to-emerald-600", delay: 60  },
-    { label: "Offres de stage", value: stats.offers,       icon: BriefcaseIcon,             gradient: "from-amber-400 to-amber-600",  delay: 120 },
-    { label: "Candidatures",    value: stats.applications, icon: ClipboardDocumentListIcon, gradient: "from-violet-400 to-violet-600", delay: 180 },
+    { label: "Étudiants", value: stats.students, icon: UsersIcon, gradient: "from-blue-400 to-blue-600", delay: 0 },
+    { label: "Entreprises", value: stats.enterprises, icon: BuildingOfficeIcon, gradient: "from-emerald-400 to-emerald-600", delay: 60 },
+    { label: "Offres de stage", value: stats.offers, icon: BriefcaseIcon, gradient: "from-amber-400 to-amber-600", delay: 120 },
+    { label: "Candidatures", value: stats.applications, icon: ClipboardDocumentListIcon, gradient: "from-violet-400 to-violet-600", delay: 180 },
   ];
-const menuItems = getAdminMenuItems({
-  users: stats.students,
-  enterprises: stats.enterprises,
-  offers: stats.offers,
-  applications: stats.applications,
-});
+  const menuItems = getAdminMenuItems({
+    users: stats.students,
+    enterprises: stats.enterprises,
+    offers: stats.offers,
+    applications: stats.applications,
+  });
   return (
     <AdminLayout menuItems={menuItems}>
-    <div className="min-h-screen bg-gray-50/80">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-gray-50/80">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Tableau de bord</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Vue d'ensemble · MyStage
-              <span className="mx-2 text-gray-200">|</span>
-              Mis à jour à {lastUpdated.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-            </p>
+          {/* ── Header ── */}
+          <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Tableau de bord</h1>
+              <p className="text-sm text-gray-400 mt-1">
+                Vue d'ensemble · MyStage
+                <span className="mx-2 text-gray-200">|</span>
+                Mis à jour à {lastUpdated.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchDashboard(true)}
+                className="flex items-center gap-2 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-xl px-3.5 py-2 hover:bg-gray-50 transition-all active:scale-95"
+              >
+                <ArrowPathIcon className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-blue-500" : ""}`} />
+                Actualiser
+              </button>
+              <button className="relative flex items-center justify-center w-9 h-9 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all active:scale-95">
+                <BellIcon className="w-4 h-4 text-gray-500" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => fetchDashboard(true)}
-              className="flex items-center gap-2 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-xl px-3.5 py-2 hover:bg-gray-50 transition-all active:scale-95"
-            >
-              <ArrowPathIcon className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-blue-500" : ""}`} />
-              Actualiser
-            </button>
-            <button className="relative flex items-center justify-center w-9 h-9 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all active:scale-95">
-              <BellIcon className="w-4 h-4 text-gray-500" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-            </button>
+
+          {/* ── Stat cards ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            {statCards.map((c) => (
+              <StatCard key={c.label} {...c} />
+            ))}
           </div>
-        </div>
 
-        {/* ── Stat cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-          {statCards.map((c) => (
-            <StatCard key={c.label} {...c} />
-          ))}
-        </div>
+          {/* ── Charts row ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
 
-        {/* ── Charts row ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-
-          {/* Bar chart — takes 2 cols */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">Statistiques globales</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Répartition par catégorie</p>
+            {/* Bar chart — takes 2 cols */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900">Statistiques globales</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Répartition par catégorie</p>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {[
+                    { label: "Étudiants", color: "bg-blue-500" },
+                    { label: "Entreprises", color: "bg-emerald-500" },
+                    { label: "Offres", color: "bg-amber-500" },
+                    { label: "Candidatures", color: "bg-violet-500" },
+                  ].map((l) => (
+                    <div key={l.label} className="flex items-center gap-1.5">
+                      <div className={`w-2 h-2 rounded-full ${l.color}`} />
+                      <span className="text-xs text-gray-400">{l.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div style={{ height: "240px" }}>
+                <Bar data={barData} options={barOptions} />
+              </div>
+            </div>
+
+            {/* Doughnut — candidatures by status */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">Statuts candidatures</h3>
+              <p className="text-xs text-gray-400 mb-5">
+                {totalStatusSum.toLocaleString()} au total
+              </p>
+              <div style={{ height: "160px" }} className="relative mx-auto" >
+                <Doughnut data={doughnutData} options={doughnutOptions} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-bold text-gray-900">{totalStatusSum}</span>
+                  <span className="text-xs text-gray-400">total</span>
+                </div>
+              </div>
+              <div className="mt-5 space-y-2">
                 {[
-                  { label: "Étudiants",    color: "bg-blue-500"    },
-                  { label: "Entreprises",  color: "bg-emerald-500" },
-                  { label: "Offres",       color: "bg-amber-500"   },
-                  { label: "Candidatures", color: "bg-violet-500"  },
-                ].map((l) => (
-                  <div key={l.label} className="flex items-center gap-1.5">
-                    <div className={`w-2 h-2 rounded-full ${l.color}`} />
-                    <span className="text-xs text-gray-400">{l.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ height: "240px" }}>
-              <Bar data={barData} options={barOptions} />
-            </div>
-          </div>
-
-          {/* Doughnut — candidatures by status */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-sm font-bold text-gray-900 mb-1">Statuts candidatures</h3>
-            <p className="text-xs text-gray-400 mb-5">
-              {totalStatusSum.toLocaleString()} au total
-            </p>
-            <div style={{ height: "160px" }} className="relative mx-auto" >
-              <Doughnut data={doughnutData} options={doughnutOptions} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-bold text-gray-900">{totalStatusSum}</span>
-                <span className="text-xs text-gray-400">total</span>
-              </div>
-            </div>
-            <div className="mt-5 space-y-2">
-              {[
-                { key: "acceptee",        label: "Acceptées",       color: "bg-emerald-500" },
-                { key: "entretien",       label: "En entretien",    color: "bg-violet-500"  },
-                { key: "preselectionnee", label: "Présélectionnées",color: "bg-amber-500"   },
-                { key: "nouveau",         label: "Nouvelles",       color: "bg-sky-500"     },
-                { key: "refusee",         label: "Refusées",        color: "bg-red-500"     },
-              ].map(({ key, label, color }) => {
-                const count = statusCounts[key] ?? 0;
-                const pct = totalStatusSum > 0 ? Math.round((count / totalStatusSum) * 100) : 0;
-                return (
-                  <div key={key} className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${color} shrink-0`} />
-                    <span className="text-xs text-gray-500 flex-1">{label}</span>
-                    <span className="text-xs font-semibold text-gray-700 tabular-nums">{count}</span>
-                    <span className="text-xs text-gray-300 w-8 text-right tabular-nums">{pct}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Latest data — 3 columns ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-          {/* Latest Students */}
-          <SectionCard
-            title="Derniers étudiants"
-            subtitle="Inscrits récemment"
-            icon={UsersIcon}
-            iconBg="bg-blue-50"
-          >
-            {stats.latest_students.length === 0 ? (
-              <EmptyState message="Aucun étudiant" />
-            ) : (
-              <div className="space-y-0.5">
-                {stats.latest_students.map((s, i) => (
-                  <PersonRow key={s.id} name={s.name} email={s.email} index={i} />
-                ))}
-              </div>
-            )}
-          </SectionCard>
-
-          {/* Latest Enterprises */}
-          <SectionCard
-            title="Dernières entreprises"
-            subtitle="Inscrites récemment"
-            icon={BuildingOfficeIcon}
-            iconBg="bg-emerald-50"
-          >
-            {stats.latest_enterprises.length === 0 ? (
-              <EmptyState message="Aucune entreprise" />
-            ) : (
-              <div className="space-y-0.5">
-                {stats.latest_enterprises.map((e, i) => (
-                  <PersonRow key={e.id} name={e.name} email={e.email} index={i + 2} />
-                ))}
-              </div>
-            )}
-          </SectionCard>
-
-          {/* Latest Applications */}
-          <SectionCard
-            title="Dernières candidatures"
-            subtitle="Soumises récemment"
-            icon={ClipboardDocumentListIcon}
-            iconBg="bg-violet-50"
-          >
-            {stats.latest_applications.length === 0 ? (
-              <EmptyState message="Aucune candidature" />
-            ) : (
-              <div className="space-y-0.5">
-                {stats.latest_applications.map((app, i) => {
-                  const studentName =
-                    app.student?.name ?? app.student_name ?? app.name ?? `Candidature #${app.id}`;
-                  const offerTitle =
-                    app.offer?.title ?? app.offer_title ?? app.title ?? "Offre non spécifiée";
-                  const { label, cls } = getStatus(app.status);
+                  { key: "acceptee", label: "Acceptées", color: "bg-emerald-500" },
+                  { key: "entretien", label: "En entretien", color: "bg-violet-500" },
+                  { key: "preselectionnee", label: "Présélectionnées", color: "bg-amber-500" },
+                  { key: "nouveau", label: "Nouvelles", color: "bg-sky-500" },
+                  { key: "refusee", label: "Refusées", color: "bg-red-500" },
+                ].map(({ key, label, color }) => {
+                  const count = statusCounts[key] ?? 0;
+                  const pct = totalStatusSum > 0 ? Math.round((count / totalStatusSum) * 100) : 0;
                   return (
-                    <PersonRow
-                      key={app.id}
-                      name={studentName}
-                      email={offerTitle}
-                      index={i + 4}
-                      extra={
-                        app.status ? (
-                          <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>
-                            {label}
-                          </span>
-                        ) : null
-                      }
-                    />
+                    <div key={key} className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${color} shrink-0`} />
+                      <span className="text-xs text-gray-500 flex-1">{label}</span>
+                      <span className="text-xs font-semibold text-gray-700 tabular-nums">{count}</span>
+                      <span className="text-xs text-gray-300 w-8 text-right tabular-nums">{pct}%</span>
+                    </div>
                   );
                 })}
               </div>
-            )}
-          </SectionCard>
+            </div>
+          </div>
+
+          {/* ── Latest data — 3 columns ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            {/* Latest Students */}
+            <SectionCard
+              title="Derniers étudiants"
+              subtitle="Inscrits récemment"
+              icon={UsersIcon}
+              iconBg="bg-blue-50"
+            >
+              {stats.latest_students.length === 0 ? (
+                <EmptyState message="Aucun étudiant" />
+              ) : (
+                <div className="space-y-0.5">
+                  {stats.latest_students.map((s, i) => (
+                    <PersonRow key={s.id} name={s.name} email={s.email} index={i} />
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+
+            {/* Latest Enterprises */}
+            <SectionCard
+              title="Dernières entreprises"
+              subtitle="Inscrites récemment"
+              icon={BuildingOfficeIcon}
+              iconBg="bg-emerald-50"
+            >
+              {stats.latest_enterprises.length === 0 ? (
+                <EmptyState message="Aucune entreprise" />
+              ) : (
+                <div className="space-y-0.5">
+                  {stats.latest_enterprises.map((e, i) => (
+                    <PersonRow key={e.id} name={e.name} email={e.email} index={i + 2} />
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+
+            {/* Latest Applications */}
+            <SectionCard
+              title="Dernières candidatures"
+              subtitle="Soumises récemment"
+              icon={ClipboardDocumentListIcon}
+              iconBg="bg-violet-50"
+            >
+              {stats.latest_applications.length === 0 ? (
+                <EmptyState message="Aucune candidature" />
+              ) : (
+                <div className="space-y-0.5">
+                  {stats.latest_applications.map((app, i) => {
+                    const studentName =
+                      app.student?.name ?? app.student_name ?? app.name ?? `Candidature #${app.id}`;
+                    const offerTitle =
+                      app.offer?.title ?? app.offer_title ?? app.title ?? "Offre non spécifiée";
+                    const { label, cls } = getStatus(app.status);
+                    return (
+                      <PersonRow
+                        key={app.id}
+                        name={studentName}
+                        email={offerTitle}
+                        index={i + 4}
+                        extra={
+                          app.status ? (
+                            <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>
+                              {label}
+                            </span>
+                          ) : null
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </SectionCard>
+          </div>
+
         </div>
 
       </div>
-      
-    </div>
     </AdminLayout>
   );
 }

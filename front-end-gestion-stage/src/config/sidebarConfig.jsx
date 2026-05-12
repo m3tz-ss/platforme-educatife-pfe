@@ -32,6 +32,7 @@ export function getEnterpriseMenuItems(counts = {}, role = "rh") {
   if (role === "encadrant") {
     return [
       { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/encadrant", badge: null },
+      { icon: ClipboardDocumentListIcon, label: "Historique Évaluations", path: "/enterprise/encadrant/evaluations/history", badge: null },
     ];
   }
 

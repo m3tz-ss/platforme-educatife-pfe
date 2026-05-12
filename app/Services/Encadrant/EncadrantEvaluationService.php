@@ -24,6 +24,14 @@ class EncadrantEvaluationService
         return $this->evaluations->findForApplication($applicationId, $encadrantId);
     }
 
+    public function history(int $encadrantId, int $perPage = 15)
+    {
+        return EncadrantEvaluation::where('encadrant_id', $encadrantId)
+            ->with(['application.student', 'application.offer'])
+            ->orderByDesc('updated_at')
+            ->paginate($perPage);
+    }
+
     public function upsert(int $encadrantId, int $applicationId, array $data): EncadrantEvaluation
     {
         if (!$this->supervision->applicationOwnedByEncadrant($applicationId, $encadrantId)) {
@@ -43,7 +51,16 @@ class EncadrantEvaluationService
         );
 
         $application = Application::with('student')->find($applicationId);
+        $encadrant = \App\Models\User::find($encadrantId);
+
+        // Notifier l'étudiant
         $application?->student?->notify(new EvaluationPublishedNotification($evaluation, $application));
+
+        // Notifier le manager de l'encadrant
+        if ($encadrant && $encadrant->manager_id) {
+            $manager = \App\Models\User::find($encadrant->manager_id);
+            $manager?->notify(new \App\Notifications\Encadrant\EvaluationSubmittedNotification($evaluation, $application, $encadrant));
+        }
 
         return $evaluation;
     }

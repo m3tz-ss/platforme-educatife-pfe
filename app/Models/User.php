@@ -54,8 +54,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password'         => 'hashed',
-        'skills'           => 'array',  // ✅ JSON → array automatique
+        'password' => 'hashed',
+        'skills' => 'array',  // ✅ JSON → array automatique
     ];
 
     // ================= RELATIONS =================
@@ -121,11 +121,11 @@ class User extends Authenticatable
     {
         return $query->where('type', 'student');
     }
-      // ✅ Conversations de l'utilisateur
+    // ✅ Conversations de l'utilisateur
     public function conversations()
-{
-    return $this->belongsToMany(Conversation::class, 'conversation_participants');
-}
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants');
+    }
 
 
 }

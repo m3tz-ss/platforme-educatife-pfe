@@ -21,6 +21,7 @@ import {
 import { Link } from "react-router-dom";
 import api from "../../services/api";
 import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
+import NotificationBell from "../../components/layout/NotificationBell";
 import "./css/ManagerDashboard.css";
 
 const AVATAR_COLORS = ["blue", "violet", "emerald", "orange", "rose", "cyan"];
@@ -184,7 +185,9 @@ export function ManagerDashboard() {
                   <p className="dashboard-title">🏢 Dashboard Manager</p>
                   <p className="dashboard-subtitle">Gérez les comptes internes de la plateforme</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3">
+                  <NotificationBell apiPrefix="rh" />
+                  <div className="h-8 w-px bg-gray-200 mx-1" />
                   <Link to="/enterprise/manager/applications">
                     <Button color="green" variant="outlined" className="flex items-center gap-2 bg-white">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>

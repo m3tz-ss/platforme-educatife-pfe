@@ -599,9 +599,9 @@ export default function StudentTasksPage() {
                   { label: "À faire", value: stats.todo, cls: "bg-slate-50 border-slate-200 text-slate-600" },
                   { label: "En cours", value: stats.in_progress, cls: "bg-amber-50 border-amber-200 text-amber-700" },
                   { label: "Terminé", value: stats.done, cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
-                  ...(supervision.evaluation ? [{ 
-                    label: "Note Finale", 
-                    value: `${supervision.evaluation.score ?? "?"}/20`, 
+                  ...(supervision.evaluations && supervision.evaluations.length > 0 ? [{ 
+                    label: "Évaluations", 
+                    value: supervision.evaluations.length, 
                     cls: "bg-indigo-50 border-indigo-200 text-indigo-700" 
                   }] : [])
                 ].map(s => (
@@ -750,11 +750,13 @@ export default function StudentTasksPage() {
                   </div>
                 )}
 
-                {/* Évaluation finale */}
-                {supervision.evaluation && (() => {
-                  const ev = supervision.evaluation;
+                {/* Évaluations (Encadrant & Manager) */}
+                {(supervision.evaluations || []).map((ev, index) => {
                   const score = ev.score ?? ev.note ?? null;
                   const decision = ev.final_decision || "pending";
+                  const role = ev.encadrant?.role || '';
+                  const isManager = role === 'manager' || role === 'rh' || (ev.encadrant_id !== supervision?.encadrant?.id && supervision?.encadrant?.id);
+                  
                   const decisionMap = {
                     pending: { label: "En attente", cls: "bg-slate-100 text-slate-600 border-slate-300" },
                     valide: { label: "Validé ✓", cls: "bg-emerald-100 text-emerald-700 border-emerald-300" },
@@ -764,21 +766,29 @@ export default function StudentTasksPage() {
                   const dec = decisionMap[decision] || decisionMap.pending;
                   const pctScore = score != null ? Math.min((score / 20) * 100, 100) : 0;
                   const scoreColor = score >= 16 ? "#10b981" : score >= 12 ? "#f59e0b" : score >= 8 ? "#f97316" : "#ef4444";
+                  const evaluatorName = ev.encadrant?.name || (isManager ? "Manager" : "Encadrant");
 
                   return (
-                    <div className="rounded-2xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
-                      <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-100"
-                        style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)" }}>
+                    <div key={ev.id || index} className={`rounded-2xl border ${isManager ? 'border-blue-200' : 'border-emerald-200'} bg-white shadow-sm overflow-hidden mb-4`}>
+                      <div className="flex items-center justify-between px-5 py-4 border-b"
+                        style={{ background: isManager ? "linear-gradient(135deg,#dbeafe,#bfdbfe)" : "linear-gradient(135deg,#d1fae5,#a7f3d0)" }}>
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shadow-sm">
-                            <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                            </svg>
+                          <div className={`w-8 h-8 rounded-xl ${isManager ? 'bg-blue-100' : 'bg-emerald-100'} flex items-center justify-center shadow-sm`}>
+                            {isManager ? (
+                              <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                              </svg>
+                            )}
                           </div>
                           <div>
-                            <p className="font-bold text-emerald-900 text-sm">Évaluation finale de stage</p>
-                            <p className="text-xs text-emerald-700">Résultat de votre encadrant</p>
+                            <p className={`font-bold ${isManager ? 'text-blue-900' : 'text-emerald-900'} text-sm`}>
+                              {isManager ? "Validation de stage (Manager/Entreprise)" : "Évaluation de stage (Encadrant)"}
+                            </p>
+                            <p className={`text-xs ${isManager ? 'text-blue-700' : 'text-emerald-700'}`}>Par {evaluatorName}</p>
                           </div>
                         </div>
                         <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${dec.cls}`}>{dec.label}</span>
@@ -809,14 +819,16 @@ export default function StudentTasksPage() {
                         )}
                         {ev.notes && (
                           <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3.5">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Appréciation de l&apos;encadrant</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                              {isManager ? "Commentaire du manager" : "Appréciation de l'encadrant"}
+                            </p>
                             <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{ev.notes}</p>
                           </div>
                         )}
                       </div>
                     </div>
                   );
-                })()}
+                })}
               </>
             ) : null}
           </>

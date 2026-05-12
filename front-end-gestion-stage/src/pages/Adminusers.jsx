@@ -27,11 +27,11 @@ import AdminLayout from "../components/layout/AdminLayout";
 
 // ── Role config ──────────────────────────────────────────────────────────────
 const ROLES = {
-  admin:     { label: "Admin",     bg: "bg-red-100",     text: "text-red-700",     border: "border-red-200",     dot: "bg-red-500",     icon: ShieldCheckIcon },
-  manager:   { label: "Manager",   bg: "bg-amber-100",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-500",   icon: BuildingOfficeIcon },
-  rh:        { label: "RH",        bg: "bg-violet-100",  text: "text-violet-700",  border: "border-violet-200",  dot: "bg-violet-500",  icon: UsersIcon },
+  admin: { label: "Admin", bg: "bg-red-100", text: "text-red-700", border: "border-red-200", dot: "bg-red-500", icon: ShieldCheckIcon },
+  manager: { label: "Manager", bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500", icon: BuildingOfficeIcon },
+  rh: { label: "RH", bg: "bg-violet-100", text: "text-violet-700", border: "border-violet-200", dot: "bg-violet-500", icon: UsersIcon },
   encadrant: { label: "Encadrant", bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", icon: UserCircleIcon },
-  student:   { label: "Étudiant",  bg: "bg-sky-100",     text: "text-sky-700",     border: "border-sky-200",     dot: "bg-sky-500",     icon: AcademicCapIcon },
+  student: { label: "Étudiant", bg: "bg-sky-100", text: "text-sky-700", border: "border-sky-200", dot: "bg-sky-500", icon: AcademicCapIcon },
 };
 
 const ROLE_OPTIONS = ["Tous", "admin", "manager", "rh", "encadrant", "student"];
@@ -140,9 +140,8 @@ function EditRoleModal({ user, onSave, onClose, saving }) {
               <button
                 key={key}
                 onClick={() => setSelectedRole(key)}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all duration-150 ${
-                  isSelected ? `${cfg.border} ${cfg.bg}` : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all duration-150 ${isSelected ? `${cfg.border} ${cfg.bg}` : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                  }`}
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? cfg.bg : "bg-gray-100"}`}>
                   <Icon className={`w-4 h-4 ${isSelected ? cfg.text : "text-gray-400"}`} />
@@ -227,11 +226,10 @@ function AddUserModal({ onSave, onClose, saving }) {
                 <button
                   key={value}
                   onClick={() => setForm((f) => ({ ...f, type: value, role: value === "enterprise" ? "manager" : null }))}
-                  className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                    form.type === value
+                  className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${form.type === value
                       ? `border-${color}-300 bg-${color}-50`
                       : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-5 h-5 ${form.type === value ? `text-${color}-600` : "text-gray-400"}`} />
                   <span className={`text-sm font-semibold ${form.type === value ? `text-${color}-700` : "text-gray-500"}`}>{label}</span>
@@ -255,9 +253,8 @@ function AddUserModal({ onSave, onClose, saving }) {
                   <button
                     key={value}
                     onClick={() => setForm((f) => ({ ...f, role: value }))}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                      form.role === value ? `${cfg.border} ${cfg.bg}` : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
-                    }`}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${form.role === value ? `${cfg.border} ${cfg.bg}` : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                      }`}
                   >
                     <Icon className={`w-5 h-5 ${form.role === value ? cfg.text : "text-gray-400"}`} />
                     <span className={`text-xs font-semibold ${form.role === value ? cfg.text : "text-gray-500"}`}>{label}</span>
@@ -275,9 +272,8 @@ function AddUserModal({ onSave, onClose, saving }) {
               value={form.name}
               onChange={set("name")}
               placeholder="Ex: Ahmed Ben Ali"
-              className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 ${
-                errors.name ? "border-red-300" : "border-gray-200"
-              }`}
+              className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 ${errors.name ? "border-red-300" : "border-gray-200"
+                }`}
             />
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
@@ -290,9 +286,8 @@ function AddUserModal({ onSave, onClose, saving }) {
               value={form.email}
               onChange={set("email")}
               placeholder="exemple@email.com"
-              className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 ${
-                errors.email ? "border-red-300" : "border-gray-200"
-              }`}
+              className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 ${errors.email ? "border-red-300" : "border-gray-200"
+                }`}
             />
             {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
           </div>
@@ -306,9 +301,8 @@ function AddUserModal({ onSave, onClose, saving }) {
                 value={form.password}
                 onChange={set("password")}
                 placeholder="Minimum 6 caractères"
-                className={`w-full px-3.5 py-2.5 pr-10 text-sm bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 ${
-                  errors.password ? "border-red-300" : "border-gray-200"
-                }`}
+                className={`w-full px-3.5 py-2.5 pr-10 text-sm bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 focus:bg-white transition-all placeholder-gray-300 ${errors.password ? "border-red-300" : "border-gray-200"
+                  }`}
               />
               <button
                 type="button"
@@ -358,19 +352,19 @@ function SkeletonRow() {
 const PER_PAGE = 10;
 
 export default function AdminUsers() {
-  const [users, setUsers]           = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch]         = useState("");
+  const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("Tous");
-  const [sortField, setSortField]   = useState("name");
-  const [sortDir, setSortDir]       = useState("asc");
-  const [page, setPage]             = useState(1);
-  const [editUser, setEditUser]     = useState(null);
+  const [sortField, setSortField] = useState("name");
+  const [sortDir, setSortDir] = useState("asc");
+  const [page, setPage] = useState(1);
+  const [editUser, setEditUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [toast, setToast]           = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -416,7 +410,7 @@ export default function AdminUsers() {
     });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -558,9 +552,8 @@ export default function AdminUsers() {
                 <button
                   key={key}
                   onClick={() => { setRoleFilter(roleFilter === key ? "Tous" : key); setPage(1); }}
-                  className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 text-left transition-all duration-150 ${
-                    roleFilter === key ? `${cfg.border} ${cfg.bg}` : "border-gray-100 bg-white hover:border-gray-200"
-                  }`}
+                  className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 text-left transition-all duration-150 ${roleFilter === key ? `${cfg.border} ${cfg.bg}` : "border-gray-100 bg-white hover:border-gray-200"
+                    }`}
                 >
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${roleFilter === key ? cfg.bg : "bg-gray-50"}`}>
                     <Icon className={`w-4 h-4 ${roleFilter === key ? cfg.text : "text-gray-400"}`} />
@@ -598,9 +591,8 @@ export default function AdminUsers() {
                   <button
                     key={r}
                     onClick={() => { setRoleFilter(r); setPage(1); }}
-                    className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-                      roleFilter === r ? "bg-blue-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    }`}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${roleFilter === r ? "bg-blue-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                      }`}
                   >
                     {r === "Tous" ? "Tous" : ROLES[r]?.label ?? r}
                   </button>
@@ -673,9 +665,8 @@ export default function AdminUsers() {
                       return (
                         <tr
                           key={user.id}
-                          className={`border-b border-gray-50 transition-colors duration-100 group ${
-                            user.is_blocked ? "bg-red-50/40 hover:bg-red-50/60" : "hover:bg-blue-50/30"
-                          }`}
+                          className={`border-b border-gray-50 transition-colors duration-100 group ${user.is_blocked ? "bg-red-50/40 hover:bg-red-50/60" : "hover:bg-blue-50/30"
+                            }`}
                         >
                           <td className="px-4 py-3.5">
                             <span className="text-xs text-gray-300 tabular-nums">{globalIdx + 1}</span>
@@ -720,11 +711,10 @@ export default function AdminUsers() {
                               {/* Block / Unblock */}
                               <button
                                 onClick={() => handleBlock(user)}
-                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                                  user.is_blocked
+                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${user.is_blocked
                                     ? "text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
                                     : "text-orange-400 hover:bg-orange-50 hover:text-orange-600"
-                                }`}
+                                  }`}
                                 title={user.is_blocked ? "Débloquer" : "Bloquer"}
                               >
                                 {user.is_blocked ? <LockOpenIcon className="w-4 h-4" /> : <LockClosedIcon className="w-4 h-4" />}
@@ -775,9 +765,8 @@ export default function AdminUsers() {
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`w-8 h-8 text-xs font-medium rounded-lg transition-colors ${
-                            page === p ? "bg-blue-500 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-                          }`}
+                          className={`w-8 h-8 text-xs font-medium rounded-lg transition-colors ${page === p ? "bg-blue-500 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                            }`}
                         >
                           {p}
                         </button>
@@ -804,9 +793,8 @@ export default function AdminUsers() {
 
           {/* ── Toast ── */}
           {toast && (
-            <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium border transition-all ${
-              toast.type === "error" ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
-            }`}>
+            <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium border transition-all ${toast.type === "error" ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              }`}>
               {toast.type === "error" ? <XMarkIcon className="w-4 h-4 shrink-0" /> : <CheckIcon className="w-4 h-4 shrink-0" />}
               {toast.msg}
             </div>

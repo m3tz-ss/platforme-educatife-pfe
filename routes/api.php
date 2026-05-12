@@ -118,6 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/comments/{commentId}', [EncadrantCommentController::class, 'destroy']);
 
         Route::get('/applications/{applicationId}/evaluation', [EncadrantEvaluationController::class, 'show']);
+        Route::get('/evaluations/history', [EncadrantEvaluationController::class, 'history']);
         Route::put('/applications/{applicationId}/evaluation', [EncadrantEvaluationController::class, 'upsert']);
 
         Route::get('/applications/{applicationId}/interviews', [EncadrantInterviewController::class, 'history']);

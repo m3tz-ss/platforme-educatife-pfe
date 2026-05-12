@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\ApplicationResource;
+use App\Http\Resources\UserResource;
 
 class EvaluationResource extends JsonResource
 {
@@ -18,6 +20,8 @@ class EvaluationResource extends JsonResource
             'encadrant_id'   => $this->encadrant_id,
             'created_at'     => $this->created_at,
             'updated_at'     => $this->updated_at,
+            'application'    => new ApplicationResource($this->whenLoaded('application')),
+            'encadrant'      => new UserResource($this->whenLoaded('encadrant')),
         ];
     }
 }

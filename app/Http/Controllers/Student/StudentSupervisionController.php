@@ -34,7 +34,7 @@ class StudentSupervisionController extends Controller
                         ]);
                 },
                 'encadrantComments.encadrant:id,name',
-                'encadrantEvaluation.encadrant:id,name',
+                'evaluations.encadrant:id,name,role',
             ])
             ->firstOrFail();
 
@@ -43,7 +43,7 @@ class StudentSupervisionController extends Controller
             'encadrant'      => $application->encadrant,
             'tasks'          => $application->encadrantTasks,
             'comments'       => $application->encadrantComments,
-            'evaluation'     => $application->encadrantEvaluation,
+            'evaluations'    => $application->evaluations,
         ]);
     }
 }
