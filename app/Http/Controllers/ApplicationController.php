@@ -64,7 +64,7 @@ class ApplicationController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:nouveau,preselectionnee,entretien,acceptee,refusee'
+            'status' => 'required|in:nouveau,preselectionnee,entretien,acceptee,refusee,termine'
         ]);
 
         $application = $this->service->updateStatus($id, $request->status);

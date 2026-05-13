@@ -10,6 +10,10 @@ use App\Models\Application;
 
 class EnterpriseEvaluationController extends Controller
 {
+    public function __construct(
+        protected \App\Services\ApplicationService $applicationService
+    ) {}
+
     public function show(Request $request, int $applicationId)
     {
         $user = $request->user();
@@ -52,6 +56,11 @@ class EnterpriseEvaluationController extends Controller
                 'notes'          => $data['notes'] ?? null,
             ]
         );
+
+        // ✅ Si la décision est "valide", on marque le stage comme terminé
+        if ($data['final_decision'] === 'valide') {
+            $this->applicationService->updateStatus($applicationId, 'termine');
+        }
 
         return new EvaluationResource($evaluation);
     }

@@ -43,10 +43,13 @@ class ManagerSupervisionController extends Controller
         $evaluations = EncadrantEvaluation::with([
                 'application.student:id,name,email,photo_path',
                 'application.offer:id,title',
-                'encadrant:id,name,email',
+                'encadrant:id,name,email,role',
             ])
-            ->whereHas('encadrant', function($q) use ($managerId) {
-                $q->where('manager_id', $managerId);
+            ->whereHas('application.offer', function($q) use ($managerId) {
+                $q->where('enterprise_id', $managerId)
+                  ->orWhereIn('enterprise_id', function($sub) use ($managerId) {
+                      $sub->select('id')->from('users')->where('manager_id', $managerId);
+                  });
             })
             ->latest()
             ->get();

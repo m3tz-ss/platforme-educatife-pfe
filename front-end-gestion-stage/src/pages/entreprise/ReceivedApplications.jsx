@@ -127,6 +127,7 @@ export default function ReceivedApplications() {
       const statusMap = {
         "Nouveau": "nouveau", "Présélectionnée": "preselectionnee",
         "Entretien": "entretien", "Acceptée": "acceptee", "Refusée": "refusee",
+        "Terminé": "termine",
       };
       filtered = filtered.filter((app) => app.status === statusMap[selectedFilter]);
     }
@@ -180,10 +181,14 @@ export default function ReceivedApplications() {
         showConfirmButton: false,
       });
     } catch (err) {
+      const errorMsg = err.response?.data?.message || "";
+      // Vérifier si le message d'erreur indique que l'étudiant est déjà en stage
+      const isUnavailable = errorMsg.includes("déjà en cours de stage") || errorMsg.includes("pas disponible");
+
       Swal.fire({
         icon: "error",
         title: "Erreur",
-        text: err.response?.data?.message || "Erreur changement statut.",
+        text: isUnavailable ? "cette condidat est deja en stage" : (errorMsg || "Erreur changement statut."),
         confirmButtonColor: "#ef4444",
       });
     }
@@ -298,6 +303,7 @@ export default function ReceivedApplications() {
     entretien: { label: "Entretien planifié", color: "purple", bg: "bg-purple-100 text-purple-700" },
     acceptee: { label: "Acceptée", color: "green", bg: "bg-green-100 text-green-700" },
     refusee: { label: "Refusée", color: "red", bg: "bg-red-100 text-red-700" },
+    termine: { label: "Stage terminé", color: "indigo", bg: "bg-indigo-100 text-indigo-700" },
   };
   const getStatus = (status) => statusConfig[status] || { label: "N/A", color: "gray", bg: "bg-gray-100 text-gray-700" };
 
@@ -320,6 +326,7 @@ export default function ReceivedApplications() {
     { label: "Entretien", count: interviewCount },
     { label: "Acceptée", count: acceptedCount },
     { label: "Refusée", count: rejectedCount },
+    { label: "Terminé", count: applications.filter((a) => a.status === "termine").length },
   ];
 
   const menuItems = [
@@ -463,9 +470,14 @@ export default function ReceivedApplications() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5">
-                                {app.student?.name || "Candidat"}
-                              </Typography>
+                                <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5 flex items-center gap-2">
+                                  {app.student?.name || "Candidat"}
+                                  {app.student?.is_in_internship && (
+                                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
+                                      Déjà en stage
+                                    </span>
+                                  )}
+                                </Typography>
                               <Typography variant="small" className="text-blue-500 font-medium mb-1">
                                 {app.offer?.title || "Offre"}
                               </Typography>
@@ -660,6 +672,7 @@ export default function ReceivedApplications() {
                     <option value="entretien">Entretien planifié</option>
                     <option value="acceptee">Acceptée</option>
                     <option value="refusee">Refusée</option>
+                    <option value="termine">Stage terminé</option>
                   </select>
                 </div>
               </div>

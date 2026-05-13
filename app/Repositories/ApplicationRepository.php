@@ -92,6 +92,9 @@ class ApplicationRepository
                              'photo_url' => $app->student->photo_path
                                  ? Storage::disk('public')->url($app->student->photo_path)
                                  : null,
+                             'is_in_internship' => \App\Models\Application::where('student_id', $app->student->id)
+                                 ->where('status', 'acceptee')
+                                 ->exists(),
                          ]) : null,
                          'encadrant'  => $app->encadrant,
                          'offer'      => $app->offer ? [

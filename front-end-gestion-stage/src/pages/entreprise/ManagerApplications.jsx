@@ -61,6 +61,12 @@ const STATUS_CONFIG = {
     color: "#991b1b",
     border: "1px solid #fecaca",
   },
+  termine: {
+    label: "Stage terminé",
+    backgroundColor: "#e0e7ff",
+    color: "#3730a3",
+    border: "1px solid #c7d2fe",
+  },
 };
 
 const DECISION_OPTIONS = [
@@ -214,7 +220,14 @@ function ApplicationTableRow({ app, index, onView }) {
           <div className={`avatar ${getAvatarColor(index)}`}>
             {getInitial(app.student?.name)}
           </div>
-          <span className="user-name">{app.student?.name}</span>
+          <span className="user-name flex items-center gap-2">
+            {app.student?.name}
+            {app.student?.is_in_internship && (
+              <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
+                Déjà en stage
+              </span>
+            )}
+          </span>
         </div>
       </td>
       <td>

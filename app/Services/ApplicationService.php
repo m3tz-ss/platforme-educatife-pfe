@@ -85,6 +85,17 @@ class ApplicationService
 
         // ✅ Vérifier le quota de places disponibles si on passe au statut "acceptée"
         if ($status === 'acceptee' && $application->status !== 'acceptee') {
+            // 1. Vérifier si l'étudiant est déjà en stage ailleurs
+            $hasOtherInternship = \App\Models\Application::where('student_id', $application->student_id)
+                ->where('status', 'acceptee')
+                ->where('id', '!=', $applicationId)
+                ->exists();
+
+            if ($hasOtherInternship) {
+                throw new \Exception("Cet étudiant est déjà en cours de stage et n'est pas disponible.");
+            }
+
+            // 2. Vérifier le quota de l'offre
             $offer = $application->offer;
             if ($offer) {
                 $acceptedCount = \App\Models\Application::where('offer_id', $offer->id)
@@ -132,6 +143,7 @@ class ApplicationService
                 'entretien'       => '📞 Entretien planifié',
                 'preselectionnee' => '👀 Présélectionnée',
                 'nouveau'         => '⏳ En attente',
+                'termine'         => '🏁 Stage terminé',
             ];
             $label      = $statusLabels[$status] ?? $status;
             $offerTitle = $fresh->offer?->title ?? 'Offre';

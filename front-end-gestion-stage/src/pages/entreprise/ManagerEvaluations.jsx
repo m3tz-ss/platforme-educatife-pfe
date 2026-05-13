@@ -205,14 +205,21 @@ export default function ManagerEvaluations() {
                                     </p>
                                 </div>
                               </td>
-                              <td>
-                                <div className="flex items-center gap-2">
-                                  <AcademicCapIcon className="w-4 h-4 text-blue-400" />
-                                  <span className="text-sm text-slate-600 font-medium">
-                                    {ev.encadrant?.name}
-                                  </span>
-                                </div>
-                              </td>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex flex-col">
+                                      <span className="text-sm text-slate-800 font-bold">
+                                        {ev.encadrant?.name}
+                                      </span>
+                                      <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                        ev.encadrant?.role === 'manager' ? 'bg-blue-100 text-blue-700' : 
+                                        ev.encadrant?.role === 'rh' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
+                                      }`}>
+                                        {ev.encadrant?.role === 'manager' ? 'Manager' : ev.encadrant?.role === 'rh' ? 'RH' : 'Encadrant'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
                               <td>
                                 <div className="flex items-center gap-2">
                                     <StarIcon className={`w-4 h-4 ${ev.score >= 10 ? 'text-yellow-500' : 'text-red-400'}`} />
