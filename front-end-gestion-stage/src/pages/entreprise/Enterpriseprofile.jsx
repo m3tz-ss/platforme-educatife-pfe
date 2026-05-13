@@ -138,25 +138,25 @@ export default function EnterpriseProfile() {
   };
 
   const roleConfig = {
-    manager:   { label: "Manager",   color: "blue",   icon: "🏢" },
-    rh:        { label: "RH",        color: "green",  icon: "👥" },
+    manager: { label: "Manager", color: "blue", icon: "🏢" },
+    rh: { label: "RH", color: "green", icon: "👥" },
     encadrant: { label: "Encadrant", color: "purple", icon: "🎓" },
   };
   const currentRole = roleConfig[role] || roleConfig.rh;
 
   const menuItems = [
-    { icon: HomeIcon,           label: "Tableau de bord", path: "/enterprise/offers" },
-    { icon: HomeIcon,           label: "Publier une offre", path: "/enterprise/publish" },
-    { icon: BriefcaseIcon,      label: "Mes offres",      path: "/enterprise/offersliste" },
-    { icon: CheckCircleIcon,    label: "Candidatures",    path: "/enterprise/condidateurliste" },
-    { icon: ChatBubbleLeftIcon, label: "Entretiens",      path: "/enterprise/enterview" },
-    { icon: UserCircleIcon,     label: "Mon profil",      path: "/enterprise/profile" },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/offers" },
+    { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish" },
+    { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste" },
+    { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste" },
+    { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview" },
+    { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile" },
   ];
 
   const sections = [
-    { id: "personal",  label: "Infos personnelles",  icon: UserCircleIcon },
-    { id: "company",   label: "Infos entreprise",     icon: BuildingOfficeIcon },
-    { id: "password",  label: "Mot de passe",         icon: LockClosedIcon },
+    { id: "personal", label: "Infos personnelles", icon: UserCircleIcon },
+    { id: "company", label: "Infos entreprise", icon: BuildingOfficeIcon },
+    { id: "password", label: "Mot de passe", icon: LockClosedIcon },
   ];
 
   return (
@@ -262,11 +262,10 @@ export default function EnterpriseProfile() {
                   <button
                     key={s.id}
                     onClick={() => setActiveSection(s.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-                      activeSection === s.id
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${activeSection === s.id
                         ? "bg-blue-500 text-white shadow-md"
                         : "bg-white text-blue-gray-700 border border-blue-gray-200 hover:bg-blue-50"
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     {s.label}
@@ -291,12 +290,12 @@ export default function EnterpriseProfile() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                      { label: "Nom complet",  name: "name",       icon: UserCircleIcon,    type: "text",  placeholder: "Votre nom" },
-                      { label: "Email",         name: "email",      icon: EnvelopeIcon,      type: "email", placeholder: "votre@email.com" },
-                      { label: "Téléphone",     name: "phone",      icon: PhoneIcon,         type: "tel",   placeholder: "+216 XX XXX XXX" },
-                      { label: "Adresse",       name: "address",    icon: MapPinIcon,        type: "text",  placeholder: "Ville, Pays" },
-                      { label: "Poste",         name: "position",   icon: UserCircleIcon,    type: "text",  placeholder: "Ex: Responsable RH" },
-                      { label: "Département",   name: "department", icon: BuildingOfficeIcon, type: "text", placeholder: "Ex: Ressources Humaines" },
+                      { label: "Nom complet", name: "name", icon: UserCircleIcon, type: "text", placeholder: "Votre nom" },
+                      { label: "Email", name: "email", icon: EnvelopeIcon, type: "email", placeholder: "votre@email.com" },
+                      { label: "Téléphone", name: "phone", icon: PhoneIcon, type: "tel", placeholder: "+216 XX XXX XXX" },
+                      { label: "Adresse", name: "address", icon: MapPinIcon, type: "text", placeholder: "Ville, Pays" },
+                      { label: "Poste", name: "position", icon: UserCircleIcon, type: "text", placeholder: "Ex: Responsable RH" },
+                      { label: "Département", name: "department", icon: BuildingOfficeIcon, type: "text", placeholder: "Ex: Ressources Humaines" },
                     ].map(({ label, name, icon: Icon, type, placeholder }) => (
                       <div key={name}>
                         <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">{label}</Typography>
@@ -364,8 +363,8 @@ export default function EnterpriseProfile() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                      { label: "Nom de l'entreprise", name: "company_name",        icon: BuildingOfficeIcon, type: "text", placeholder: "Nom de votre entreprise" },
-                      { label: "Site web",            name: "company_website",     icon: EnvelopeIcon,       type: "url",  placeholder: "https://www.entreprise.com" },
+                      { label: "Nom de l'entreprise", name: "company_name", icon: BuildingOfficeIcon, type: "text", placeholder: "Nom de votre entreprise" },
+                      { label: "Site web", name: "company_website", icon: EnvelopeIcon, type: "url", placeholder: "https://www.entreprise.com" },
                     ].map(({ label, name, icon: Icon, type, placeholder }) => (
                       <div key={name}>
                         <Typography variant="small" className="font-semibold text-blue-gray-900 mb-2 block">{label}</Typography>

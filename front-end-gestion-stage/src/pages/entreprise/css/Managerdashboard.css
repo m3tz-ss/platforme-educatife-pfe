@@ -39,13 +39,13 @@ table {
 .dashboard-container {
     min-height: 100vh;
     background: linear-gradient(to bottom right, var(--primary-light), #e0e7ff);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     position: relative;
 }
 
 @media (min-width: 768px) {
     .dashboard-container {
-        padding: var(--spacing-xl);
+        padding: var(--spacing-md);
     }
 }
 
@@ -96,8 +96,8 @@ table {
 .dashboard-wrapper {
     position: relative;
     z-index: 10;
-    max-width: 64rem;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
 }
 
 /* ── Back Link ── */
@@ -456,6 +456,11 @@ table {
 .role-badge.encadrant {
     background-color: #ede9fe;
     color: #6d28d9;
+}
+
+.role-badge.refusee {
+    background-color: #fee2e2;
+    color: #991b1b;
 }
 
 /* ── Actions ── */

@@ -87,10 +87,10 @@ class AuthController extends Controller
             );
         }
 
-        // ✅ Vérification du blocage par l'admin
-        if ($user->remember_token === 'BLOCKED') {
+        // ✅ Vérification du blocage par l'admin ou désactivation par manager
+        if ($user->remember_token === 'BLOCKED' || $user->is_active === false) {
             return response()->json(
-                ['message' => 'Votre compte a été bloqué. Contactez l\'administrateur.'],
+                ['message' => 'Votre compte a été bloqué ou désactivé. Contactez l\'administrateur.'],
                 403
             );
         }
@@ -148,6 +148,14 @@ class AuthController extends Controller
             return response()->json(
                 ['message' => 'Email ou mot de passe incorrect'],
                 401
+            );
+        }
+
+        // ✅ Vérification de l'activation
+        if ($user->is_active === false) {
+            return response()->json(
+                ['message' => 'Votre compte a été désactivé. Contactez votre manager.'],
+                403
             );
         }
 

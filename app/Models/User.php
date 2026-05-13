@@ -21,6 +21,7 @@ class User extends Authenticatable
         'password',
         'type',
         'role',
+        'is_active',
         'manager_id',
         'encadrant_id',
         'enterprise_id',  // ✅ ajouté
@@ -56,6 +57,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'skills' => 'array',  // ✅ JSON → array automatique
+        'is_active' => 'boolean',
     ];
 
     // ================= RELATIONS =================

@@ -10,6 +10,13 @@ import {
   Input,
   Progress,
   IconButton,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Textarea,
+  Select,
+  Option,
 } from "@material-tailwind/react";
 import {
   HomeIcon,
@@ -26,8 +33,8 @@ import {
   ClockIcon,
   LinkIcon,
   ChatBubbleBottomCenterTextIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
 
 export default function InterviewsHistory() {
@@ -37,6 +44,10 @@ export default function InterviewsHistory() {
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("Toutes");
   const [loading, setLoading] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedInterview, setSelectedInterview] = useState(null);
+  const [updateData, setUpdateData] = useState({ result: "pending", comment: "" });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchInterviews();
@@ -86,6 +97,27 @@ export default function InterviewsHistory() {
     }
   };
 
+  const handleOpenUpdate = (i) => {
+    setSelectedInterview(i);
+    setUpdateData({ result: i.result || "pending", comment: i.comment || "" });
+    setOpenModal(true);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedInterview) return;
+    try {
+      setSubmitting(true);
+      await api.patch(`/enterprise/interviews/${selectedInterview.id}/result`, updateData);
+      setOpenModal(false);
+      fetchInterviews();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la mise à jour");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const filterInterviews = () => {
     let filtered = interviews;
     if (selectedFilter !== "Toutes") {
@@ -103,36 +135,36 @@ export default function InterviewsHistory() {
   };
 
   const resultConfig = {
-    accepted: { label: "Accepté",    color: "green",  bg: "bg-green-100 text-green-700" },
-    rejected: { label: "Refusé",     color: "red",    bg: "bg-red-100 text-red-700" },
-    pending:  { label: "En attente", color: "purple", bg: "bg-purple-100 text-purple-700" },
+    accepted: { label: "Accepté", color: "green", bg: "bg-green-100 text-green-700" },
+    rejected: { label: "Refusé", color: "red", bg: "bg-red-100 text-red-700" },
+    pending: { label: "En attente", color: "purple", bg: "bg-purple-100 text-purple-700" },
   };
-  const getResult = (result) => resultConfig[result] || resultConfig.pending;
+  const getResultInfo = (result) => resultConfig[result] || resultConfig.pending;
 
   const getInitial = (name) => name ? name.charAt(0).toUpperCase() : "?";
-  const avatarColors = ["bg-blue-500","bg-indigo-500","bg-cyan-500","bg-teal-500","bg-purple-500","bg-violet-500"];
+  const avatarColors = ["bg-blue-500", "bg-indigo-500", "bg-cyan-500", "bg-teal-500", "bg-purple-500", "bg-violet-500"];
   const getAvatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
   // Compteurs
-  const totalCount    = interviews.length;
-  const pendingCount  = interviews.filter((i) => !i.result || i.result === "pending").length;
+  const totalCount = interviews.length;
+  const pendingCount = interviews.filter((i) => !i.result || i.result === "pending").length;
   const acceptedCount = interviews.filter((i) => i.result === "accepted").length;
   const rejectedCount = interviews.filter((i) => i.result === "rejected").length;
 
   const filters = [
-    { label: "Toutes",     count: totalCount },
+    { label: "Toutes", count: totalCount },
     { label: "En attente", count: pendingCount },
-    { label: "Accepté",    count: acceptedCount },
-    { label: "Refusé",     count: rejectedCount },
+    { label: "Accepté", count: acceptedCount },
+    { label: "Refusé", count: rejectedCount },
   ];
 
   const menuItems = [
-    { icon: HomeIcon,           label: "Tableau de bord",  path: "/enterprise/offers",           badge: null },
-    { icon: HomeIcon,           label: "Publier une offre", path: "/enterprise/publish",          badge: null },
-    { icon: BriefcaseIcon,      label: "Mes offres",        path: "/enterprise/offersliste",      badge: null },
-    { icon: CheckCircleIcon,    label: "Candidatures",      path: "/enterprise/condidateurliste", badge: null },
-    { icon: ChatBubbleLeftIcon, label: "Entretiens",        path: "/enterprise/enterview",        badge: totalCount || null },
-    { icon: UserCircleIcon,     label: "Mon profil",        path: "/enterprise/profile",          badge: null },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/offers", badge: null },
+    { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
+    { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
+    { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: null },
+    { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: totalCount || null },
+    { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];
 
   return (
@@ -199,10 +231,10 @@ export default function InterviewsHistory() {
             {/* ✅ Statistiques */}
             <div className="mb-8 grid gap-4 grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Total entretiens", value: totalCount,    color: "text-blue-gray-900", subColor: "text-blue-500",   sub: "Total" },
-                { label: "En attente",       value: pendingCount,  color: "text-purple-500",    subColor: "text-purple-500", sub: "⏳ À traiter" },
-                { label: "Acceptés",         value: acceptedCount, color: "text-green-500",     subColor: "text-green-500",  sub: "✅ Succès" },
-                { label: "Refusés",          value: rejectedCount, color: "text-red-500",       subColor: "text-red-500",    sub: "❌ Refusés" },
+                { label: "Total entretiens", value: totalCount, color: "text-blue-gray-900", subColor: "text-blue-500", sub: "Total" },
+                { label: "En attente", value: pendingCount, color: "text-purple-500", subColor: "text-purple-500", sub: "⏳ À traiter" },
+                { label: "Acceptés", value: acceptedCount, color: "text-green-500", subColor: "text-green-500", sub: "✅ Succès" },
+                { label: "Refusés", value: rejectedCount, color: "text-red-500", subColor: "text-red-500", sub: "❌ Refusés" },
               ].map((stat) => (
                 <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
                   <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
@@ -266,7 +298,7 @@ export default function InterviewsHistory() {
                 ) : (
                   <div className="divide-y divide-blue-gray-50">
                     {filteredInterviews.map((i) => {
-                      const result = getResult(i.result);
+                      const info = getResultInfo(i.result);
                       const initial = getInitial(i.candidate?.name);
                       return (
                         <div key={i.id} className="flex items-start gap-4 p-5 hover:bg-blue-gray-50 transition">
@@ -286,9 +318,23 @@ export default function InterviewsHistory() {
                                   {i.offer?.title || "Offre"}
                                 </Typography>
                               </div>
-                              <span className={`${result.bg} text-xs font-medium px-3 py-1 rounded-full flex-shrink-0 ml-3`}>
-                                {result.label}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`${info.bg} text-xs font-medium px-3 py-1 rounded-full flex-shrink-0`}>
+                                  {info.label}
+                                </span>
+                                {(i.result === 'pending' || !i.result) && (
+                                  <Button 
+                                    size="sm" 
+                                    color="blue" 
+                                    variant="text" 
+                                    className="flex items-center gap-1"
+                                    onClick={() => handleOpenUpdate(i)}
+                                  >
+                                    <ChatBubbleBottomCenterTextIcon className="w-4 h-4" />
+                                    Statuer
+                                  </Button>
+                                )}
+                              </div>
                             </div>
 
                             {/* ✅ Détails entretien */}
@@ -347,6 +393,44 @@ export default function InterviewsHistory() {
           </div>
         </main>
       </div>
+
+      {/* Update Status Modal */}
+      <Dialog open={openModal} handler={() => setOpenModal(false)} size="xs">
+        <DialogHeader className="flex flex-col items-start gap-1">
+          <Typography variant="h5" color="blue-gray">Mettre à jour le statut</Typography>
+          <Typography variant="small" color="gray" className="font-normal">
+            Candidat: {selectedInterview?.candidate?.name}
+          </Typography>
+        </DialogHeader>
+        <DialogBody className="space-y-4 text-blue-gray-700">
+          <div className="space-y-2">
+            <Typography variant="small" color="blue-gray" className="font-medium">Résultat de l'entretien</Typography>
+            <Select 
+              label="Statut" 
+              value={updateData.result}
+              onChange={(val) => setUpdateData({ ...updateData, result: val })}
+            >
+              <Option value="pending">En attente / À revoir</Option>
+              <Option value="accepted">Accepter le candidat</Option>
+              <Option value="rejected">Refuser le candidat</Option>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Typography variant="small" color="blue-gray" className="font-medium">Commentaire / Décision</Typography>
+            <Textarea 
+              label="Observations..." 
+              value={updateData.comment}
+              onChange={(e) => setUpdateData({ ...updateData, comment: e.target.value })}
+            />
+          </div>
+        </DialogBody>
+        <DialogFooter className="gap-2">
+          <Button variant="text" color="red" onClick={() => setOpenModal(false)}>Annuler</Button>
+          <Button color="blue" onClick={handleUpdateStatus} disabled={submitting}>
+            {submitting ? "Mise à jour..." : "Enregistrer"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }

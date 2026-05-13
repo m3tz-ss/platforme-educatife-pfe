@@ -15,9 +15,12 @@ import {
   ArrowLeftIcon,
   EyeIcon,
   MagnifyingGlassIcon,
+  BriefcaseIcon,
   DocumentArrowDownIcon,
   XMarkIcon,
   UserGroupIcon,
+  ChartBarIcon,
+  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -77,6 +80,21 @@ const MENU_ITEMS = [
     icon: MagnifyingGlassIcon,
     label: "Candidatures & Validations",
     path: "/enterprise/manager/applications",
+  },
+  {
+    icon: BriefcaseIcon,
+    label: "Toutes les Offres",
+    path: "/enterprise/manager/offers",
+  },
+  {
+    icon: ChartBarIcon,
+    label: "Suivi & Supervision",
+    path: "/enterprise/manager/supervision",
+  },
+  {
+    icon: ClipboardDocumentCheckIcon,
+    label: "Évaluations Encadrants",
+    path: "/enterprise/manager/evaluations",
   },
 ];
 

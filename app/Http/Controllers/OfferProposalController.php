@@ -148,12 +148,26 @@ class OfferProposalController extends Controller
      */
     public function studentProposals(Request $request)
     {
-        $proposals = OfferProposal::with(['offer', 'rh:id,name,email'])
+        $proposals = OfferProposal::with(['offer.user.manager', 'rh:id,name,email'])
             ->where('student_id', $request->user()->id)
             ->latest()
             ->get();
 
-        return response()->json($proposals);
+        $data = $proposals->map(function ($proposal) {
+            return [
+                'id'               => $proposal->id,
+                'offer_id'         => $proposal->offer_id,
+                'student_id'       => $proposal->student_id,
+                'rh_id'            => $proposal->rh_id,
+                'personal_message' => $proposal->personal_message,
+                'status'           => $proposal->status,
+                'created_at'       => $proposal->created_at,
+                'offer'            => new \App\Http\Resources\OfferResource($proposal->offer),
+                'rh'               => $proposal->rh,
+            ];
+        });
+
+        return response()->json($data);
     }
 
     /**

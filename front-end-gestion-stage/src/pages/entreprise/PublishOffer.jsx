@@ -136,16 +136,16 @@ export default function PublishOffer() {
   };
 
   const categories = ["Informatique", "Finance", "Marketing", "Ressources Humaines", "Ventes", "Design", "Ingénierie", "Data Science", "Autre"];
-  const durations  = ["1 mois", "2 mois", "3 mois", "4 mois", "5 mois", "6 mois"];
-  const locations  = ["Tunis", "Ariana", "Ben Arous", "Manouba", "Sfax", "Sousse", "Kairouan", "Gabès", "Gafsa", "Autre"];
+  const durations = ["1 mois", "2 mois", "3 mois", "4 mois", "5 mois", "6 mois"];
+  const locations = ["Tunis", "Ariana", "Ben Arous", "Manouba", "Sfax", "Sousse", "Kairouan", "Gabès", "Gafsa", "Autre"];
 
   const menuItems = [
-    { icon: HomeIcon,           label: "Tableau de bord",  path: "/enterprise/offers",           badge: null },
-    { icon: HomeIcon,           label: "Publier une offre", path: "/enterprise/publish",          badge: null },
-    { icon: BriefcaseIcon,      label: "Mes offres",        path: "/enterprise/offersliste",      badge: null },
-    { icon: CheckCircleIcon,    label: "Candidatures",      path: "/enterprise/condidateurliste", badge: null },
-    { icon: ChatBubbleLeftIcon, label: "Entretiens",        path: "/enterprise/enterview",        badge: null },
-    { icon: UserCircleIcon,     label: "Mon profil",        path: "/enterprise/profile",          badge: null },
+    { icon: HomeIcon, label: "Tableau de bord", path: "/enterprise/offers", badge: null },
+    { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
+    { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
+    { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: null },
+    { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: null },
+    { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];
 
   return (

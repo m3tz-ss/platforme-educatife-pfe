@@ -111,6 +111,7 @@ class UserController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'sometimes|min:6',
             'role' => 'sometimes|in:rh,encadrant',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         if ($request->has('name'))
@@ -121,6 +122,8 @@ class UserController extends Controller
             $user->password = Hash::make($request->password);
         if ($request->has('role'))
             $user->role = $request->role;
+        if ($request->has('is_active'))
+            $user->is_active = $request->is_active;
 
         $user->save();
 

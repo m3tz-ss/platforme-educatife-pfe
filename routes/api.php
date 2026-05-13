@@ -29,6 +29,7 @@ use App\Http\Controllers\RHNotificationController;
 use App\Http\Controllers\AI\RecommendationController;
 use App\Http\Controllers\Enterprise\EnterpriseEvaluationController;
 use App\Http\Controllers\OfferProposalController;
+use App\Http\Controllers\ManagerSupervisionController;
 
 
 
@@ -89,6 +90,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/internal-users', [UserController::class, 'store']);
     Route::put('/internal-users/{id}', [UserController::class, 'update']);
     Route::delete('/internal-users/{id}', [UserController::class, 'destroy']);
+    Route::get('/manager/supervision-overview', [ManagerSupervisionController::class, 'index']);
+    Route::get('/manager/evaluations', [ManagerSupervisionController::class, 'evaluations']);
+    Route::get('/manager/offers', [ManagerSupervisionController::class, 'offers']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {

@@ -12,11 +12,14 @@ import {
 import {
   UsersIcon,
   UserPlusIcon,
+  BriefcaseIcon,
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
   ArrowLeftIcon,
+  ChartBarIcon,
+  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
@@ -57,8 +60,8 @@ export function ManagerDashboard() {
     }
   };
 
-  useEffect(() => { 
-    fetchAccounts(); 
+  useEffect(() => {
+    fetchAccounts();
     fetchUser();
   }, []);
 
@@ -103,6 +106,16 @@ export function ManagerDashboard() {
     setForm({ name: "", email: "", password: "", role: "rh" });
   };
 
+  const handleToggleActive = async (targetUser) => {
+    try {
+      const newStatus = !targetUser.is_active;
+      await api.put(`/internal-users/${targetUser.id}`, { is_active: newStatus });
+      setAccounts(prev => prev.map(u => u.id === targetUser.id ? { ...u, is_active: newStatus } : u));
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur lors de la mise à jour du statut");
+    }
+  };
+
   const getInitial = (name) => name ? name.charAt(0).toUpperCase() : "?";
   const getAvatarColor = (idx) => AVATAR_COLORS[idx % AVATAR_COLORS.length];
 
@@ -120,7 +133,10 @@ export function ManagerDashboard() {
 
   const menuItems = [
     { icon: UsersIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager", badge: null },
-    { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications", badge: null }
+    { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications", badge: null },
+    { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers", badge: null },
+    { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision", badge: null },
+    { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations", badge: null }
   ];
 
   return (
@@ -128,11 +144,11 @@ export function ManagerDashboard() {
       {/* ── Sidebar ── */}
       <aside className="w-64 bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col z-10 flex-shrink-0 border-r border-blue-gray-100">
         <div className="p-6 border-b border-blue-gray-100">
-          <InternalSidebarHeader 
-            name={user?.name} 
-            email={user?.email} 
-            role={user?.role || 'manager'} 
-            photoUrl={user?.photo_url} 
+          <InternalSidebarHeader
+            name={user?.name}
+            email={user?.email}
+            role={user?.role || 'manager'}
+            photoUrl={user?.photo_url}
             logoUrl={user?.logo_url}
             logo={user?.logo}
             enterpriseName={user?.company_name}
@@ -173,7 +189,7 @@ export function ManagerDashboard() {
 
         <div className="dashboard-wrapper min-h-screen relative z-10 w-full p-4 sm:p-6 lg:p-8">
 
-          
+
 
           {/* ── Main Card ── */}
           <div className="main-card">
@@ -254,7 +270,7 @@ export function ManagerDashboard() {
                     <table className="data-table">
                       <thead>
                         <tr>
-                          {["Utilisateur", "Email", "Rôle", "Actions"].map((h) => (
+                          {["Utilisateur", "Email", "Rôle", "Statut", "Actions"].map((h) => (
                             <th key={h}>{h}</th>
                           ))}
                         </tr>
@@ -275,6 +291,15 @@ export function ManagerDashboard() {
                               <span className={`role-badge ${user.role === "rh" ? "rh" : "encadrant"}`}>
                                 {user.role === "rh" ? "RH" : "Encadrant"}
                               </span>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => handleToggleActive(user)}
+                                className={`role-badge transition-all active:scale-95 ${user.is_active ? "rh" : "refusee"}`}
+                                title={user.is_active ? "Cliquer pour désactiver" : "Cliquer pour activer"}
+                              >
+                                {user.is_active ? "✅ Actif" : "❌ Inactif"}
+                              </button>
                             </td>
                             <td>
                               <div className="actions-cell">

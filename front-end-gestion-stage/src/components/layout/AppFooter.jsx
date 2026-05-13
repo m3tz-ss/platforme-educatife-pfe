@@ -15,13 +15,8 @@ export default function AppFooter({ variant = "light" }) {
           </Typography>
         </div>
         <div className="flex gap-4">
-          <Link to="/" className={`text-sm transition ${isDark ? "text-blue-300 hover:text-white" : "text-blue-500 hover:text-blue-700"}`}>
-            Accueil
-          </Link>
-          <Link to="/auth/sign-in" className={`text-sm transition ${isDark ? "text-blue-300 hover:text-white" : "text-blue-500 hover:text-blue-700"}`}>
-            Connexion
-          </Link>
-          <a href="mailto:contact@mystage.com" className={`text-sm transition ${isDark ? "text-blue-300 hover:text-white" : "text-blue-500 hover:text-blue-700"}`}>
+          
+          <a href="mailto:tarresmoataz840@gmail.com" className={`text-sm transition ${isDark ? "text-blue-300 hover:text-white" : "text-blue-500 hover:text-blue-700"}`}>
             Contact
           </a>
         </div>

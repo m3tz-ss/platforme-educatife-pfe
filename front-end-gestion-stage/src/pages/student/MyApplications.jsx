@@ -576,13 +576,9 @@ export default function MyApplications() {
     }
   };
 
-  const handleContactEnterprise = async (appId) => {
-    try {
-      await api.post(`/applications/${appId}/contact`, {});
-      Swal.fire({ icon: "success", title: "Message envoyé", timer: 2000, timerProgressBar: true, showConfirmButton: false });
-    } catch (err) {
-      Swal.fire({ icon: "error", title: "Erreur", text: err.response?.data?.message || "Erreur envoi message", confirmButtonColor: "#ef4444" });
-    }
+  const handleContactEnterprise = (app) => {
+    const email = app?.offer?.enterprise?.email || 'tarresmoataz840@gmail.com';
+    window.location.href = `mailto:${email}`;
   };
 
   const statusMap = {
@@ -967,57 +963,123 @@ export default function MyApplications() {
               {/* ── Tab Informations ── */}
               {activeTab === "info" && (
                 <div className="p-6 space-y-6">
+                  {/* Résumé de l'offre */}
                   <div>
-                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">💼 Offre de stage</Typography>
-                    <div className="grid grid-cols-2 gap-3">
+                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4 flex items-center gap-2">
+                      💼 Offre de stage
+                    </Typography>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                       {[
-                        { label: "Titre", value: selectedApp.offer?.title },
-                        { label: "Entreprise", value: selectedApp.offer?.enterprise?.name },
-                        { label: "Email", value: selectedApp.offer?.enterprise?.email !== 'N/A' ? selectedApp.offer?.enterprise?.email : null },
-                        { label: "Localisation", value: selectedApp.offer?.location },
-                        { label: "Durée", value: selectedApp.offer?.duration },
-                        { label: "Date de début", value: formatDate(selectedApp.offer?.start_date) },
-                        { label: "Places dispo", value: selectedApp.offer?.available_places ? `${selectedApp.offer.available_places} place(s)` : "N/A" },
-                        { label: "Domaine", value: selectedApp.offer?.domain },
-                      ].map(({ label, value }) => (
-                        <div key={label}>
-                          <Typography variant="small" className="font-bold text-blue-gray-900">{label} :</Typography>
-                          <Typography variant="small" className="text-blue-gray-700">{value || "—"}</Typography>
+                        { label: "Titre", value: selectedApp.offer?.title, icon: "🏷️" },
+                        { label: "Entreprise", value: selectedApp.offer?.enterprise?.name, icon: "🏢" },
+                        { label: "Email", value: selectedApp.offer?.enterprise?.email !== 'N/A' ? selectedApp.offer?.enterprise?.email : null, icon: "📧" },
+                        { label: "Téléphone", value: selectedApp.offer?.enterprise?.phone !== 'N/A' ? selectedApp.offer?.enterprise?.phone : null, icon: "📞" },
+                        { label: "Localisation", value: selectedApp.offer?.location, icon: "📍" },
+                        { label: "Durée", value: selectedApp.offer?.duration, icon: "⏱️" },
+                        { label: "Date de début", value: formatDate(selectedApp.offer?.start_date), icon: "📅" },
+                        { label: "Domaine", value: selectedApp.offer?.domain, icon: "💼" },
+                      ].map(({ label, value, icon }) => (
+                        <div key={label} className="flex flex-col">
+                          <Typography variant="small" className="font-bold text-blue-gray-900 flex items-center gap-1.5 uppercase text-[10px] tracking-wider opacity-70">
+                            {icon} {label}
+                          </Typography>
+                          <Typography variant="small" className="text-blue-gray-800 font-medium">{value || "—"}</Typography>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="border-t border-blue-gray-100" />
+
+                  {/* Description détaillée */}
+                  {selectedApp.offer?.description && (
+                    <div className="pt-2">
+                      <Typography variant="h6" className="font-bold text-blue-gray-900 mb-2">Description du poste</Typography>
+                      <Typography variant="small" className="text-blue-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {selectedApp.offer.description}
+                      </Typography>
+                    </div>
+                  )}
+
+                  {/* Exigences et Avantages */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {selectedApp.offer?.requirements && (
+                      <div>
+                        <Typography variant="h6" className="font-bold text-blue-gray-900 mb-2">Compétences requises</Typography>
+                        <ul className="space-y-1.5">
+                          {selectedApp.offer.requirements.split(',').map((req, i) => (
+                            <li key={i} className="flex items-start gap-2 text-blue-gray-700 text-sm">
+                              <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5" />
+                              {req.trim()}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {selectedApp.offer?.advantages && (
+                      <div>
+                        <Typography variant="h6" className="font-bold text-blue-gray-900 mb-2">Avantages</Typography>
+                        <ul className="space-y-1.5">
+                          {selectedApp.offer.advantages.split(',').map((adv, i) => (
+                            <li key={i} className="flex items-start gap-2 text-blue-gray-700 text-sm">
+                              <span className="text-yellow-500">⭐</span>
+                              {adv.trim()}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-blue-gray-100 pt-6" />
+
+                  {/* Statut de la candidature */}
                   <div>
-                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">📋 Statut</Typography>
-                    <div className="space-y-3">
-                      <div>
-                        <Typography variant="small" className="font-bold text-blue-gray-900 mb-2">Statut actuel :</Typography>
-                        <Chip value={statusLabel(selectedApp.status)} color={statusColor(selectedApp.status)} size="sm" className="font-semibold" />
+                    <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4 flex items-center gap-2">
+                      📊 Statut de votre candidature
+                    </Typography>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-blue-gray-50 shadow-sm">
+                        <div>
+                          <Typography variant="small" className="font-bold text-blue-gray-900 mb-1 uppercase text-[10px] tracking-wider opacity-70">Statut actuel</Typography>
+                          <Chip 
+                            value={statusLabel(selectedApp.status)} 
+                            color={statusColor(selectedApp.status)} 
+                            size="sm" 
+                            className="font-bold" 
+                          />
+                        </div>
+                        <div className="text-right">
+                          <Typography variant="small" className="font-bold text-blue-gray-900 mb-1 uppercase text-[10px] tracking-wider opacity-70">Postulé le</Typography>
+                          <Typography variant="small" className="text-blue-gray-700 font-medium">{formatDate(selectedApp.created_at)}</Typography>
+                        </div>
                       </div>
-                      <div>
-                        <Typography variant="small" className="font-bold text-blue-gray-900">Date de candidature :</Typography>
-                        <Typography variant="small" className="text-blue-gray-700">{formatDate(selectedApp.created_at)}</Typography>
+
+                      <div className={`${getStatusMessage(selectedApp.status).bgColor} border ${getStatusMessage(selectedApp.status).borderColor} rounded-xl p-4 flex gap-3`}>
+                        <span className="text-2xl shrink-0">{getStatusMessage(selectedApp.status).icon}</span>
+                        <div>
+                          <Typography variant="small" className={`${getStatusMessage(selectedApp.status).textColor} font-bold mb-1`}>
+                            {getStatusMessage(selectedApp.status).title}
+                          </Typography>
+                          <Typography variant="small" className={`${getStatusMessage(selectedApp.status).textColor} opacity-90 leading-relaxed text-xs`}>
+                            {getStatusMessage(selectedApp.status).message}
+                          </Typography>
+                        </div>
                       </div>
+
                       {selectedApp.encadrant && (
-                        <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-3 mt-2">
-                          <Typography variant="small" className="font-bold text-indigo-900">Encadrant</Typography>
-                          <Typography variant="small" className="text-indigo-900 font-medium">{selectedApp.encadrant.name}</Typography>
-                          {selectedApp.encadrant.email && (
-                            <Typography variant="small" className="text-indigo-700 mt-1">{selectedApp.encadrant.email}</Typography>
-                          )}
+                        <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shrink-0 shadow-sm">
+                            {selectedApp.encadrant.name?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <Typography variant="small" className="font-bold text-indigo-900">Encadrant assigné</Typography>
+                            <Typography variant="small" className="text-indigo-800 font-medium">{selectedApp.encadrant.name}</Typography>
+                            {selectedApp.encadrant.email && (
+                              <Typography variant="small" className="text-indigo-600/70 text-xs">{selectedApp.encadrant.email}</Typography>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
-                  </div>
-                  <div className="border-t border-blue-gray-100" />
-                  <div className={`${getStatusMessage(selectedApp.status).bgColor} border ${getStatusMessage(selectedApp.status).borderColor} rounded-lg p-4`}>
-                    <Typography variant="small" className={`${getStatusMessage(selectedApp.status).textColor} font-medium`}>
-                      {getStatusMessage(selectedApp.status).icon}{" "}
-                      <strong>{getStatusMessage(selectedApp.status).title}</strong>
-                      <br />
-                      {getStatusMessage(selectedApp.status).message}
-                    </Typography>
                   </div>
                 </div>
               )}
@@ -1084,7 +1146,7 @@ export default function MyApplications() {
 
         <DialogFooter className="space-x-3 border-t border-blue-gray-100">
           <Button variant="outlined" color="blue-gray" onClick={() => setOpenModal(false)}>Fermer</Button>
-          <Button color="blue" variant="outlined" onClick={() => handleContactEnterprise(selectedApp?.id)}>
+          <Button color="blue" variant="outlined" onClick={() => handleContactEnterprise(selectedApp)}>
             <EnvelopeIcon className="w-4 h-4 mr-2" />
             Contacter
           </Button>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Interview;  // ← IMPORTANT
 use App\Models\Application;
 use App\Notifications\Encadrant\InterviewScheduledForEncadrantNotification;
+use App\Notifications\Student\InterviewResultUpdatedNotification;
 
 class InterviewController extends Controller
 {
@@ -65,6 +66,9 @@ public function updateResult(Request $request, $id)
     $interview->application->update([
         'status' => $statusMap[$request->result]
     ]);
+
+    // 🔔 Notifier l'étudiant
+    $interview->application->student->notify(new InterviewResultUpdatedNotification($interview));
 
     return response()->json(['message' => 'Résultat enregistré']);
 }

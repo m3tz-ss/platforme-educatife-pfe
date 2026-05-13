@@ -754,7 +754,9 @@ export function StudentDashboard() {
         <Progress value={65} color="blue" className="h-2" />
         <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
       </div>
-      <Button fullWidth color="blue" variant="gradient" size="sm">✉️ Contacter support</Button>
+      <Button fullWidth color="blue" variant="gradient" size="sm" onClick={() => window.location.href='mailto:tarresmoataz840@gmail.com'}>
+        ✉️ Contacter support
+      </Button>
     </>
   ), []);
 
@@ -816,6 +818,134 @@ export function StudentDashboard() {
         />
       </div>
 
+      {/* 🎯 Propositions d'offres reçues du RH */}
+      {proposals.filter(p => p.status === 'pending').length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-2xl">🎯</span>
+            <Typography variant="h5" className="font-bold text-purple-700">
+              Propositions d'offres
+            </Typography>
+            <span className="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {proposals.filter(p => p.status === 'pending').length}
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {proposals.filter(p => p.status === 'pending').map(proposal => (
+              <div
+                key={proposal.id}
+                className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex gap-3">
+                    {proposal.offer?.enterprise?.logo_url && (
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-purple-100 flex-shrink-0 flex items-center justify-center p-1 shadow-sm">
+                        <img 
+                          src={proposal.offer.enterprise.logo_url} 
+                          alt={proposal.offer?.enterprise?.company_name || "Logo"} 
+                          className="w-full h-full object-contain" 
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <Typography className="font-bold text-purple-900 text-base leading-tight">
+                        🎓 {proposal.offer?.title || 'Offre'}
+                      </Typography>
+                      <Typography variant="small" className="text-purple-700 font-bold mt-0.5">
+                        🏢 {proposal.offer?.enterprise?.company_name || proposal.offer?.enterprise?.name || 'Entreprise'}
+                      </Typography>
+                      <Typography variant="small" className="text-purple-500 text-[10px] mt-0.5 italic">
+                        Proposé par : {proposal.rh?.name}
+                      </Typography>
+                    </div>
+                  </div>
+                  <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full shrink-0">
+                    En attente
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                  {proposal.offer?.domain && (
+                    <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                      🏷️ {proposal.offer.domain}
+                    </span>
+                  )}
+                  {proposal.offer?.location && (
+                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                      📍 {proposal.offer.location}
+                    </span>
+                  )}
+                  {proposal.offer?.duration && (
+                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      ⏱️ {proposal.offer.duration}
+                    </span>
+                  )}
+                </div>
+
+                {/* Coordonnées Entreprise */}
+                {(proposal.offer?.enterprise?.email || proposal.offer?.enterprise?.phone) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 p-3 bg-white/60 rounded-xl border border-purple-100 shadow-sm">
+                    {proposal.offer.enterprise.email && (
+                      <div className="flex items-center gap-2 text-xs text-blue-700 font-medium">
+                        <EnvelopeIcon className="w-4 h-4 text-blue-500" />
+                        <span className="truncate">{proposal.offer.enterprise.email}</span>
+                      </div>
+                    )}
+                    {proposal.offer.enterprise.phone && (
+                      <div className="flex items-center gap-2 text-xs text-green-700 font-medium">
+                        <PhoneIcon className="w-4 h-4 text-green-500" />
+                        <span>{proposal.offer.enterprise.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {proposal.personal_message && (
+                  <div className="bg-white rounded-lg p-3 mb-3 border border-purple-100">
+                    <p className="text-xs text-purple-600 font-semibold mb-1">💬 Message du recruteur :</p>
+                    <p className="text-sm text-gray-700 italic">"{proposal.personal_message}"</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outlined"
+                    color="blue"
+                    className="flex-1 min-w-[100px] flex items-center justify-center gap-2"
+                    onClick={() => handleOpenDetails(proposal.offer)}
+                  >
+                    <MagnifyingGlassIcon className="w-4 h-4" />
+                    Détails
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="green"
+                    className="flex-1 min-w-[100px] flex items-center justify-center gap-2"
+                    disabled={respondingId === proposal.id}
+                    onClick={() => handleProposalResponse(proposal.id, 'accepted')}
+                  >
+                    <CheckCircleIcon className="w-4 h-4" />
+                    Accepter
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="red"
+                    variant="outlined"
+                    className="flex-1 min-w-[100px] flex items-center justify-center gap-2"
+                    disabled={respondingId === proposal.id}
+                    onClick={() => handleProposalResponse(proposal.id, 'refused')}
+                  >
+                    <XCircleIcon className="w-4 h-4" />
+                    Refuser
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Grille 2 colonnes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Offres récentes */}
@@ -856,92 +986,6 @@ export function StudentDashboard() {
           </CardBody>
         </Card>
       </div>
-
-      {/* 🎯 Propositions d'offres reçues du RH */}
-      {proposals.filter(p => p.status === 'pending').length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">🎯</span>
-            <Typography variant="h5" className="font-bold text-purple-700">
-              Propositions d'offres
-            </Typography>
-            <span className="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-              {proposals.filter(p => p.status === 'pending').length}
-            </span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {proposals.filter(p => p.status === 'pending').map(proposal => (
-              <div
-                key={proposal.id}
-                className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-5 shadow-sm"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <Typography className="font-bold text-purple-900 text-base">
-                      🎓 {proposal.offer?.title || 'Offre'}
-                    </Typography>
-                    <Typography variant="small" className="text-purple-600">
-                      Proposé par : <strong>{proposal.rh?.name}</strong>
-                    </Typography>
-                  </div>
-                  <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
-                    En attente
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-3 text-xs">
-                  {proposal.offer?.domain && (
-                    <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                      🏷️ {proposal.offer.domain}
-                    </span>
-                  )}
-                  {proposal.offer?.location && (
-                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                      📍 {proposal.offer.location}
-                    </span>
-                  )}
-                  {proposal.offer?.duration && (
-                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                      ⏱️ {proposal.offer.duration}
-                    </span>
-                  )}
-                </div>
-
-                {proposal.personal_message && (
-                  <div className="bg-white rounded-lg p-3 mb-3 border border-purple-100">
-                    <p className="text-xs text-purple-600 font-semibold mb-1">💬 Message du recruteur :</p>
-                    <p className="text-sm text-gray-700 italic">"{proposal.personal_message}"</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3 mt-4">
-                  <Button
-                    size="sm"
-                    color="green"
-                    className="flex-1 flex items-center justify-center gap-2"
-                    disabled={respondingId === proposal.id}
-                    onClick={() => handleProposalResponse(proposal.id, 'accepted')}
-                  >
-                    <CheckCircleIcon className="w-4 h-4" />
-                    Accepter
-                  </Button>
-                  <Button
-                    size="sm"
-                    color="red"
-                    variant="outlined"
-                    className="flex-1 flex items-center justify-center gap-2"
-                    disabled={respondingId === proposal.id}
-                    onClick={() => handleProposalResponse(proposal.id, 'refused')}
-                  >
-                    <XCircleIcon className="w-4 h-4" />
-                    Refuser
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 🤖 Section Recommandations IA */}
       <div className="mb-8">
@@ -1262,9 +1306,13 @@ export function StudentDashboard() {
         </DialogBody>
 
         <DialogFooter className="space-x-3 p-6 bg-gray-50">
-          <Button color="blue" variant="outlined" onClick={toggleSaved}>
-            {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
-          </Button>
+        <Button color="blue" variant="outlined" onClick={() => window.location.href=`mailto:${selectedOffer?.enterprise?.email || 'tarresmoataz840@gmail.com'}`}>
+          <EnvelopeIcon className="w-4 h-4 mr-2 inline" />
+          Contacter
+        </Button>
+        <Button color="blue" variant="outlined" onClick={toggleSaved}>
+          {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
+        </Button>
           <Button
             size="sm"
             color={hasApplied(selectedOffer?.id) ? "green" : "blue"}

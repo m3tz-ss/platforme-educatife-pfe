@@ -446,9 +446,6 @@ export default function EncadrantDashboard() {
                         {s?.email && <p className="text-xs text-slate-500 truncate">{s.email}</p>}
                       </div>
                     </div>
-                    <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-lg ring-1 ${statusClass(app.status)}`}>
-                      {statusLabel(app.status)}
-                    </span>
                   </div>
 
                   <p className="mt-4 text-sm text-slate-600 line-clamp-2">
