@@ -36,7 +36,8 @@ import {
   EnvelopeIcon,
   PhoneIcon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon, StarIcon, XCircleIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon, StarIcon, XCircleIcon, BookmarkIcon as BookmarkSolid } from "@heroicons/react/24/solid";
+import { BookmarkIcon as BookmarkOutline } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -115,9 +116,28 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
 
   return (
     <div 
-      className="group p-4 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer"
+      className="group p-4 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer relative"
       onClick={() => onOpen(offer)}
     >
+      {/* Bookmark Toggle */}
+      <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <IconButton
+          size="sm"
+          color={offer.is_saved ? "blue" : "blue-gray"}
+          variant="text"
+          className="rounded-full bg-white/80 hover:bg-white shadow-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            offer.onToggleSave(offer.id, e);
+          }}
+        >
+          {offer.is_saved ? (
+            <BookmarkSolid className="w-4 h-4 text-blue-500" />
+          ) : (
+            <BookmarkOutline className="w-4 h-4 text-blue-gray-400" />
+          )}
+        </IconButton>
+      </div>
       <div className="flex items-center gap-4 mb-3">
         {/* ✅ Logo entreprise */}
         <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-gray-100 flex-shrink-0 flex items-center justify-center bg-white shadow-sm group-hover:shadow-md transition-shadow">
@@ -537,6 +557,7 @@ export function StudentDashboard() {
   const [loading, setLoading] = useState(false);
   const [cvFile, setCvFile] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [savedOfferIds, setSavedOfferIds] = useState(new Set());
 
   // ── État IA ────────────────────────────────────────────────────────────────
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
@@ -599,6 +620,14 @@ export function StudentDashboard() {
     } catch (err) { console.error("Erreur propositions:", err); }
   }, []);
 
+  const fetchSavedOfferIds = useCallback(async () => {
+    try {
+      const res = await api.get("/student/saved-offers");
+      const ids = new Set((res.data.data || []).map(o => o.id));
+      setSavedOfferIds(ids);
+    } catch (err) { console.error("Erreur favoris:", err); }
+  }, []);
+
   const fetchUserData = useCallback(async () => {
     try {
       const res = await api.get("/user/profile");
@@ -618,8 +647,9 @@ export function StudentDashboard() {
       fetchAIRecommendations(),
       fetchProposals(),
       fetchUserData(),
+      fetchSavedOfferIds(),
     ]);
-  }, [fetchOffers, fetchApplications, fetchAIRecommendations, fetchProposals, fetchUserData]);
+  }, [fetchOffers, fetchApplications, fetchAIRecommendations, fetchProposals, fetchUserData, fetchSavedOfferIds]);
 
   const handleProposalResponse = useCallback(async (proposalId, response) => {
     try {
@@ -689,7 +719,23 @@ export function StudentDashboard() {
   }, []);
 
   const handleSearchChange = useCallback((e) => setSearch(e.target.value), []);
-  const toggleSaved = useCallback(() => setIsSaved((prev) => !prev), []);
+  const toggleSave = useCallback(async (offerId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const res = await api.post(`/student/saved-offers/${offerId}/toggle`);
+      const newSaved = new Set(savedOfferIds);
+      if (res.data.saved) {
+        newSaved.add(offerId);
+        setIsSaved(true);
+      } else {
+        newSaved.delete(offerId);
+        setIsSaved(false);
+      }
+      setSavedOfferIds(newSaved);
+    } catch (err) {
+      console.error("Erreur favoris:", err);
+    }
+  }, [savedOfferIds]);
 
   const applyToOffer = useCallback(async (offerId) => {
     if (!cvFile) {
@@ -961,7 +1007,16 @@ export function StudentDashboard() {
               <Typography className="text-center text-blue-gray-500 py-4">Aucune offre disponible</Typography>
             ) : (
               topOffers.map((offer) => (
-                <OfferCard key={offer.id} offer={offer} applied={hasApplied(offer.id)} onOpen={handleOpenDetails} />
+                <OfferCard 
+                  key={offer.id} 
+                  offer={{
+                    ...offer,
+                    is_saved: savedOfferIds.has(offer.id),
+                    onToggleSave: toggleSave
+                  }} 
+                  applied={hasApplied(offer.id)} 
+                  onOpen={handleOpenDetails} 
+                />
               ))
             )}
           </CardBody>
@@ -1155,7 +1210,9 @@ export function StudentDashboard() {
                     {/* Description */}
                     <div>
                       <Typography variant="h6" className="mb-3 font-semibold">À propos de l'entreprise</Typography>
-                      <Typography className="text-blue-gray-700 leading-relaxed mb-4">{selectedOffer.enterprise?.description || "Information non disponible"}</Typography>
+                      <Typography className="text-blue-gray-700 leading-relaxed mb-4">
+                        {selectedOffer?.enterprise?.company_description || selectedOffer?.enterprise?.description || "Information non disponible"}
+                      </Typography>
                     </div>
 
                     {/* ✅ Coordonnées améliorées */}
@@ -1310,8 +1367,12 @@ export function StudentDashboard() {
           <EnvelopeIcon className="w-4 h-4 mr-2 inline" />
           Contacter
         </Button>
-        <Button color="blue" variant="outlined" onClick={toggleSaved}>
-          {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
+        <Button 
+          color={savedOfferIds.has(selectedOffer?.id) ? "red" : "blue"} 
+          variant="outlined" 
+          onClick={(e) => toggleSave(selectedOffer?.id, e)}
+        >
+          {savedOfferIds.has(selectedOffer?.id) ? "❌ Retirer des favoris" : "❤️ Sauvegarder"}
         </Button>
           <Button
             size="sm"

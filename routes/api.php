@@ -16,6 +16,7 @@ use App\Http\Controllers\Encadrant\EncadrantEvaluationController;
 use App\Http\Controllers\Encadrant\EncadrantTaskCommentController;
 use App\Http\Controllers\Encadrant\EncadrantInterviewController;
 use App\Http\Controllers\Encadrant\EncadrantNotificationController;
+use App\Http\Controllers\Student\SavedOfferController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EnterpriseController;
 use App\Http\Controllers\Student\StudentSupervisionController;
@@ -81,6 +82,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // 🎯 Propositions d'offres reçues par l'étudiant
         Route::get('/offer-proposals', [OfferProposalController::class, 'studentProposals']);
         Route::post('/offer-proposals/{id}/respond', [OfferProposalController::class, 'respond']);
+
+        // 💾 Offres sauvegardées (Favoris)
+        Route::get('/saved-offers', [SavedOfferController::class, 'index']);
+        Route::post('/saved-offers/{offerId}/toggle', [SavedOfferController::class, 'toggle']);
+        Route::get('/saved-offers/{offerId}/check', [SavedOfferController::class, 'check']);
     });
 });
 // ⚙️ Gestion des utilisateurs internes par le Manager

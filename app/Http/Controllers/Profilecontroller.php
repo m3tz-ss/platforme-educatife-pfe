@@ -20,7 +20,7 @@ class ProfileController extends Controller
                 $manager = \App\Models\User::find($user->manager_id);
                 $logoPath = $manager?->logo_path;
             }
-            
+
             // 2. Si toujours rien, chercher chez n'importe quel collègue ayant le même manager
             if (!$logoPath && $user->manager_id) {
                 $colleague = \App\Models\User::where('manager_id', $user->manager_id)
@@ -65,7 +65,7 @@ class ProfileController extends Controller
 
             // Photos
             'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
-            'logo_url'  => $logoPath  ? Storage::disk('public')->url($logoPath)  : null,
+            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
         ]);
     }
 
@@ -151,9 +151,9 @@ class ProfileController extends Controller
         return response()->json([
             'message' => 'Profil mis à jour avec succès',
             'user' => [
-                'id'        => $user->id,
-                'name'      => $user->name,
-                'email'     => $user->email,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
                 'photo_url' => $user->photo_path ? Storage::disk('public')->url($user->photo_path) : null,
             ],
         ]);

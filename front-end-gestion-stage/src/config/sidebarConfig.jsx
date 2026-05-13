@@ -21,6 +21,7 @@ export function getStudentMenuItems(counts = {}) {
     { icon: CheckCircleIcon, label: "Mes candidatures", path: "/student/applications", badge: counts.applications ?? null },
     { icon: ClipboardDocumentListIcon, label: "Mes tâches", path: "/student/tasks", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Messages", path: "/message", badge: null },
+    { icon: BookmarkIcon, label: "Offres sauvegardées", path: "/student/saved", badge: null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/student/profile", badge: null },
   ];
 }

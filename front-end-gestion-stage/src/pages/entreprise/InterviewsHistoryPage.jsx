@@ -323,10 +323,10 @@ export default function InterviewsHistory() {
                                   {info.label}
                                 </span>
                                 {(i.result === 'pending' || !i.result) && (
-                                  <Button 
-                                    size="sm" 
-                                    color="blue" 
-                                    variant="text" 
+                                  <Button
+                                    size="sm"
+                                    color="blue"
+                                    variant="text"
                                     className="flex items-center gap-1"
                                     onClick={() => handleOpenUpdate(i)}
                                   >
@@ -405,8 +405,8 @@ export default function InterviewsHistory() {
         <DialogBody className="space-y-4 text-blue-gray-700">
           <div className="space-y-2">
             <Typography variant="small" color="blue-gray" className="font-medium">Résultat de l'entretien</Typography>
-            <Select 
-              label="Statut" 
+            <Select
+              label="Statut"
               value={updateData.result}
               onChange={(val) => setUpdateData({ ...updateData, result: val })}
             >
@@ -417,8 +417,8 @@ export default function InterviewsHistory() {
           </div>
           <div className="space-y-2">
             <Typography variant="small" color="blue-gray" className="font-medium">Commentaire / Décision</Typography>
-            <Textarea 
-              label="Observations..." 
+            <Textarea
+              label="Observations..."
               value={updateData.comment}
               onChange={(e) => setUpdateData({ ...updateData, comment: e.target.value })}
             />

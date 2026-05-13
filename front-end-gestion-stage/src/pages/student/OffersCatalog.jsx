@@ -40,7 +40,8 @@ import {
   SparklesIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon, BookmarkIcon as BookmarkSolid } from "@heroicons/react/24/solid";
+import { BookmarkIcon as BookmarkOutline } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { StudentSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -61,12 +62,14 @@ export default function OffersCatalog() {
   const [currentPage, setCurrentPage] = useState(1);
   const [cvFile, setCvFile] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [savedOfferIds, setSavedOfferIds] = useState(new Set());
   const itemsPerPage = 6;
 
   useEffect(() => {
     fetchOffers();
     fetchApplications();
     fetchUserData();
+    fetchSavedOfferIds();
   }, []);
 
   const fetchUserData = async () => {
@@ -97,6 +100,16 @@ export default function OffersCatalog() {
       setApplications(Array.isArray(res.data) ? res.data : res.data.data || []);
     } catch (err) {
       console.error("Erreur chargement candidatures", err);
+    }
+  };
+
+  const fetchSavedOfferIds = async () => {
+    try {
+      const res = await api.get("/student/saved-offers");
+      const ids = new Set((res.data.data || []).map(o => o.id));
+      setSavedOfferIds(ids);
+    } catch (err) {
+      console.error("Erreur chargement favoris:", err);
     }
   };
 
@@ -160,6 +173,25 @@ export default function OffersCatalog() {
     setOpenModal(false);
     setSelectedOffer(null);
     setCvFile(null);
+    setIsSaved(false);
+  };
+
+  const toggleSave = async (offerId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const res = await api.post(`/student/saved-offers/${offerId}/toggle`);
+      const newSaved = new Set(savedOfferIds);
+      if (res.data.saved) {
+        newSaved.add(offerId);
+        setIsSaved(true);
+      } else {
+        newSaved.delete(offerId);
+        setIsSaved(false);
+      }
+      setSavedOfferIds(newSaved);
+    } catch (err) {
+      console.error("Erreur favoris:", err);
+    }
   };
 
   const applyToOffer = async (offerId) => {
@@ -414,6 +446,19 @@ export default function OffersCatalog() {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2">
+                      <IconButton
+                        size="sm"
+                        color={savedOfferIds.has(offer.id) ? "blue" : "blue-gray"}
+                        variant="text"
+                        className="rounded-full hover:bg-blue-50"
+                        onClick={(e) => toggleSave(offer.id, e)}
+                      >
+                        {savedOfferIds.has(offer.id) ? (
+                          <BookmarkSolid className="w-5 h-5 text-blue-500" />
+                        ) : (
+                          <BookmarkOutline className="w-5 h-5" />
+                        )}
+                      </IconButton>
                       <Chip
                         value={offer.domain || "Autre"}
                         variant="ghost"
@@ -662,7 +707,7 @@ export default function OffersCatalog() {
                       À propos de l'entreprise
                     </Typography>
                     <Typography className="text-blue-gray-700 leading-relaxed">
-                      {selectedOffer.enterprise?.company_description || selectedOffer.enterprise?.bio || "Information non disponible"}
+                      {selectedOffer?.enterprise?.company_description || selectedOffer?.enterprise?.bio || "Information non disponible"}
                     </Typography>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {selectedOffer.enterprise?.email && (
@@ -693,12 +738,12 @@ export default function OffersCatalog() {
 
         <DialogFooter className="flex flex-wrap items-center justify-between gap-3">
           <Button
-            color="blue"
+            color={savedOfferIds.has(selectedOffer?.id) ? "red" : "blue"}
             variant="outlined"
-            onClick={() => setIsSaved(!isSaved)}
+            onClick={(e) => toggleSave(selectedOffer?.id, e)}
             className="flex items-center gap-2"
           >
-            {isSaved ? "❌ Retirer" : "❤️ Sauvegarder"}
+            {savedOfferIds.has(selectedOffer?.id) ? "❌ Retirer" : "❤️ Sauvegarder"}
           </Button>
 
           <div className="flex items-center gap-3 ml-auto">
