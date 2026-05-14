@@ -21,10 +21,18 @@ import {
   UserGroupIcon,
   ChartBarIcon,
   ClipboardDocumentCheckIcon,
+  ClockIcon,
+  StarIcon,
+  BuildingOfficeIcon,
+  AcademicCapIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
 import NotificationBell from "../../components/layout/NotificationBell";
+import CandidateHistoryModal from "../../components/CandidateHistoryModal";
 import "./css/ManagerDashboard.css";
 
 /* ── Constants ── */
@@ -209,7 +217,7 @@ function EmptyState() {
   );
 }
 
-function ApplicationTableRow({ app, index, onView }) {
+function ApplicationTableRow({ app, index, onView, onViewHistory }) {
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
   const getAvatarColor = (idx) => AVATAR_COLORS[idx % AVATAR_COLORS.length];
 
@@ -245,15 +253,26 @@ function ApplicationTableRow({ app, index, onView }) {
             variant="text"
             size="sm"
             color="blue"
+            title="Voir la candidature"
             onClick={() => onView(app)}
           >
             <EyeIcon className="w-5 h-5" />
+          </IconButton>
+          <IconButton
+            variant="text"
+            size="sm"
+            color="purple"
+            title="Historique des stages"
+            onClick={() => onViewHistory(app.student)}
+          >
+            <ClockIcon className="w-5 h-5" />
           </IconButton>
         </div>
       </td>
     </tr>
   );
 }
+
 
 function ApplicationDetailsModal({
   open,
@@ -495,6 +514,12 @@ export default function ManagerApplications() {
   });
   const [evalLoading, setEvalLoading] = useState(false);
 
+  // Candidate history state
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [openHistoryModal, setOpenHistoryModal] = useState(false);
+  const [candidateHistory, setCandidateHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   /* ── Fetch Applications ── */
   const fetchApplications = useCallback(async () => {
     try {
@@ -623,6 +648,36 @@ export default function ManagerApplications() {
     setEvalForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  /* ── Candidate History Handlers ── */
+  const handleViewHistory = useCallback(async (student) => {
+    if (!student?.id) return;
+    setSelectedStudent(student);
+    setOpenHistoryModal(true);
+    setHistoryLoading(true);
+    setCandidateHistory(null);
+    try {
+      const res = await api.get(`/rh/candidates/${student.id}/history`);
+      setCandidateHistory(res.data);
+    } catch (err) {
+      console.error("Erreur historique candidat:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Impossible de charger l'historique du candidat.",
+        confirmButtonColor: "#ef4444",
+      });
+      setOpenHistoryModal(false);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  const handleCloseHistoryModal = useCallback(() => {
+    setOpenHistoryModal(false);
+    setSelectedStudent(null);
+    setCandidateHistory(null);
+  }, []);
+
   /* ── Effects ── */
   useEffect(() => {
     fetchApplications();
@@ -664,9 +719,9 @@ export default function ManagerApplications() {
               {/* ── Header ── */}
               <div className="dashboard-header flex-row items-center justify-between gap-2">
                 <div className="flex-col items-start gap-2">
-                  <p className="dashboard-title">Candidatures & Validations</p>
+                  <p className="dashboard-title"></p>
                   <p className="dashboard-subtitle">
-                    Gérez et validez les candidatures reçues par votre entreprise
+                    
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -722,6 +777,7 @@ export default function ManagerApplications() {
                             app={app}
                             index={idx}
                             onView={handleViewApplication}
+                            onViewHistory={handleViewHistory}
                           />
                         ))}
                       </tbody>
@@ -734,7 +790,7 @@ export default function ManagerApplications() {
         </div>
       </div>
 
-      {/* ── Modal ── */}
+      {/* ── Modal Candidature ── */}
       <ApplicationDetailsModal
         open={openModal}
         application={selectedApplication}
@@ -744,6 +800,15 @@ export default function ManagerApplications() {
         onClose={handleCloseModal}
         onEvalFormChange={handleEvalFormChange}
         onSaveEvaluation={saveEvaluation}
+      />
+
+      {/* ── Modal Historique Candidat ── */}
+      <CandidateHistoryModal
+        open={openHistoryModal}
+        student={selectedStudent}
+        history={candidateHistory}
+        loading={historyLoading}
+        onClose={handleCloseHistoryModal}
       />
 
       <ChatBox />

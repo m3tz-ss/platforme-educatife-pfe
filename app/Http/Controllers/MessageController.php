@@ -40,16 +40,16 @@ class MessageController extends Controller
             ->orderBy('created_at')
             ->get()
             ->map(fn($msg) => [
-                'id'              => $msg->id,
-                'body'            => $msg->body,
-                'attachment'      => $msg->attachment ? url('storage/' . $msg->attachment) : null,
+                'id' => $msg->id,
+                'body' => $msg->body,
+                'attachment' => $msg->attachment ? url('storage/' . $msg->attachment) : null,
                 'attachment_name' => $msg->attachment_name,
-                'is_edited'       => $msg->is_edited,
-                'is_deleted'      => $msg->is_deleted,
-                'sender'          => $msg->sender,
-                'is_mine'         => $msg->sender_id === $user->id,
-                'read_at'         => $msg->read_at,
-                'created_at'      => $msg->created_at,
+                'is_edited' => $msg->is_edited,
+                'is_deleted' => $msg->is_deleted,
+                'sender' => $msg->sender,
+                'is_mine' => $msg->sender_id === $user->id,
+                'read_at' => $msg->read_at,
+                'created_at' => $msg->created_at,
             ]);
 
         return response()->json($messages);
@@ -61,13 +61,13 @@ class MessageController extends Controller
     public function send(Request $request)
     {
         $request->validate([
-            'receiver_id'     => 'required|exists:users,id',
-            'body'            => 'required|string|max:2000',
+            'receiver_id' => 'required|exists:users,id',
+            'body' => 'required|string|max:2000',
             'conversation_id' => 'nullable|exists:conversations,id',
-            'attachment'      => 'nullable|file|max:5120', // 5MB max
+            'attachment' => 'nullable|file|max:5120', // 5MB max
         ]);
 
-        $sender   = $request->user();
+        $sender = $request->user();
         $receiver = User::findOrFail($request->receiver_id);
 
         if (!$this->service->canSendTo($sender, $receiver)) {
@@ -83,7 +83,7 @@ class MessageController extends Controller
         $attachmentPath = null;
         $attachmentName = null;
         if ($request->hasFile('attachment')) {
-            $file           = $request->file('attachment');
+            $file = $request->file('attachment');
             $attachmentName = $file->getClientOriginalName();
             $attachmentPath = $file->store('messages', 'public');
         }
@@ -92,15 +92,15 @@ class MessageController extends Controller
 
         return response()->json([
             'conversation_id' => $conversation->id,
-            'message'         => [
-                'id'              => $message->id,
-                'body'            => $message->body,
-                'attachment'      => $message->attachment ? url('storage/' . $message->attachment) : null,
+            'message' => [
+                'id' => $message->id,
+                'body' => $message->body,
+                'attachment' => $message->attachment ? url('storage/' . $message->attachment) : null,
                 'attachment_name' => $message->attachment_name,
-                'is_edited'       => false,
-                'is_deleted'      => false,
-                'is_mine'         => true,
-                'created_at'      => $message->created_at,
+                'is_edited' => false,
+                'is_deleted' => false,
+                'is_mine' => true,
+                'created_at' => $message->created_at,
             ],
         ], 201);
     }
@@ -114,13 +114,13 @@ class MessageController extends Controller
             'body' => 'required|string|max:2000',
         ]);
 
-        $message        = \App\Models\Message::findOrFail($messageId);
+        $message = \App\Models\Message::findOrFail($messageId);
         $updatedMessage = $this->service->updateMessage($message, $request->user(), $request->body);
 
         return response()->json([
-            'id'         => $updatedMessage->id,
-            'body'       => $updatedMessage->body,
-            'is_edited'  => $updatedMessage->is_edited,
+            'id' => $updatedMessage->id,
+            'body' => $updatedMessage->body,
+            'is_edited' => $updatedMessage->is_edited,
             'is_deleted' => $updatedMessage->is_deleted,
         ]);
     }
@@ -142,7 +142,7 @@ class MessageController extends Controller
      */
     public function deleteConversation(Request $request, int $conversationId)
     {
-        $user         = $request->user();
+        $user = $request->user();
         $conversation = $user->conversations()->findOrFail($conversationId);
 
         // Détacher l'utilisateur de la conversation (soft-leave)
@@ -162,7 +162,7 @@ class MessageController extends Controller
      */
     public function contacts(Request $request)
     {
-        $user     = $request->user();
+        $user = $request->user();
         $contacts = collect();
 
         // ✅ RH → tous les utilisateurs sauf RH (inclut admin, managers, encadrants, étudiants)
@@ -170,7 +170,7 @@ class MessageController extends Controller
             $contacts = User::where('id', '!=', $user->id)
                 ->where(function ($query) {
                     $query->where('role', '!=', 'rh')
-                          ->orWhereNull('role');
+                        ->orWhereNull('role');
                 })
                 ->select('id', 'name', 'role', 'type')
                 ->get();
@@ -184,7 +184,7 @@ class MessageController extends Controller
 
             $contacts = $applications->map(function ($app) {
                 return [
-                    'id'   => $app->student->id,
+                    'id' => $app->student->id,
                     'name' => $app->student->name,
                     'role' => 'student',
                     'type' => 'student',
@@ -202,7 +202,7 @@ class MessageController extends Controller
 
             if ($application && $application->encadrant) {
                 $contacts->push([
-                    'id'   => $application->encadrant->id,
+                    'id' => $application->encadrant->id,
                     'name' => $application->encadrant->name,
                     'role' => 'encadrant',
                     'type' => 'enterprise',
@@ -217,7 +217,7 @@ class MessageController extends Controller
             $rhs = User::whereIn('id', $rhIds)->get(['id', 'name', 'role', 'type']);
             foreach ($rhs as $rh) {
                 $contacts->push([
-                    'id'   => $rh->id,
+                    'id' => $rh->id,
                     'name' => $rh->name . ' (RH)',
                     'role' => $rh->role,
                     'type' => $rh->type,
@@ -235,11 +235,11 @@ class MessageController extends Controller
 
         foreach ($savedUsers as $su) {
             $contacts->push([
-                'id'      => $su->id,
-                'name'    => $su->name,
-                'role'    => $su->role,
-                'type'    => $su->type,
-                'is_saved'=> true,
+                'id' => $su->id,
+                'name' => $su->name,
+                'role' => $su->role,
+                'type' => $su->type,
+                'is_saved' => true,
             ]);
         }
 
@@ -269,22 +269,22 @@ class MessageController extends Controller
 
         $user = $request->user();
 
-        if ((int)$request->contact_user_id === $user->id) {
+        if ((int) $request->contact_user_id === $user->id) {
             return response()->json(['message' => 'Vous ne pouvez pas vous ajouter vous-même'], 422);
         }
 
         Contact::firstOrCreate([
-            'user_id'         => $user->id,
+            'user_id' => $user->id,
             'contact_user_id' => $request->contact_user_id,
         ]);
 
         $contactUser = User::findOrFail($request->contact_user_id);
 
         return response()->json([
-            'id'       => $contactUser->id,
-            'name'     => $contactUser->name,
-            'role'     => $contactUser->role,
-            'type'     => $contactUser->type,
+            'id' => $contactUser->id,
+            'name' => $contactUser->name,
+            'role' => $contactUser->role,
+            'type' => $contactUser->type,
             'is_saved' => true,
         ], 201);
     }

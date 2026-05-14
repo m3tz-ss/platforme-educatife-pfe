@@ -137,8 +137,8 @@ export default function ManagerSupervision() {
               {/* ── Header ── */}
               <div className="dashboard-header">
                 <div>
-                  <p className="dashboard-title">📊 Suivi & Supervision</p>
-                  <p className="dashboard-subtitle">Vue d'ensemble des candidats par RH et Encadrant</p>
+                  <p className="dashboard-title"></p>
+                  <p className="dashboard-subtitle"></p>
                 </div>
                 <div className="flex items-center gap-3">
                     <NotificationBell apiPrefix="rh" />

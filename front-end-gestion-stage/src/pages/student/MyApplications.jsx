@@ -584,12 +584,14 @@ export default function MyApplications() {
   const statusMap = {
     nouveau: "pending", preselectionnee: "reviewing",
     entretien: "interview", acceptee: "accepted", refusee: "rejected",
+    termine: "finished",
   };
   const normalizeStatus = (s) => statusMap[s] || s;
 
   const statusColor = (s) => {
     switch (normalizeStatus(s)) {
       case "accepted": return "green";
+      case "finished": return "blue";
       case "rejected": return "red";
       case "interview": return "purple";
       case "reviewing": return "amber";
@@ -600,6 +602,7 @@ export default function MyApplications() {
   const statusLabel = (s) => {
     switch (normalizeStatus(s)) {
       case "accepted": return "✅ Accepté";
+      case "finished": return "🏁 Stage terminé";
       case "rejected": return "❌ Rejeté";
       case "interview": return "📞 Entretien planifié";
       case "reviewing": return "👀 Présélectionnée";
@@ -610,6 +613,7 @@ export default function MyApplications() {
   const getStatusMessage = (status) => {
     switch (normalizeStatus(status)) {
       case "accepted": return { icon: "🎉", title: "Félicitations!", message: "Votre candidature a été acceptée. L'entreprise vous contactera bientôt.", bgColor: "bg-green-50", borderColor: "border-green-200", textColor: "text-green-700" };
+      case "finished": return { icon: "🏁", title: "Stage terminé", message: "Félicitations! Vous avez terminé votre stage. Consultez vos évaluations.", bgColor: "bg-blue-50", borderColor: "border-blue-200", textColor: "text-blue-700" };
       case "rejected": return { icon: "😔", title: "Candidature refusée", message: "Malheureusement, votre candidature n'a pas été retenue. Ne baissez pas les bras!", bgColor: "bg-red-50", borderColor: "border-red-200", textColor: "text-red-700" };
       case "interview": return { icon: "📞", title: "Entretien planifié", message: "L'entreprise souhaite vous rencontrer. Vérifiez vos messages pour plus de détails.", bgColor: "bg-purple-50", borderColor: "border-purple-200", textColor: "text-purple-700" };
       case "reviewing": return { icon: "👀", title: "Présélectionnée", message: "Votre candidature a plu à l'entreprise! Vous êtes en cours d'examen.", bgColor: "bg-amber-50", borderColor: "border-amber-200", textColor: "text-amber-700" };
@@ -618,6 +622,7 @@ export default function MyApplications() {
   };
 
   const acceptedCount = applications.filter((a) => normalizeStatus(a.status) === "accepted").length;
+  const finishedCount = applications.filter((a) => normalizeStatus(a.status) === "finished").length;
   const rejectedCount = applications.filter((a) => normalizeStatus(a.status) === "rejected").length;
   const interviewCount = applications.filter((a) => normalizeStatus(a.status) === "interview").length;
   const reviewingCount = applications.filter((a) => normalizeStatus(a.status) === "reviewing").length;
@@ -772,6 +777,7 @@ export default function MyApplications() {
               {[
                 { label: "Total", value: applications.length, color: "text-blue-gray-900", sub: "Soumises", subColor: "text-blue-500" },
                 { label: "Acceptées", value: acceptedCount, color: "text-green-500", sub: "✅ Succès", subColor: "text-green-500" },
+                { label: "Terminées", value: finishedCount, color: "text-blue-500", sub: "🏁 Finis", subColor: "text-blue-500" },
                 { label: "Entretiens", value: interviewCount, color: "text-purple-500", sub: "📞 Planifiés", subColor: "text-purple-500" },
                 { label: "En cours", value: pendingCount + reviewingCount, color: "text-orange-500", sub: "⏳ En cours", subColor: "text-orange-500" },
                 { label: "Rejetées", value: rejectedCount, color: "text-red-500", sub: "❌ Refusées", subColor: "text-red-500" },
@@ -840,6 +846,7 @@ export default function MyApplications() {
                             }}
                           >
                             <div className={`h-1.5 bg-gradient-to-r ${statusColor(app.status) === "green" ? "from-green-500 to-green-600" :
+                              statusColor(app.status) === "blue" ? "from-blue-500 to-blue-600" :
                               statusColor(app.status) === "red" ? "from-red-500 to-red-600" :
                                 statusColor(app.status) === "purple" ? "from-purple-500 to-purple-600" :
                                   statusColor(app.status) === "amber" ? "from-amber-500 to-amber-600" :

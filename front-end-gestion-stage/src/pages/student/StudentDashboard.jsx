@@ -58,10 +58,11 @@ const formatDate = (dateStr) => {
 const STATUS_MAP = {
   nouveau: "pending", preselectionnee: "reviewing",
   entretien: "interview", acceptee: "accepted", refusee: "rejected",
+  termine: "finished",
 };
 const normalizeStatus = (status) => STATUS_MAP[status] ?? status;
-const STATUS_COLOR = { accepted: "green", rejected: "red", interview: "purple", reviewing: "amber", pending: "orange" };
-const STATUS_LABEL = { accepted: "✅ Acceptée", rejected: "❌ Refusée", interview: "📞 Entretien", reviewing: "👀 Présélectionnée", pending: "⏳ En attente" };
+const STATUS_COLOR = { accepted: "green", finished: "blue", rejected: "red", interview: "purple", reviewing: "amber", pending: "orange" };
+const STATUS_LABEL = { accepted: "✅ Acceptée", finished: "🏁 Terminé", rejected: "❌ Refusée", interview: "📞 Entretien", reviewing: "👀 Présélectionnée", pending: "⏳ En attente" };
 const statusColor = (status) => STATUS_COLOR[normalizeStatus(status)] ?? "orange";
 const statusLabel = (status) => STATUS_LABEL[normalizeStatus(status)] ?? "⏳ En attente";
 

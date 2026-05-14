@@ -198,8 +198,8 @@ export function ManagerDashboard() {
               {/* ── Header ── */}
               <div className="dashboard-header">
                 <div>
-                  <p className="dashboard-title">🏢 Dashboard Manager</p>
-                  <p className="dashboard-subtitle">Gérez les comptes internes de la plateforme</p>
+                  <p className="dashboard-title"></p>
+                  <p className="dashboard-subtitle"></p>
                 </div>
                 <div className="flex items-center gap-3">
                   <NotificationBell apiPrefix="rh" />

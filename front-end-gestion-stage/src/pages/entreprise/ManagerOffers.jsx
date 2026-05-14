@@ -146,8 +146,8 @@ export default function ManagerOffers() {
               {/* ── Header ── */}
               <div className="dashboard-header">
                 <div>
-                  <p className="dashboard-title">💼 Gestion des Offres</p>
-                  <p className="dashboard-subtitle">Liste de toutes les offres de stage publiées</p>
+                  <p className="dashboard-title"></p>
+                  <p className="dashboard-subtitle"></p>
                 </div>
                 <div className="flex items-center gap-3">
                     <NotificationBell apiPrefix="rh" />

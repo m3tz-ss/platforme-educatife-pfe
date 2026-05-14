@@ -42,6 +42,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
 import PlanInterviewModal from "../../components/interviews/PlanInterviewModal";
 import InterviewHistoryModal from "../../components/interviews/InterviewHistoryModal";
+import CandidateHistoryModal from "../../components/CandidateHistoryModal";
 import NotificationBell from "../../components/layout/NotificationBell";
 import BaseLayout from "../../components/layout/BaseLayout";
 import { EnterpriseSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -69,6 +70,12 @@ export default function ReceivedApplications() {
   const [evaluation, setEvaluation] = useState(null);
   const [evalForm, setEvalForm] = useState({ score: "", final_decision: "pending", notes: "" });
   const [evalLoading, setEvalLoading] = useState(false);
+
+  // Candidate history state
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [openHistoryModal, setOpenHistoryModal] = useState(false);
+  const [candidateHistory, setCandidateHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -286,6 +293,30 @@ export default function ReceivedApplications() {
       Swal.fire({ icon: "error", title: "Erreur", text: "Impossible d'enregistrer la validation." });
     } finally {
       setEvalLoading(false);
+    }
+  };
+
+  // Candidate history handler
+  const handleViewHistory = async (student) => {
+    if (!student?.id) return;
+    setSelectedStudent(student);
+    setOpenHistoryModal(true);
+    setHistoryLoading(true);
+    setCandidateHistory(null);
+    try {
+      const res = await api.get(`/rh/candidates/${student.id}/history`);
+      setCandidateHistory(res.data);
+    } catch (err) {
+      console.error("Erreur historique candidat:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Impossible de charger l'historique du candidat.",
+        confirmButtonColor: "#ef4444",
+      });
+      setOpenHistoryModal(false);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -513,6 +544,11 @@ export default function ReceivedApplications() {
                                 title="Voir détails">
                                 <EyeIcon className="w-4 h-4" />
                               </IconButton>
+                              <IconButton variant="text" size="sm" color="violet"
+                                onClick={() => handleViewHistory(app.student)}
+                                title="Historique des stages">
+                                <ClockIcon className="w-4 h-4" />
+                              </IconButton>
                               <IconButton variant="text" size="sm" color="purple"
                                 onClick={() => setPlanAppId(app.id)} title="Planifier entretien">
                                 <CalendarIcon className="w-4 h-4" />
@@ -586,6 +622,18 @@ export default function ReceivedApplications() {
                       <Typography variant="small" className="text-blue-gray-700">{value || "—"}</Typography>
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button 
+                    size="sm" 
+                    variant="text" 
+                    color="purple" 
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewHistory(selectedApplication.student)}
+                  >
+                    <ClockIcon className="w-4 h-4" />
+                    Voir l'historique complet
+                  </Button>
                 </div>
               </div>
 
@@ -826,6 +874,13 @@ export default function ReceivedApplications() {
         open={!!historyAppId}
         applicationId={historyAppId}
         onClose={() => setHistoryAppId(null)}
+      />
+      <CandidateHistoryModal
+        open={openHistoryModal}
+        student={selectedStudent}
+        history={candidateHistory}
+        loading={historyLoading}
+        onClose={() => { setOpenHistoryModal(false); setSelectedStudent(null); setCandidateHistory(null); }}
       />
       <ChatBox />
     </>

@@ -10,6 +10,7 @@ import {
   MagnifyingGlassIcon,
   UserGroupIcon,
   ChartBarIcon,
+  BriefcaseIcon,
   AcademicCapIcon,
   ChatBubbleLeftRightIcon,
   CalendarDaysIcon,
@@ -74,6 +75,7 @@ export default function ManagerEvaluations() {
   const menuItems = [
     { icon: UserGroupIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager" },
     { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications" },
+    { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers" },
     { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision" },
     { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations" }
   ];
@@ -136,8 +138,8 @@ export default function ManagerEvaluations() {
               {/* ── Header ── */}
               <div className="dashboard-header">
                 <div>
-                  <p className="dashboard-title">📋 Évaluations Encadrants</p>
-                  <p className="dashboard-subtitle">Historique des évaluations de fin de stage</p>
+                  <p className="dashboard-title"> </p>
+                  <p className="dashboard-subtitle"></p>
                 </div>
                 <div className="flex items-center gap-3">
                     <NotificationBell apiPrefix="rh" />

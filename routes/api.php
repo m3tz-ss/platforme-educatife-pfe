@@ -31,6 +31,7 @@ use App\Http\Controllers\AI\RecommendationController;
 use App\Http\Controllers\Enterprise\EnterpriseEvaluationController;
 use App\Http\Controllers\OfferProposalController;
 use App\Http\Controllers\ManagerSupervisionController;
+use App\Http\Controllers\Enterprise\CandidateHistoryController;
 
 
 
@@ -208,4 +209,7 @@ Route::middleware('auth:sanctum')->prefix('rh')->group(function () {
     // 🎯 Propositions d'offres (RH → étudiant)
     Route::post('/offer-proposals', [OfferProposalController::class, 'propose']);
     Route::get('/offer-proposals', [OfferProposalController::class, 'rhProposals']);
+
+    // 🔍 Historique des stages d'un candidat
+    Route::get('/candidates/{studentId}/history', [CandidateHistoryController::class, 'index']);
 });
