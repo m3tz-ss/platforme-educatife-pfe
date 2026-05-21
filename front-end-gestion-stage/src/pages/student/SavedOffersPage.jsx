@@ -173,10 +173,10 @@ export default function SavedOffersPage() {
       title="Offres Sauvegardées"
       menuItems={menuItems}
       sidebarHeader={
-        <StudentSidebarHeader 
-          name={userData?.name} 
-          email={userData?.email} 
-          photoUrl={userData?.photo_url} 
+        <StudentSidebarHeader
+          name={userData?.name}
+          email={userData?.email}
+          photoUrl={userData?.photo_url}
         />
       }
     >
@@ -223,8 +223,8 @@ export default function SavedOffersPage() {
             {savedOffers.map((offer) => {
               const companyInitial = offer.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
               return (
-                <Card 
-                  key={offer.id} 
+                <Card
+                  key={offer.id}
                   className="hover:shadow-xl transition-all duration-300 group cursor-pointer border border-blue-gray-50 overflow-hidden"
                   onClick={() => handleOpenDetails(offer)}
                 >
@@ -312,7 +312,7 @@ export default function SavedOffersPage() {
                 <XMarkIcon className="w-5 h-5" />
               </IconButton>
             </div>
-            
+
             {selectedOffer?.enterprise?.logo_url && (
               <div className="absolute -bottom-6 right-8 w-20 h-20 rounded-2xl overflow-hidden bg-white shadow-xl border-4 border-white flex items-center justify-center p-2 z-10">
                 <img src={selectedOffer.enterprise.logo_url} alt="Logo" className="w-full h-full object-contain" />

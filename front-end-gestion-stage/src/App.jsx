@@ -24,6 +24,7 @@ const SavedOffersPage = lazy(() => import("./pages/student/SavedOffersPage"));
 const Offertable = lazy(() => import("./pages/entreprise/offerstable"));
 const ReceivedApplications = lazy(() => import("./pages/entreprise/ReceivedApplications"));
 const InterviewsHistoryPage = lazy(() => import("./pages/entreprise/InterviewsHistoryPage"));
+const AiCandidateRecommendations = lazy(() => import("./pages/entreprise/AiCandidateRecommendations"));
 const EspaceEntreprise = lazy(() => import("./pages/entreprise/EspaceEntreprise"));
 const ManagerDashboard = lazy(() => import("./pages/entreprise/ManagerDashboard"));
 const ManagerApplications = lazy(() => import("./pages/entreprise/ManagerApplications"));
@@ -94,6 +95,7 @@ function App() {
         <Route path="/enterprise/condidateurliste" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><ReceivedApplications /></ProtectedRoute>} />
         <Route path="/enterprise/enterview" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><InterviewsHistoryPage /></ProtectedRoute>} />
         <Route path="/enterprise/profile" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><EnterpriseProfile /></ProtectedRoute>} />
+        <Route path="/enterprise/ai-recommendations" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><AiCandidateRecommendations /></ProtectedRoute>} />
 
         {/* Manager uniquement - gestion des utilisateurs internes */}
         <Route path="/enterprise/manager" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerDashboard /></ProtectedRoute>} />

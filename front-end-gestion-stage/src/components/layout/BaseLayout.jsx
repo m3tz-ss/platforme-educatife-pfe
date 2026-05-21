@@ -53,22 +53,22 @@ export default function BaseLayout({
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = window.location.pathname === item.path || window.location.pathname.startsWith(item.path + "/");
-              
+
               if (variant === "encadrant") {
                 return (
                   <Link key={item.path} to={item.path}>
                     <div className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group cursor-pointer mb-1.5
-                      ${isActive 
-                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200/50 scale-[1.02]" 
+                      ${isActive
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200/50 scale-[1.02]"
                         : "text-slate-500 hover:bg-slate-50 hover:text-indigo-600 hover:translate-x-1"}`}>
-                      
+
                       {/* Active Indicator Bar */}
                       {isActive && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
                       )}
 
                       <Icon className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${isActive ? "text-white scale-110" : "text-slate-400 group-hover:text-indigo-500 group-hover:scale-110"}`} />
-                      
+
                       <span className={`text-sm font-bold tracking-tight truncate transition-colors ${isActive ? "text-white" : "group-hover:text-indigo-600"}`}>
                         {item.label}
                       </span>

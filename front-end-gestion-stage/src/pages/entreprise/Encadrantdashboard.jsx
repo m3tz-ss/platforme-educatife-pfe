@@ -6,6 +6,8 @@ import BaseLayout from "../../components/layout/BaseLayout";
 import { EnterpriseSidebarHeader } from "../../components/layout/SidebarHeaders";
 import { getEnterpriseMenuItems } from "../../config/sidebarConfig";
 import NotificationBell from "../../components/layout/NotificationBell";
+import CandidateHistoryModal from "../../components/CandidateHistoryModal";
+import Swal from "sweetalert2";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(
   /\/api\/?$/,
@@ -59,6 +61,13 @@ export default function EncadrantDashboard() {
   const [notifError, setNotifError] = useState(null);
   const notifRef = useRef(null);
 
+  // ── CANDIDATE HISTORY STATE ──────────────────────────────────────
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [openHistoryModal, setOpenHistoryModal] = useState(false);
+  const [candidateHistory, setCandidateHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  // ─────────────────────────────────────────────────────────────────
+
   // ── MESSAGING STATE ──────────────────────────────────────────────
   const [msgOpen, setMsgOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -102,6 +111,29 @@ export default function EncadrantDashboard() {
       .then((res) => setMeta(res.data))
       .catch((err) => console.error("Supervision", err))
       .finally(() => setLoading(false));
+  };
+
+  const handleViewHistory = async (student) => {
+    if (!student?.id) return;
+    setSelectedStudent(student);
+    setOpenHistoryModal(true);
+    setHistoryLoading(true);
+    setCandidateHistory(null);
+    try {
+      const res = await api.get(`/rh/candidates/${student.id}/history`);
+      setCandidateHistory(res.data);
+    } catch (err) {
+      console.error("Erreur historique candidat:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Impossible de charger l'historique du candidat.",
+        confirmButtonColor: "#ef4444",
+      });
+      setOpenHistoryModal(false);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   useEffect(() => { loadSupervision(page); }, [page]);
@@ -478,6 +510,13 @@ export default function EncadrantDashboard() {
                         CV
                       </a>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleViewHistory(s)}
+                      className="inline-flex items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-100 transition-colors"
+                    >
+                      Historique
+                    </button>
                   </div>
                 </article>
               );
@@ -501,6 +540,14 @@ export default function EncadrantDashboard() {
         )}
       </div>
       <ChatBox />
+
+      <CandidateHistoryModal
+        open={openHistoryModal}
+        student={selectedStudent}
+        history={candidateHistory}
+        loading={historyLoading}
+        onClose={() => setOpenHistoryModal(false)}
+      />
     </BaseLayout>
   );
 }

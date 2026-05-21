@@ -9,6 +9,7 @@ import {
   CheckCircleIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 
 /**
@@ -42,6 +43,7 @@ export function getEnterpriseMenuItems(counts = {}, role = "rh") {
     { icon: PlusIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: counts.applications ?? null },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: counts.interviewApps ?? null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];

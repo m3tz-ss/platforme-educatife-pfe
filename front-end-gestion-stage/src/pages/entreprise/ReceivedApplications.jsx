@@ -37,6 +37,7 @@ import {
   DocumentArrowDownIcon,
   MapPinIcon,
   ClockIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -208,17 +209,20 @@ export default function ReceivedApplications() {
     }
     try {
       setAssignLoading(true);
-      await api.post(`/assign-encadrant/${applicationId}`, { encadrant_id: selectedEncadrant });
+      const res = await api.post(`/assign-encadrant/${applicationId}`, { encadrant_id: selectedEncadrant });
+      const updatedApp = res.data.application;
+
       setSelectedEncadrant("");
-      Swal.fire({ icon: "success", title: "Encadrant affecté !", timer: 2000, timerProgressBar: true, showConfirmButton: false });
-      fetchApplications();
-      // Update selected application if it's the one we're assigning
+
+      setApplications((prev) =>
+        prev.map((app) => (app.id === applicationId ? updatedApp : app))
+      );
+
       if (selectedApplication?.id === applicationId) {
-        const res = await api.get("/enterprise/applications");
-        const apps = Array.isArray(res.data) ? res.data : res.data.data || [];
-        const updatedApp = apps.find(a => a.id === applicationId);
-        if (updatedApp) setSelectedApplication(updatedApp);
+        setSelectedApplication(updatedApp);
       }
+
+      Swal.fire({ icon: "success", title: "Encadrant affecté !", timer: 2000, timerProgressBar: true, showConfirmButton: false });
     } catch (err) {
       Swal.fire({ icon: "error", title: "Erreur", text: "Impossible d'affecter l'encadrant.", confirmButtonColor: "#ef4444" });
     } finally {
@@ -241,16 +245,18 @@ export default function ReceivedApplications() {
     if (result.isConfirmed) {
       try {
         setAssignLoading(true);
-        await api.delete(`/unassign-encadrant/${applicationId}`);
-        Swal.fire({ icon: "success", title: "Affectation supprimée !", timer: 2000, timerProgressBar: true, showConfirmButton: false });
-        fetchApplications();
-        // Update selected application if it's the one we're unassigning
+        const res = await api.delete(`/unassign-encadrant/${applicationId}`);
+        const updatedApp = res.data.application;
+
+        setApplications((prev) =>
+          prev.map((app) => (app.id === applicationId ? updatedApp : app))
+        );
+
         if (selectedApplication?.id === applicationId) {
-          const res = await api.get("/enterprise/applications");
-          const apps = Array.isArray(res.data) ? res.data : res.data.data || [];
-          const updatedApp = apps.find(a => a.id === applicationId);
-          if (updatedApp) setSelectedApplication(updatedApp);
+          setSelectedApplication(updatedApp);
         }
+
+        Swal.fire({ icon: "success", title: "Affectation supprimée !", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       } catch (err) {
         Swal.fire({ icon: "error", title: "Erreur", text: "Impossible de supprimer l'affectation.", confirmButtonColor: "#ef4444" });
       } finally {
@@ -365,221 +371,222 @@ export default function ReceivedApplications() {
     { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: totalCount },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: interviewCount || null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];
 
   const roleConfigs = {
-    manager:   { label: "Manager",   color: "blue",   icon: "🏢" },
-    rh:        { label: "RH",        color: "green",  icon: "👥" },
+    manager: { label: "Manager", color: "blue", icon: "🏢" },
+    rh: { label: "RH", color: "green", icon: "👥" },
     encadrant: { label: "Encadrant", color: "purple", icon: "🎓" },
     enterprise: { label: "Entreprise", color: "blue", icon: "🏢" },
   };
 
   return (
     <>
-    <BaseLayout
-      title="Candidatures reçues"
-      menuItems={menuItems}
-      sidebarHeader={
-        <EnterpriseSidebarHeader 
-          name={userData?.name} 
-          email={userData?.email} 
-          photoUrl={userData?.photo_url}
-          enterpriseName={userData?.company_name}
-          logoUrl={userData?.logo_url}
-          logo={userData?.logo}
-          roleConfig={roleConfigs[enterpriseRole]}
-        />
-      }
-      sidebarExtra={
-        <div className="bg-blue-50 rounded-lg p-4">
-          <Typography variant="small" className="text-blue-gray-600 mb-1">En attente de traitement</Typography>
-          <Progress value={totalCount > 0 ? (newCount / totalCount) * 100 : 0} color="blue" className="h-2" />
-          <Typography variant="caption" className="text-blue-gray-500 mt-2">{newCount} nouvelle(s)</Typography>
-        </div>
-      }
-      headerActions={
-        <div className="flex items-center gap-2">
-          <NotificationBell apiPrefix="rh" />
-          <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
-        </div>
-      }
-    >
-      <div className="p-0">
+      <BaseLayout
+        title="Candidatures reçues"
+        menuItems={menuItems}
+        sidebarHeader={
+          <EnterpriseSidebarHeader
+            name={userData?.name}
+            email={userData?.email}
+            photoUrl={userData?.photo_url}
+            enterpriseName={userData?.company_name}
+            logoUrl={userData?.logo_url}
+            logo={userData?.logo}
+            roleConfig={roleConfigs[enterpriseRole]}
+          />
+        }
+        sidebarExtra={
+          <div className="bg-blue-50 rounded-lg p-4">
+            <Typography variant="small" className="text-blue-gray-600 mb-1">En attente de traitement</Typography>
+            <Progress value={totalCount > 0 ? (newCount / totalCount) * 100 : 0} color="blue" className="h-2" />
+            <Typography variant="caption" className="text-blue-gray-500 mt-2">{newCount} nouvelle(s)</Typography>
+          </div>
+        }
+        headerActions={
+          <div className="flex items-center gap-2">
+            <NotificationBell apiPrefix="rh" />
+            <IconButton variant="text" color="blue-gray"><UserCircleIcon className="w-5 h-5" /></IconButton>
+          </div>
+        }
+      >
+        <div className="p-0">
 
-            {/* ✅ Statistiques */}
-            <div className="mb-8 grid gap-4 grid-cols-2 xl:grid-cols-5">
-              {[
-                { label: "Total", value: totalCount, color: "text-blue-gray-900", subColor: "text-blue-500" },
-                { label: "Nouveau", value: newCount, color: "text-blue-500", subColor: "text-blue-500" },
-                { label: "Présélectionnée", value: preCount, color: "text-amber-500", subColor: "text-amber-500" },
-                { label: "Entretien", value: interviewCount, color: "text-purple-500", subColor: "text-purple-500" },
-                { label: "Acceptée", value: acceptedCount, color: "text-green-500", subColor: "text-green-500" },
-              ].map((stat) => (
-                <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
-                  <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
-                  <Typography className={`text-2xl font-bold ${stat.color}`}>{stat.value}</Typography>
-                </Card>
-              ))}
-            </div>
+          {/* ✅ Statistiques */}
+          <div className="mb-8 grid gap-4 grid-cols-2 xl:grid-cols-5">
+            {[
+              { label: "Total", value: totalCount, color: "text-blue-gray-900", subColor: "text-blue-500" },
+              { label: "Nouveau", value: newCount, color: "text-blue-500", subColor: "text-blue-500" },
+              { label: "Présélectionnée", value: preCount, color: "text-amber-500", subColor: "text-amber-500" },
+              { label: "Entretien", value: interviewCount, color: "text-purple-500", subColor: "text-purple-500" },
+              { label: "Acceptée", value: acceptedCount, color: "text-green-500", subColor: "text-green-500" },
+            ].map((stat) => (
+              <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
+                <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
+                <Typography className={`text-2xl font-bold ${stat.color}`}>{stat.value}</Typography>
+              </Card>
+            ))}
+          </div>
 
-            {/* Filtres */}
-            <div className="mb-6 flex gap-2 flex-wrap">
-              {filters.map((filter) => (
-                <Button
-                  key={filter.label}
-                  variant={selectedFilter === filter.label ? "filled" : "outlined"}
-                  color={selectedFilter === filter.label ? "blue" : "blue-gray"}
-                  size="sm"
-                  onClick={() => setSelectedFilter(filter.label)}
-                  className="text-xs"
-                >
-                  {filter.label} ({filter.count})
-                </Button>
-              ))}
-            </div>
+          {/* Filtres */}
+          <div className="mb-6 flex gap-2 flex-wrap">
+            {filters.map((filter) => (
+              <Button
+                key={filter.label}
+                variant={selectedFilter === filter.label ? "filled" : "outlined"}
+                color={selectedFilter === filter.label ? "blue" : "blue-gray"}
+                size="sm"
+                onClick={() => setSelectedFilter(filter.label)}
+                className="text-xs"
+              >
+                {filter.label} ({filter.count})
+              </Button>
+            ))}
+          </div>
 
-            {/* Recherche */}
-            <Card className="mb-6 shadow-sm border border-blue-gray-100">
-              <CardBody className="p-4">
-                <Input
-                  placeholder="Rechercher par nom de candidat ou offre..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  icon={<MagnifyingGlassIcon className="h-5 w-5" />}
-                  className="!border-blue-gray-200"
-                />
-              </CardBody>
-            </Card>
+          {/* Recherche */}
+          <Card className="mb-6 shadow-sm border border-blue-gray-100">
+            <CardBody className="p-4">
+              <Input
+                placeholder="Rechercher par nom de candidat ou offre..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon={<MagnifyingGlassIcon className="h-5 w-5" />}
+                className="!border-blue-gray-200"
+              />
+            </CardBody>
+          </Card>
 
-            {/* ✅ Liste candidatures */}
-            <Card className="shadow-sm border border-blue-gray-100">
-              <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
-                <Typography variant="h6" color="blue-gray" className="font-bold">
-                  {filteredApplications.length} candidature(s) trouvée(s)
-                </Typography>
-                <Button size="sm" color="blue" variant="outlined" onClick={fetchApplications}>
-                  🔄 Actualiser
-                </Button>
-              </CardHeader>
+          {/* ✅ Liste candidatures */}
+          <Card className="shadow-sm border border-blue-gray-100">
+            <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
+              <Typography variant="h6" color="blue-gray" className="font-bold">
+                {filteredApplications.length} candidature(s) trouvée(s)
+              </Typography>
+              <Button size="sm" color="blue" variant="outlined" onClick={fetchApplications}>
+                🔄 Actualiser
+              </Button>
+            </CardHeader>
 
-              <CardBody className="p-0">
-                {loading ? (
-                  <div className="flex justify-center py-12">
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-blue-500 animate-spin mb-3 mx-auto"></div>
-                      <Typography className="text-blue-gray-500">Chargement...</Typography>
-                    </div>
+            <CardBody className="p-0">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-blue-500 animate-spin mb-3 mx-auto"></div>
+                    <Typography className="text-blue-gray-500">Chargement...</Typography>
                   </div>
-                ) : filteredApplications.length === 0 ? (
-                  <div className="text-center py-12 px-6">
-                    <UserGroupIcon className="w-16 h-16 mx-auto text-blue-gray-300 mb-4" />
-                    <Typography className="text-blue-gray-500">Aucune candidature trouvée</Typography>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-blue-gray-50">
-                    {filteredApplications.map((app) => {
-                      const initial = getInitial(app.student?.name);
-                      const cvUrl = getCvUrl(app.cv_path || app.cv);
-                      const status = getStatus(app.status);
+                </div>
+              ) : filteredApplications.length === 0 ? (
+                <div className="text-center py-12 px-6">
+                  <UserGroupIcon className="w-16 h-16 mx-auto text-blue-gray-300 mb-4" />
+                  <Typography className="text-blue-gray-500">Aucune candidature trouvée</Typography>
+                </div>
+              ) : (
+                <div className="divide-y divide-blue-gray-50">
+                  {filteredApplications.map((app) => {
+                    const initial = getInitial(app.student?.name);
+                    const cvUrl = getCvUrl(app.cv_path || app.cv);
+                    const status = getStatus(app.status);
 
-                      return (
-                        <div key={app.id} className="flex items-center justify-between p-5 hover:bg-blue-gray-50 transition">
-                          {/* Avatar + Infos */}
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            {/* ✅ Photo étudiant avec fallback initiale */}
-                            <div className={`w-12 h-12 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${app.student?.photo_url ? '' : getAvatarColor(app.student?.name)}`}>
-                              {app.student?.photo_url ? (
-                                <img
-                                  src={app.student.photo_url}
-                                  alt={app.student?.name || "Photo"}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                initial
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5 flex items-center gap-2">
-                                  {app.student?.name || "Candidat"}
-                                  {app.student?.is_in_internship && (
-                                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
-                                      Déjà en stage
-                                    </span>
-                                  )}
-                                </Typography>
-                              <Typography variant="small" className="text-blue-500 font-medium mb-1">
-                                {app.offer?.title || "Offre"}
-                              </Typography>
-                              {/* ✅ snake_case */}
-                              <div className="flex flex-wrap gap-3 text-xs text-blue-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <MapPinIcon className="w-3 h-3" />{app.offer?.location || "N/A"}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <ClockIcon className="w-3 h-3" />{app.offer?.duration || "N/A"}
-                                </span>
-                                <span>🗓️ {formatDate(app.created_at)}</span>
-                                {cvUrl ? (
-                                  <a href={cvUrl} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition">
-                                    <DocumentArrowDownIcon className="w-3 h-3" /> CV joint
-                                  </a>
-                                ) : (
-                                  <span className="text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Pas de CV</span>
-                                )}
-                              </div>
-                            </div>
+                    return (
+                      <div key={app.id} className="flex items-center justify-between p-5 hover:bg-blue-gray-50 transition">
+                        {/* Avatar + Infos */}
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          {/* ✅ Photo étudiant avec fallback initiale */}
+                          <div className={`w-12 h-12 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${app.student?.photo_url ? '' : getAvatarColor(app.student?.name)}`}>
+                            {app.student?.photo_url ? (
+                              <img
+                                src={app.student.photo_url}
+                                alt={app.student?.name || "Photo"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              initial
+                            )}
                           </div>
-
-                          {/* Statut + Actions */}
-                          <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                            <span className={`${status.bg} text-xs font-medium px-3 py-1 rounded-full`}>
-                              {status.label}
-                            </span>
-                            <div className="flex gap-1">
-                              <IconButton variant="text" size="sm" color="blue"
-                                onClick={() => { setSelectedApplication(app); setSelectedEncadrant(""); fetchEvaluation(app.id); setOpenModal(true); }}
-                                title="Voir détails">
-                                <EyeIcon className="w-4 h-4" />
-                              </IconButton>
-                              <IconButton variant="text" size="sm" color="violet"
-                                onClick={() => handleViewHistory(app.student)}
-                                title="Historique des stages">
-                                <ClockIcon className="w-4 h-4" />
-                              </IconButton>
-                              <IconButton variant="text" size="sm" color="purple"
-                                onClick={() => setPlanAppId(app.id)} title="Planifier entretien">
-                                <CalendarIcon className="w-4 h-4" />
-                              </IconButton>
-                              {app.status === "entretien" && (
-                                <IconButton variant="text" size="sm" color="amber"
-                                  onClick={() => setHistoryAppId(app.id)} title="Historique entretiens">
-                                  <span className="text-sm">📜</span>
-                                </IconButton>
+                          <div className="flex-1 min-w-0">
+                            <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5 flex items-center gap-2">
+                              {app.student?.name || "Candidat"}
+                              {app.student?.is_in_internship && (
+                                <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
+                                  Déjà en stage
+                                </span>
                               )}
-                              <IconButton variant="text" size="sm" color="green"
-                                onClick={() => handleStatusChange(app.id, "acceptee")} title="Accepter"
-                                disabled={app.status === "acceptee"}>
-                                <CheckIcon className="w-4 h-4" />
-                              </IconButton>
-                              <IconButton variant="text" size="sm" color="red"
-                                onClick={() => handleStatusChange(app.id, "refusee")} title="Refuser"
-                                disabled={app.status === "refusee"}>
-                                <XCircleIcon className="w-4 h-4" />
-                              </IconButton>
+                            </Typography>
+                            <Typography variant="small" className="text-blue-500 font-medium mb-1">
+                              {app.offer?.title || "Offre"}
+                            </Typography>
+                            {/* ✅ snake_case */}
+                            <div className="flex flex-wrap gap-3 text-xs text-blue-gray-500">
+                              <span className="flex items-center gap-1">
+                                <MapPinIcon className="w-3 h-3" />{app.offer?.location || "N/A"}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <ClockIcon className="w-3 h-3" />{app.offer?.duration || "N/A"}
+                              </span>
+                              <span>🗓️ {formatDate(app.created_at)}</span>
+                              {cvUrl ? (
+                                <a href={cvUrl} target="_blank" rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition">
+                                  <DocumentArrowDownIcon className="w-3 h-3" /> CV joint
+                                </a>
+                              ) : (
+                                <span className="text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Pas de CV</span>
+                              )}
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-      </div>
-    </BaseLayout>
+
+                        {/* Statut + Actions */}
+                        <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                          <span className={`${status.bg} text-xs font-medium px-3 py-1 rounded-full`}>
+                            {status.label}
+                          </span>
+                          <div className="flex gap-1">
+                            <IconButton variant="text" size="sm" color="blue"
+                              onClick={() => { setSelectedApplication(app); setSelectedEncadrant(""); fetchEvaluation(app.id); setOpenModal(true); }}
+                              title="Voir détails">
+                              <EyeIcon className="w-4 h-4" />
+                            </IconButton>
+                            <IconButton variant="text" size="sm" color="violet"
+                              onClick={() => handleViewHistory(app.student)}
+                              title="Historique des stages">
+                              <ClockIcon className="w-4 h-4" />
+                            </IconButton>
+                            <IconButton variant="text" size="sm" color="purple"
+                              onClick={() => setPlanAppId(app.id)} title="Planifier entretien">
+                              <CalendarIcon className="w-4 h-4" />
+                            </IconButton>
+                            {app.status === "entretien" && (
+                              <IconButton variant="text" size="sm" color="amber"
+                                onClick={() => setHistoryAppId(app.id)} title="Historique entretiens">
+                                <span className="text-sm">📜</span>
+                              </IconButton>
+                            )}
+                            <IconButton variant="text" size="sm" color="green"
+                              onClick={() => handleStatusChange(app.id, "acceptee")} title="Accepter"
+                              disabled={app.status === "acceptee"}>
+                              <CheckIcon className="w-4 h-4" />
+                            </IconButton>
+                            <IconButton variant="text" size="sm" color="red"
+                              onClick={() => handleStatusChange(app.id, "refusee")} title="Refuser"
+                              disabled={app.status === "refusee"}>
+                              <XCircleIcon className="w-4 h-4" />
+                            </IconButton>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      </BaseLayout>
 
       {/* ✅ Modal Détails */}
       <Dialog open={openModal} handler={() => setOpenModal(false)} size="lg">
@@ -624,10 +631,10 @@ export default function ReceivedApplications() {
                   ))}
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button 
-                    size="sm" 
-                    variant="text" 
-                    color="purple" 
+                  <Button
+                    size="sm"
+                    variant="text"
+                    color="purple"
                     className="flex items-center gap-2"
                     onClick={() => handleViewHistory(selectedApplication.student)}
                   >
@@ -863,7 +870,6 @@ export default function ReceivedApplications() {
         </DialogFooter>
       </Dialog>
 
-      {/* Modals externes */}
       <PlanInterviewModal
         open={!!planAppId}
         applicationId={planAppId}

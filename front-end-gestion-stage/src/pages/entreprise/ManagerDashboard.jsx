@@ -20,11 +20,13 @@ import {
   ArrowLeftIcon,
   ChartBarIcon,
   ClipboardDocumentCheckIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
 import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
 import NotificationBell from "../../components/layout/NotificationBell";
+
 import "./css/ManagerDashboard.css";
 
 const AVATAR_COLORS = ["blue", "violet", "emerald", "orange", "rose", "cyan"];
@@ -135,6 +137,7 @@ export function ManagerDashboard() {
     { icon: UsersIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager", badge: null },
     { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications", badge: null },
     { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers", badge: null },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
     { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision", badge: null },
     { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations", badge: null }
   ];

@@ -14,6 +14,7 @@ import {
   UserCircleIcon,
   AcademicCapIcon,
   ClipboardDocumentCheckIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
@@ -29,6 +30,7 @@ const STATUS_CONFIG = {
   entretien: { label: "Entretien", color: "purple", bg: "bg-purple-50", text: "text-purple-700" },
   acceptee: { label: "Accepté", color: "green", bg: "bg-green-50", text: "text-green-700" },
   refusee: { label: "Refusé", color: "red", bg: "bg-red-50", text: "text-red-700" },
+  termine: { label: "Stage Terminé", color: "teal", bg: "bg-teal-50", text: "text-teal-700" },
 };
 
 export default function ManagerSupervision() {
@@ -76,13 +78,14 @@ export default function ManagerSupervision() {
   const stats = [
     { label: "Candidats suivis", value: data.length, icon: UserGroupIcon, color: "blue" },
     { label: "Stages en cours", value: data.filter(d => d.status === 'acceptee').length, icon: BriefcaseIcon, color: "emerald" },
-    { label: "En attente", value: data.filter(d => d.status !== 'acceptee' && d.status !== 'refusee').length, icon: ChartBarIcon, color: "orange" },
+    { label: "En attente", value: data.filter(d => d.status !== 'acceptee' && d.status !== 'refusee' && d.status !== 'termine').length, icon: ChartBarIcon, color: "orange" },
   ];
 
   const menuItems = [
     { icon: UserGroupIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager" },
     { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications" },
     { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers" },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations" },
     { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision" },
     { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations" }
   ];
@@ -248,7 +251,7 @@ export default function ManagerSupervision() {
                               </td>
                               <td>
                                 <div className="w-full min-w-[120px]">
-                                    {item.status === 'acceptee' ? (
+                                    {item.status === 'acceptee' || item.status === 'termine' ? (
                                         <div className="space-y-1">
                                             <div className="flex justify-between text-[10px] font-bold text-slate-500">
                                                 <span>{item.progress}%</span>

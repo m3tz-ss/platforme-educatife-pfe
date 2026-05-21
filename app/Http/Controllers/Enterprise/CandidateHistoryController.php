@@ -17,9 +17,9 @@ class CandidateHistoryController extends Controller
     {
         $user = $request->user();
 
-        // Autorisation : manager, rh ou enterprise
-        if (!in_array($user->role, ['manager', 'rh', 'enterprise'])) {
-            abort(403, 'Accès refusé. Rôle manager, rh ou enterprise requis.');
+        // Autorisation : manager, rh, enterprise ou encadrant
+        if (!in_array($user->role, ['manager', 'rh', 'enterprise', 'encadrant'])) {
+            abort(403, 'Accès refusé. Rôle manager, rh, enterprise ou encadrant requis.');
         }
 
         // Récupérer l'étudiant

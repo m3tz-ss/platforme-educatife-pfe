@@ -88,7 +88,7 @@ class ManagerSupervisionController extends Controller
 
         // Calcul de l'avancement pour les stages acceptés
         $applications->each(function($app) {
-            if ($app->status === 'acceptee') {
+            if (in_array($app->status, ['acceptee', 'termine'])) {
                 $total = $app->total_tasks;
                 $done = $app->completed_tasks;
                 

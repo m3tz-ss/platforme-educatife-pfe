@@ -64,7 +64,7 @@ class ApplicationRepository
             // Flat IDs fetching is 100x faster than PostgreSQL orWhereIn subquery
             $managedIds = User::where('manager_id', $userId)->pluck('id')->toArray();
             $managedIds[] = $userId;
-            
+
             $query->whereHas('offer', function ($q) use ($managedIds) {
                 $q->whereIn('enterprise_id', $managedIds);
             });
@@ -81,32 +81,32 @@ class ApplicationRepository
             : $query->get();
 
         $transform = fn($app) => [
-                         'id'         => $app->id,
-                         'status'     => $app->status,
-                         'cv'         => $app->cv,
-                         'cv_path'    => $app->cv, // ✅ alias
-                         'created_at' => $app->created_at,
-                         'offer_id'   => $app->offer_id,
-                         'student'    => $app->student ? array_merge($app->student->only(['id','name','email','phone']), [
-                             // ✅ URL absolue de la photo étudiant
-                             'photo_url' => $app->student->photo_path
-                                 ? Storage::disk('public')->url($app->student->photo_path)
-                                 : null,
-                             'is_in_internship' => \App\Models\Application::where('student_id', $app->student->id)
-                                 ->where('status', 'acceptee')
-                                 ->exists(),
-                         ]) : null,
-                         'encadrant'  => $app->encadrant,
-                         'offer'      => $app->offer ? [
-                             'id'               => $app->offer->id,
-                             'title'            => $app->offer->title,
-                             'domain'           => $app->offer->domain,
-                             'location'         => $app->offer->location,
-                             'duration'         => $app->offer->duration,
-                             'start_date'       => $app->offer->start_date,
-                             'available_places' => $app->offer->available_places,
-                         ] : null,
-                     ];
+            'id' => $app->id,
+            'status' => $app->status,
+            'cv' => $app->cv,
+            'cv_path' => $app->cv, // ✅ alias
+            'created_at' => $app->created_at,
+            'offer_id' => $app->offer_id,
+            'student' => $app->student ? array_merge($app->student->only(['id', 'name', 'email', 'phone']), [
+                // ✅ URL absolue de la photo étudiant
+                'photo_url' => $app->student->photo_path
+                    ? Storage::disk('public')->url($app->student->photo_path)
+                    : null,
+                'is_in_internship' => \App\Models\Application::where('student_id', $app->student->id)
+                    ->where('status', 'acceptee')
+                    ->exists(),
+            ]) : null,
+            'encadrant' => $app->encadrant,
+            'offer' => $app->offer ? [
+                'id' => $app->offer->id,
+                'title' => $app->offer->title,
+                'domain' => $app->offer->domain,
+                'location' => $app->offer->location,
+                'duration' => $app->offer->duration,
+                'start_date' => $app->offer->start_date,
+                'available_places' => $app->offer->available_places,
+            ] : null,
+        ];
 
         if ($results instanceof \Illuminate\Contracts\Pagination\Paginator) {
             $results->getCollection()->transform($transform);

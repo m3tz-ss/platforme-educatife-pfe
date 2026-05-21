@@ -43,13 +43,13 @@ class EncadrantController extends Controller
         // 3. ✉️ Email réel → Étudiant
         if ($student?->email) {
             Mail::to($student->email)
-                ->send(new EncadrantAssignedToStudentMail($student, $encadrant, $offerTitle));
+                ->queue(new EncadrantAssignedToStudentMail($student, $encadrant, $offerTitle));
         }
 
         // 4. ✉️ Email réel → Encadrant
         if ($encadrant->email) {
             Mail::to($encadrant->email)
-                ->send(new EncadrantAssignedToEncadrantMail($encadrant, $student ?? $encadrant, $offerTitle));
+                ->queue(new EncadrantAssignedToEncadrantMail($encadrant, $student ?? $encadrant, $offerTitle));
         }
 
         return response()->json([

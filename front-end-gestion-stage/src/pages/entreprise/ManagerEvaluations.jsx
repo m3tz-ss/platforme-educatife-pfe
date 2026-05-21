@@ -15,6 +15,7 @@ import {
   ChatBubbleLeftRightIcon,
   CalendarDaysIcon,
   StarIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
@@ -76,6 +77,7 @@ export default function ManagerEvaluations() {
     { icon: UserGroupIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager" },
     { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications" },
     { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers" },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations" },
     { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision" },
     { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations" }
   ];

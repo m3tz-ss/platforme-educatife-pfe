@@ -12,7 +12,8 @@ class EnterpriseEvaluationController extends Controller
 {
     public function __construct(
         protected \App\Services\ApplicationService $applicationService
-    ) {}
+    ) {
+    }
 
     public function show(Request $request, int $applicationId)
     {
@@ -40,20 +41,20 @@ class EnterpriseEvaluationController extends Controller
         }
 
         $data = $request->validate([
-            'score'          => 'nullable|numeric|between:0,20',
+            'score' => 'nullable|numeric|between:0,20',
             'final_decision' => 'required|string|in:valide,a_ameliorer,non_conforme,pending',
-            'notes'          => 'nullable|string|max:10000',
+            'notes' => 'nullable|string|max:10000',
         ]);
 
         $evaluation = EncadrantEvaluation::updateOrCreate(
             [
                 'application_id' => $applicationId,
-                'encadrant_id'   => $user->id,
+                'encadrant_id' => $user->id,
             ],
             [
-                'score'          => $data['score'] ?? null,
+                'score' => $data['score'] ?? null,
                 'final_decision' => $data['final_decision'],
-                'notes'          => $data['notes'] ?? null,
+                'notes' => $data['notes'] ?? null,
             ]
         );
 

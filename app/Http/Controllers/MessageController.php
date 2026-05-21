@@ -165,12 +165,58 @@ class MessageController extends Controller
         $user = $request->user();
         $contacts = collect();
 
-        // ✅ RH → tous les utilisateurs sauf RH (inclut admin, managers, encadrants, étudiants)
+        // ✅ RH → l'encadrant et manager de la société ET les candidats acceptés
         if ($user->role === 'rh') {
+            // 1. Trouver les collègues (manager et encadrants de la même entreprise)
+            $colleaguesIds = User::where('id', '!=', $user->id)
+                ->whereIn('role', ['manager', 'encadrant'])
+                ->where(function ($query) use ($user) {
+                    if ($user->enterprise_id) {
+                        $query->where('enterprise_id', $user->enterprise_id);
+                    } elseif ($user->manager_id) {
+                        $query->where('id', $user->manager_id)
+                              ->orWhere('manager_id', $user->manager_id);
+                    }
+                })
+                ->pluck('id')
+                ->toArray();
+
+            // 2. Trouver les IDs de tous les créateurs d'offres de cette entreprise
+            $offerCreatorIds = [$user->id];
+            if ($user->enterprise_id) {
+                $offerCreatorIds = User::where('enterprise_id', $user->enterprise_id)->pluck('id')->toArray();
+            } elseif ($user->manager_id) {
+                $offerCreatorIds = User::where('manager_id', $user->manager_id)
+                                       ->orWhere('id', $user->manager_id)
+                                       ->pluck('id')->toArray();
+            }
+
+            // 3. Trouver les étudiants acceptés
+            $acceptedStudentIds = Application::whereHas('offer', function($q) use ($offerCreatorIds) {
+                    $q->whereIn('enterprise_id', $offerCreatorIds);
+                })
+                ->whereIn('status', ['acceptee', 'termine'])
+                ->pluck('student_id')
+                ->toArray();
+
+            // 4. Récupérer les utilisateurs
+            $allContactIds = array_unique(array_merge($colleaguesIds, $acceptedStudentIds));
+
+            $contacts = User::whereIn('id', $allContactIds)
+                ->select('id', 'name', 'role', 'type')
+                ->get();
+        }
+        
+        // ✅ MANAGER → le rh et encadrant de cette sosciete seulment
+        elseif ($user->role === 'manager') {
             $contacts = User::where('id', '!=', $user->id)
-                ->where(function ($query) {
-                    $query->where('role', '!=', 'rh')
-                        ->orWhereNull('role');
+                ->whereIn('role', ['rh', 'encadrant'])
+                ->where(function ($query) use ($user) {
+                    if ($user->enterprise_id) {
+                        $query->where('enterprise_id', $user->enterprise_id);
+                    } else {
+                        $query->where('manager_id', $user->id);
+                    }
                 })
                 ->select('id', 'name', 'role', 'type')
                 ->get();

@@ -116,7 +116,7 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
     || offer.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <div 
+    <div
       className="group p-4 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer relative"
       onClick={() => onOpen(offer)}
     >
@@ -179,12 +179,12 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
 
       <div className="flex items-center justify-between mt-2">
         <div className="flex gap-2">
-           {offer.enterprise?.email && (
+          {offer.enterprise?.email && (
             <Tooltip content="Copier l'email">
-              <IconButton 
-                size="sm" 
-                variant="text" 
-                color="blue" 
+              <IconButton
+                size="sm"
+                variant="text"
+                color="blue"
                 className="bg-blue-50 rounded-lg h-8 w-8"
                 onClick={(e) => copyToClipboard(offer.enterprise.email, "Email", e)}
               >
@@ -194,10 +194,10 @@ const OfferCard = memo(({ offer, applied, onOpen }) => {
           )}
           {offer.enterprise?.phone && (
             <Tooltip content="Copier le téléphone">
-              <IconButton 
-                size="sm" 
-                variant="text" 
-                color="green" 
+              <IconButton
+                size="sm"
+                variant="text"
+                color="green"
                 className="bg-green-50 rounded-lg h-8 w-8"
                 onClick={(e) => copyToClipboard(offer.enterprise.phone, "Téléphone", e)}
               >
@@ -221,7 +221,7 @@ const ApplicationCard = memo(({ app, onOpen }) => {
   const companyInitial = offer?.enterprise?.name?.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <div 
+    <div
       className="group p-4 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer"
       onClick={() => onOpen(offer)}
     >
@@ -245,11 +245,11 @@ const ApplicationCard = memo(({ app, onOpen }) => {
             {offer?.enterprise?.name || "Entreprise"}
           </Typography>
         </div>
-        <Chip 
-          value={statusLabel(app.status)} 
-          color={statusColor(app.status)} 
-          size="sm" 
-          variant="ghost" 
+        <Chip
+          value={statusLabel(app.status)}
+          color={statusColor(app.status)}
+          size="sm"
+          variant="ghost"
           className="rounded-full font-bold"
         />
       </div>
@@ -801,7 +801,7 @@ export function StudentDashboard() {
         <Progress value={65} color="blue" className="h-2" />
         <Typography variant="caption" className="text-blue-gray-500 mt-2">65% de profil complet</Typography>
       </div>
-      <Button fullWidth color="blue" variant="gradient" size="sm" onClick={() => window.location.href='mailto:tarresmoataz840@gmail.com'}>
+      <Button fullWidth color="blue" variant="gradient" size="sm" onClick={() => window.location.href = 'mailto:tarresmoataz840@gmail.com'}>
         ✉️ Contacter support
       </Button>
     </>
@@ -828,10 +828,10 @@ export function StudentDashboard() {
       title="Tableau de Bord"
       menuItems={menuItems}
       sidebarHeader={
-        <StudentSidebarHeader 
-          name={userData?.name} 
-          email={userData?.email} 
-          photoUrl={userData?.photo_url} 
+        <StudentSidebarHeader
+          name={userData?.name}
+          email={userData?.email}
+          photoUrl={userData?.photo_url}
         />
       }
       sidebarExtra={sidebarExtra}
@@ -843,7 +843,7 @@ export function StudentDashboard() {
           Bonjour, {userName} 👋
         </Typography>
         <Typography variant="small" className="text-blue-gray-500">
-         
+
         </Typography>
       </div>
 
@@ -887,10 +887,10 @@ export function StudentDashboard() {
                   <div className="flex gap-3">
                     {proposal.offer?.enterprise?.logo_url && (
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-purple-100 flex-shrink-0 flex items-center justify-center p-1 shadow-sm">
-                        <img 
-                          src={proposal.offer.enterprise.logo_url} 
-                          alt={proposal.offer?.enterprise?.company_name || "Logo"} 
-                          className="w-full h-full object-contain" 
+                        <img
+                          src={proposal.offer.enterprise.logo_url}
+                          alt={proposal.offer?.enterprise?.company_name || "Logo"}
+                          className="w-full h-full object-contain"
                         />
                       </div>
                     )}
@@ -1008,15 +1008,15 @@ export function StudentDashboard() {
               <Typography className="text-center text-blue-gray-500 py-4">Aucune offre disponible</Typography>
             ) : (
               topOffers.map((offer) => (
-                <OfferCard 
-                  key={offer.id} 
+                <OfferCard
+                  key={offer.id}
                   offer={{
                     ...offer,
                     is_saved: savedOfferIds.has(offer.id),
                     onToggleSave: toggleSave
-                  }} 
-                  applied={hasApplied(offer.id)} 
-                  onOpen={handleOpenDetails} 
+                  }}
+                  applied={hasApplied(offer.id)}
+                  onOpen={handleOpenDetails}
                 />
               ))
             )}
@@ -1095,7 +1095,7 @@ export function StudentDashboard() {
                 <XMarkIcon className="w-5 h-5" />
               </IconButton>
             </div>
-            
+
             {selectedOffer?.enterprise?.logo_url && (
               <div className="absolute -bottom-6 right-8 w-20 h-20 rounded-2xl overflow-hidden bg-white shadow-xl border-4 border-white flex items-center justify-center p-2 z-10">
                 <img
@@ -1364,17 +1364,17 @@ export function StudentDashboard() {
         </DialogBody>
 
         <DialogFooter className="space-x-3 p-6 bg-gray-50">
-        <Button color="blue" variant="outlined" onClick={() => window.location.href=`mailto:${selectedOffer?.enterprise?.email || 'tarresmoataz840@gmail.com'}`}>
-          <EnvelopeIcon className="w-4 h-4 mr-2 inline" />
-          Contacter
-        </Button>
-        <Button 
-          color={savedOfferIds.has(selectedOffer?.id) ? "red" : "blue"} 
-          variant="outlined" 
-          onClick={(e) => toggleSave(selectedOffer?.id, e)}
-        >
-          {savedOfferIds.has(selectedOffer?.id) ? "❌ Retirer des favoris" : "❤️ Sauvegarder"}
-        </Button>
+          <Button color="blue" variant="outlined" onClick={() => window.location.href = `mailto:${selectedOffer?.enterprise?.email || 'tarresmoataz840@gmail.com'}`}>
+            <EnvelopeIcon className="w-4 h-4 mr-2 inline" />
+            Contacter
+          </Button>
+          <Button
+            color={savedOfferIds.has(selectedOffer?.id) ? "red" : "blue"}
+            variant="outlined"
+            onClick={(e) => toggleSave(selectedOffer?.id, e)}
+          >
+            {savedOfferIds.has(selectedOffer?.id) ? "❌ Retirer des favoris" : "❤️ Sauvegarder"}
+          </Button>
           <Button
             size="sm"
             color={hasApplied(selectedOffer?.id) ? "green" : "blue"}

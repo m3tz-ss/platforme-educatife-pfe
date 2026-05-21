@@ -27,6 +27,7 @@ import {
   UsersIcon,
   DocumentTextIcon,
   StarIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -144,6 +145,7 @@ export default function PublishOffer() {
     { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: null },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];

@@ -29,6 +29,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
   DocumentArrowUpIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -149,6 +150,7 @@ export default function EnterpriseProfile() {
     { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish" },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste" },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste" },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations" },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview" },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile" },
   ];
@@ -156,7 +158,7 @@ export default function EnterpriseProfile() {
   const sections = [
     { id: "personal", label: "Infos personnelles", icon: UserCircleIcon },
     { id: "company", label: "Infos entreprise", icon: BuildingOfficeIcon },
-    { id: "password", label: "Mot de passe", icon: LockClosedIcon },
+    ...(role !== "rh" ? [{ id: "password", label: "Mot de passe", icon: LockClosedIcon }] : []),
   ];
 
   return (
@@ -302,7 +304,8 @@ export default function EnterpriseProfile() {
                         {editMode ? (
                           <Input type={type} placeholder={placeholder} value={profile[name] || ""}
                             onChange={(e) => setProfile((p) => ({ ...p, [name]: e.target.value }))}
-                            icon={<Icon className="w-5 h-5" />} className="!border-blue-gray-300" />
+                            icon={<Icon className="w-5 h-5" />} className="!border-blue-gray-300"
+                            disabled={role === "rh" && (name === "name" || name === "email")} />
                         ) : (
                           <div className="flex items-center gap-2 px-3 py-2 bg-blue-gray-50 rounded-lg">
                             <Icon className="w-4 h-4 text-blue-gray-400" />
@@ -415,7 +418,7 @@ export default function EnterpriseProfile() {
             )}
 
             {/* ✅ Section : Mot de passe */}
-            {activeSection === "password" && (
+            {activeSection === "password" && role !== "rh" && (
               <Card className="shadow-sm border border-blue-gray-100">
                 <CardBody className="p-8">
                   <Typography variant="h6" className="font-bold text-blue-gray-900 mb-6">🔒 Modifier le mot de passe</Typography>

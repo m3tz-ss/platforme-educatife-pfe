@@ -28,6 +28,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   XCircleIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import { InternalSidebarHeader } from "../../components/layout/SidebarHeaders";
@@ -101,6 +102,11 @@ const MENU_ITEMS = [
     path: "/enterprise/manager/offers",
   },
   {
+    icon: SparklesIcon,
+    label: "Recommandations IA",
+    path: "/enterprise/ai-recommendations",
+  },
+  {
     icon: ChartBarIcon,
     label: "Suivi & Supervision",
     path: "/enterprise/manager/supervision",
@@ -118,11 +124,11 @@ function Sidebar({ user }) {
   return (
     <aside className="w-64 bg-white shadow-lg transition-all duration-300 overflow-hidden flex flex-col z-10 flex-shrink-0 border-r border-blue-gray-100">
       <div className="p-6 border-b border-blue-gray-100">
-        <InternalSidebarHeader 
-          name={user?.name} 
-          email={user?.email} 
-          role={user?.role || 'manager'} 
-          photoUrl={user?.photo_url} 
+        <InternalSidebarHeader
+          name={user?.name}
+          email={user?.email}
+          role={user?.role || 'manager'}
+          photoUrl={user?.photo_url}
         />
       </div>
 
@@ -133,18 +139,16 @@ function Sidebar({ user }) {
           return (
             <Link key={item.path} to={item.path}>
               <div
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group cursor-pointer ${
-                  active
-                    ? "bg-blue-50 text-blue-600 font-bold"
-                    : "text-blue-gray-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
-                }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group cursor-pointer ${active
+                  ? "bg-blue-50 text-blue-600 font-bold"
+                  : "text-blue-gray-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                  }`}
               >
                 <Icon
-                  className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                    active
-                      ? "text-blue-600"
-                      : "text-blue-gray-400 group-hover:text-blue-gray-600"
-                  }`}
+                  className={`w-5 h-5 flex-shrink-0 transition-colors ${active
+                    ? "text-blue-600"
+                    : "text-blue-gray-400 group-hover:text-blue-gray-600"
+                    }`}
                 />
                 <span className="text-sm truncate">{item.label}</span>
               </div>
@@ -284,7 +288,7 @@ function ApplicationDetailsModal({
   onEvalFormChange,
   onSaveEvaluation,
 }) {
-  const isAccepted = application?.status === "acceptee";
+  const isAcceptedOrCompleted = application?.status === "acceptee" || application?.status === "termine";
 
   return (
     <Dialog open={open} handler={onClose} size="lg" className="bg-white rounded-2xl">
@@ -359,7 +363,7 @@ function ApplicationDetailsModal({
             </div>
 
             {/* ── Evaluation Section ── */}
-            {isAccepted ? (
+            {isAcceptedOrCompleted ? (
               <div className="bg-white rounded-xl border border-blue-200 p-5 shadow-sm">
                 <p className="font-bold text-blue-900 mb-2 flex items-center gap-2 text-sm">
                   <svg
@@ -440,8 +444,8 @@ function ApplicationDetailsModal({
                     {evalLoading
                       ? "Enregistrement..."
                       : evaluation
-                      ? "Mettre à jour l'évaluation"
-                      : "Délivrer la validation"}
+                        ? "Mettre à jour l'évaluation"
+                        : "Délivrer la validation"}
                   </Button>
                 </div>
               </div>
@@ -606,6 +610,7 @@ export default function ManagerApplications() {
           timer: 1500,
           showConfirmButton: false,
         });
+        fetchApplications();
       } catch (err) {
         const errorMsg =
           err.response?.data?.message ||
@@ -721,11 +726,11 @@ export default function ManagerApplications() {
                 <div className="flex-col items-start gap-2">
                   <p className="dashboard-title"></p>
                   <p className="dashboard-subtitle">
-                    
+
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                   <NotificationBell apiPrefix="rh" />
+                  <NotificationBell apiPrefix="rh" />
                 </div>
               </div>
 

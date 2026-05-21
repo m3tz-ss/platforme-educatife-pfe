@@ -309,10 +309,10 @@ export default function OffersCatalog() {
       title="Catalogue d'Offres"
       menuItems={getStudentMenuItems({ offers: offers.length, applications: applications.length })}
       sidebarHeader={
-        <StudentSidebarHeader 
-          name={userData?.name} 
-          email={userData?.email} 
-          photoUrl={userData?.photo_url} 
+        <StudentSidebarHeader
+          name={userData?.name}
+          email={userData?.email}
+          photoUrl={userData?.photo_url}
         />
       }
       sidebarExtra={sidebarExtra}
@@ -515,7 +515,7 @@ export default function OffersCatalog() {
                     </div>
 
                     <div className="flex items-center justify-between mt-auto">
-                       <Typography variant="small" className="text-blue-600 font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Typography variant="small" className="text-blue-600 font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         Détails <span className="text-lg">→</span>
                       </Typography>
                       <Button
@@ -579,7 +579,7 @@ export default function OffersCatalog() {
                 <XMarkIcon className="w-5 h-5" />
               </IconButton>
             </div>
-            
+
             {selectedOffer?.enterprise?.logo_url && (
               <div className="absolute -bottom-6 right-8 w-20 h-20 rounded-2xl overflow-hidden bg-white shadow-xl border-4 border-white flex items-center justify-center p-2 z-10">
                 <img

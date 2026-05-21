@@ -66,7 +66,7 @@ export function EnterpriseSidebarHeader({ enterpriseName, logoUrl, logo, roleCon
             MyStage
           </Typography>
           <Typography className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-            {isEncadrant ? "Portal Encadrant" : "Portal Entreprise"}
+            {isEncadrant ? "" : "Portal Entreprise"}
           </Typography>
         </div>
       </div>
