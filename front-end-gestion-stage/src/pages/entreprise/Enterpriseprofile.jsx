@@ -150,7 +150,6 @@ export default function EnterpriseProfile() {
     { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish" },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste" },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste" },
-    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations" },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview" },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile" },
   ];

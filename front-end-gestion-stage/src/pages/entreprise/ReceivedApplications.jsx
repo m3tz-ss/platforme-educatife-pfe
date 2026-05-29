@@ -38,6 +38,7 @@ import {
   MapPinIcon,
   ClockIcon,
   SparklesIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import api from "../../services/api";
@@ -54,14 +55,13 @@ export default function ReceivedApplications() {
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("Toutes");
+  const [selectedOffer, setSelectedOffer] = useState("Toutes");
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [planAppId, setPlanAppId] = useState(null);
   const [historyAppId, setHistoryAppId] = useState(null);
   const [encadrants, setEncadrants] = useState([]);
-  const [selectedEncadrant, setSelectedEncadrant] = useState("");
-  const [assignLoading, setAssignLoading] = useState(false);
   const [userData, setUserData] = useState(null);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -77,6 +77,11 @@ export default function ReceivedApplications() {
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [candidateHistory, setCandidateHistory] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Affectation encadrant - select & loading
+  const [selectedEncadrantApp, setSelectedEncadrantApp] = useState(null);
+  const [selectedEncadrantId, setSelectedEncadrantId] = useState("");
+  const [assignLoading, setAssignLoading] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -95,9 +100,19 @@ export default function ReceivedApplications() {
 
   useEffect(() => {
     filterApplications();
-  }, [applications, selectedFilter, search]);
+  }, [applications, selectedFilter, search, selectedOffer]);
 
-  // ✅ Format date
+  const uniqueOffers = [
+    { id: "Toutes", title: "Toutes les offres" },
+    ...Array.from(
+      new Map(
+        applications
+          .filter((app) => app.offer?.id)
+          .map((app) => [app.offer.id, { id: String(app.offer.id), title: app.offer.title || `Offre #${app.offer.id}` }])
+      ).values()
+    ),
+  ];
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
     try {
@@ -131,6 +146,7 @@ export default function ReceivedApplications() {
 
   const filterApplications = () => {
     let filtered = applications;
+
     if (selectedFilter !== "Toutes") {
       const statusMap = {
         "Nouveau": "nouveau", "Présélectionnée": "preselectionnee",
@@ -139,6 +155,11 @@ export default function ReceivedApplications() {
       };
       filtered = filtered.filter((app) => app.status === statusMap[selectedFilter]);
     }
+
+    if (selectedOffer !== "Toutes") {
+      filtered = filtered.filter((app) => String(app.offer?.id) === selectedOffer);
+    }
+
     if (search) {
       filtered = filtered.filter(
         (app) =>
@@ -146,18 +167,17 @@ export default function ReceivedApplications() {
           app.offer?.title?.toLowerCase().includes(search.toLowerCase())
       );
     }
+
     setFilteredApplications(filtered);
   };
 
   const handleStatusChange = async (appId, newStatus) => {
     const app = applications.find((a) => a.id === appId);
 
-    // ✅ Vérifier le quota de places disponibles si on accepte
     if (newStatus === "acceptee" && app?.offer) {
       const offerId = app.offer.id;
       const availablePlaces = app.offer.available_places || 0;
 
-      // Compter combien sont déjà acceptés pour cette offre précise
       const currentlyAccepted = applications.filter(
         (a) => a.offer?.id === offerId && a.status === "acceptee"
       ).length;
@@ -190,29 +210,29 @@ export default function ReceivedApplications() {
       });
     } catch (err) {
       const errorMsg = err.response?.data?.message || "";
-      // Vérifier si le message d'erreur indique que l'étudiant est déjà en stage
       const isUnavailable = errorMsg.includes("déjà en cours de stage") || errorMsg.includes("pas disponible");
 
       Swal.fire({
         icon: "error",
         title: "Erreur",
-        text: isUnavailable ? "cette condidat est deja en stage" : (errorMsg || "Erreur changement statut."),
+        text: isUnavailable ? "Ce candidat est déjà en stage" : (errorMsg || "Erreur changement statut."),
         confirmButtonColor: "#ef4444",
       });
     }
   };
 
   const assignEncadrant = async (applicationId) => {
-    if (!selectedEncadrant) {
+    if (!selectedEncadrantId) {
       Swal.fire({ icon: "warning", title: "Encadrant requis", text: "Veuillez choisir un encadrant.", confirmButtonColor: "#f59e0b" });
       return;
     }
     try {
       setAssignLoading(true);
-      const res = await api.post(`/assign-encadrant/${applicationId}`, { encadrant_id: selectedEncadrant });
+      const res = await api.post(`/assign-encadrant/${applicationId}`, { encadrant_id: selectedEncadrantId });
       const updatedApp = res.data.application;
 
-      setSelectedEncadrant("");
+      setSelectedEncadrantId("");
+      setSelectedEncadrantApp(null);
 
       setApplications((prev) =>
         prev.map((app) => (app.id === applicationId ? updatedApp : app))
@@ -265,7 +285,6 @@ export default function ReceivedApplications() {
     }
   };
 
-  // ✅ Load and Save Manager Evaluation
   const fetchEvaluation = async (appId) => {
     try {
       const res = await api.get(`/rh/applications/${appId}/evaluation`);
@@ -302,7 +321,6 @@ export default function ReceivedApplications() {
     }
   };
 
-  // Candidate history handler
   const handleViewHistory = async (student) => {
     if (!student?.id) return;
     setSelectedStudent(student);
@@ -326,14 +344,12 @@ export default function ReceivedApplications() {
     }
   };
 
-  // ✅ CV URL
   const getCvUrl = (cvPath) => {
     if (!cvPath) return null;
     if (cvPath.startsWith("http")) return cvPath;
     return `http://127.0.0.1:8000/storage/${cvPath}`;
   };
 
-  // ✅ Statut helpers
   const statusConfig = {
     nouveau: { label: "Nouveau", color: "blue", bg: "bg-blue-100 text-blue-700" },
     preselectionnee: { label: "Présélectionnée", color: "amber", bg: "bg-amber-100 text-amber-700" },
@@ -348,7 +364,6 @@ export default function ReceivedApplications() {
   const avatarColors = ["bg-blue-500", "bg-indigo-500", "bg-cyan-500", "bg-teal-500", "bg-purple-500", "bg-violet-500", "bg-green-500", "bg-orange-500"];
   const getAvatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
-  // Compteurs
   const totalCount = applications.length;
   const newCount = applications.filter((a) => a.status === "nouveau").length;
   const preCount = applications.filter((a) => a.status === "preselectionnee").length;
@@ -371,7 +386,6 @@ export default function ReceivedApplications() {
     { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: totalCount },
-    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: interviewCount || null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];
@@ -415,14 +429,14 @@ export default function ReceivedApplications() {
       >
         <div className="p-0">
 
-          {/* ✅ Statistiques */}
+          {/* Statistiques */}
           <div className="mb-8 grid gap-4 grid-cols-2 xl:grid-cols-5">
             {[
-              { label: "Total", value: totalCount, color: "text-blue-gray-900", subColor: "text-blue-500" },
-              { label: "Nouveau", value: newCount, color: "text-blue-500", subColor: "text-blue-500" },
-              { label: "Présélectionnée", value: preCount, color: "text-amber-500", subColor: "text-amber-500" },
-              { label: "Entretien", value: interviewCount, color: "text-purple-500", subColor: "text-purple-500" },
-              { label: "Acceptée", value: acceptedCount, color: "text-green-500", subColor: "text-green-500" },
+              { label: "Total", value: totalCount, color: "text-blue-gray-900" },
+              { label: "Nouveau", value: newCount, color: "text-blue-500" },
+              { label: "Présélectionnée", value: preCount, color: "text-amber-500" },
+              { label: "Entretien", value: interviewCount, color: "text-purple-500" },
+              { label: "Acceptée", value: acceptedCount, color: "text-green-500" },
             ].map((stat) => (
               <Card key={stat.label} className="p-4 shadow-sm border border-blue-gray-100 hover:shadow-lg transition">
                 <Typography className="text-blue-gray-500 text-sm">{stat.label}</Typography>
@@ -431,8 +445,8 @@ export default function ReceivedApplications() {
             ))}
           </div>
 
-          {/* Filtres */}
-          <div className="mb-6 flex gap-2 flex-wrap">
+          {/* Filtres par statut */}
+          <div className="mb-4 flex gap-2 flex-wrap">
             {filters.map((filter) => (
               <Button
                 key={filter.label}
@@ -447,24 +461,78 @@ export default function ReceivedApplications() {
             ))}
           </div>
 
-          {/* Recherche */}
+          {/* Filtre par offre + Recherche */}
           <Card className="mb-6 shadow-sm border border-blue-gray-100">
             <CardBody className="p-4">
-              <Input
-                placeholder="Rechercher par nom de candidat ou offre..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                icon={<MagnifyingGlassIcon className="h-5 w-5" />}
-                className="!border-blue-gray-200"
-              />
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <FunnelIcon className="h-5 w-5 text-blue-gray-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <select
+                      value={selectedOffer}
+                      onChange={(e) => setSelectedOffer(e.target.value)}
+                      className="w-full border border-blue-gray-200 rounded-lg px-3 py-2 text-sm text-blue-gray-700 focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      {uniqueOffers.map((offer) => (
+                        <option key={offer.id} value={offer.id}>
+                          {offer.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="hidden sm:block w-px bg-blue-gray-100 self-stretch"></div>
+
+                <div className="flex-1">
+                  <Input
+                    placeholder="Rechercher par nom de candidat ou offre..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    icon={<MagnifyingGlassIcon className="h-5 w-5" />}
+                    className="!border-blue-gray-200"
+                  />
+                </div>
+
+                {(selectedOffer !== "Toutes" || search) && (
+                  <Button
+                    size="sm"
+                    variant="text"
+                    color="blue-gray"
+                    onClick={() => { setSelectedOffer("Toutes"); setSearch(""); }}
+                    className="text-xs whitespace-nowrap flex-shrink-0"
+                  >
+                    ✕ Réinitialiser
+                  </Button>
+                )}
+              </div>
+
+              {selectedOffer !== "Toutes" && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs text-blue-gray-500">Filtre actif :</span>
+                  <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
+                    <BriefcaseIcon className="w-3 h-3" />
+                    {uniqueOffers.find((o) => o.id === selectedOffer)?.title || selectedOffer}
+                    <button
+                      onClick={() => setSelectedOffer("Toutes")}
+                      className="ml-1 hover:text-blue-900 font-bold"
+                    >×</button>
+                  </span>
+                </div>
+              )}
             </CardBody>
           </Card>
 
-          {/* ✅ Liste candidatures */}
+          {/* Liste candidatures */}
           <Card className="shadow-sm border border-blue-gray-100">
             <CardHeader floated={false} shadow={false} color="transparent" className="m-0 flex items-center justify-between p-6 border-b border-blue-gray-100">
               <Typography variant="h6" color="blue-gray" className="font-bold">
                 {filteredApplications.length} candidature(s) trouvée(s)
+                {selectedOffer !== "Toutes" && (
+                  <span className="ml-2 text-sm font-normal text-blue-500">
+                    — {uniqueOffers.find((o) => o.id === selectedOffer)?.title}
+                  </span>
+                )}
               </Typography>
               <Button size="sm" color="blue" variant="outlined" onClick={fetchApplications}>
                 🔄 Actualiser
@@ -483,6 +551,17 @@ export default function ReceivedApplications() {
                 <div className="text-center py-12 px-6">
                   <UserGroupIcon className="w-16 h-16 mx-auto text-blue-gray-300 mb-4" />
                   <Typography className="text-blue-gray-500">Aucune candidature trouvée</Typography>
+                  {(selectedOffer !== "Toutes" || search || selectedFilter !== "Toutes") && (
+                    <Button
+                      size="sm"
+                      variant="text"
+                      color="blue"
+                      className="mt-3"
+                      onClick={() => { setSelectedOffer("Toutes"); setSearch(""); setSelectedFilter("Toutes"); }}
+                    >
+                      Effacer tous les filtres
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="divide-y divide-blue-gray-50">
@@ -490,94 +569,191 @@ export default function ReceivedApplications() {
                     const initial = getInitial(app.student?.name);
                     const cvUrl = getCvUrl(app.cv_path || app.cv);
                     const status = getStatus(app.status);
+                    const isEncadrantOpen = selectedEncadrantApp === app.id;
 
                     return (
-                      <div key={app.id} className="flex items-center justify-between p-5 hover:bg-blue-gray-50 transition">
-                        {/* Avatar + Infos */}
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                          {/* ✅ Photo étudiant avec fallback initiale */}
-                          <div className={`w-12 h-12 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${app.student?.photo_url ? '' : getAvatarColor(app.student?.name)}`}>
-                            {app.student?.photo_url ? (
-                              <img
-                                src={app.student.photo_url}
-                                alt={app.student?.name || "Photo"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              initial
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5 flex items-center gap-2">
-                              {app.student?.name || "Candidat"}
-                              {app.student?.is_in_internship && (
-                                <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
-                                  Déjà en stage
-                                </span>
-                              )}
-                            </Typography>
-                            <Typography variant="small" className="text-blue-500 font-medium mb-1">
-                              {app.offer?.title || "Offre"}
-                            </Typography>
-                            {/* ✅ snake_case */}
-                            <div className="flex flex-wrap gap-3 text-xs text-blue-gray-500">
-                              <span className="flex items-center gap-1">
-                                <MapPinIcon className="w-3 h-3" />{app.offer?.location || "N/A"}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <ClockIcon className="w-3 h-3" />{app.offer?.duration || "N/A"}
-                              </span>
-                              <span>🗓️ {formatDate(app.created_at)}</span>
-                              {cvUrl ? (
-                                <a href={cvUrl} target="_blank" rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition">
-                                  <DocumentArrowDownIcon className="w-3 h-3" /> CV joint
-                                </a>
+                      <div key={app.id}>
+                        {/* Ligne principale */}
+                        <div className="flex items-center justify-between p-5 hover:bg-blue-gray-50 transition">
+                          {/* Avatar + Infos */}
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className={`w-12 h-12 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${app.student?.photo_url ? '' : getAvatarColor(app.student?.name)}`}>
+                              {app.student?.photo_url ? (
+                                <img
+                                  src={app.student.photo_url}
+                                  alt={app.student?.name || "Photo"}
+                                  className="w-full h-full object-cover"
+                                />
                               ) : (
-                                <span className="text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Pas de CV</span>
+                                initial
                               )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <Typography variant="h6" className="font-bold text-blue-gray-900 mb-0.5 flex items-center gap-2">
+                                {app.student?.name || "Candidat"}
+                                {app.student?.is_in_internship && (
+                                  <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
+                                    Déjà en stage
+                                  </span>
+                                )}
+                              </Typography>
+                              <Typography variant="small" className="text-blue-500 font-medium mb-1">
+                                {app.offer?.title || "Offre"}
+                              </Typography>
+                              <div className="flex flex-wrap gap-3 text-xs text-blue-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <MapPinIcon className="w-3 h-3" />{app.offer?.location || "N/A"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <ClockIcon className="w-3 h-3" />{app.offer?.duration || "N/A"}
+                                </span>
+                                <span>🗓️ {formatDate(app.created_at)}</span>
+                                {cvUrl ? (
+                                  <a href={cvUrl} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition">
+                                    <DocumentArrowDownIcon className="w-3 h-3" /> CV joint
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Pas de CV</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Statut inline + Actions */}
+                          <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                            {/* Badge statut actuel */}
+                            <span className={`${status.bg} text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap`}>
+                              {status.label}
+                            </span>
+
+                            {/* Select pour changer le statut */}
+                            <select
+                              value={app.status}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(app.id, e.target.value);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="border border-blue-gray-200 rounded-lg px-2 py-1.5 text-xs text-blue-gray-700 focus:outline-none focus:border-blue-500 bg-white cursor-pointer hover:border-blue-400 transition-colors"
+                              title="Changer le statut"
+                            >
+                              <option value="nouveau">Nouveau</option>
+                              <option value="preselectionnee">Présélectionnée</option>
+                              <option value="entretien">Entretien</option>
+                              <option value="acceptee">Acceptée</option>
+                              <option value="refusee">Refusée</option>
+                              <option value="termine">Terminé</option>
+                            </select>
+
+                            {/* Boutons d'action */}
+                            <div className="flex gap-1">
+                              <IconButton variant="text" size="sm" color="blue"
+                                onClick={() => { setSelectedApplication(app); setSelectedEncadrantId(""); fetchEvaluation(app.id); setOpenModal(true); }}
+                                title="Voir détails">
+                                <EyeIcon className="w-4 h-4" />
+                              </IconButton>
+                              <IconButton variant="text" size="sm" color="violet"
+                                onClick={() => handleViewHistory(app.student)}
+                                title="Historique des stages">
+                                <ClockIcon className="w-4 h-4" />
+                              </IconButton>
+                              <IconButton variant="text" size="sm" color="purple"
+                                onClick={() => setPlanAppId(app.id)} title="Planifier entretien">
+                                <CalendarIcon className="w-4 h-4" />
+                              </IconButton>
+                              {app.status === "entretien" && (
+                                <IconButton variant="text" size="sm" color="amber"
+                                  onClick={() => setHistoryAppId(app.id)} title="Historique entretiens">
+                                  <span className="text-sm">📜</span>
+                                </IconButton>
+                              )}
+                              {app.status === "acceptee" && (
+                                <IconButton variant="text" size="sm" color="teal"
+                                  onClick={() => setSelectedEncadrantApp(isEncadrantOpen ? null : app.id)}
+                                  title="Affecter encadrant">
+                                  <span className="text-sm">👨‍🏫</span>
+                                </IconButton>
+                              )}
+                              <IconButton variant="text" size="sm" color="green"
+                                onClick={() => handleStatusChange(app.id, "acceptee")} title="Accepter"
+                                disabled={app.status === "acceptee"}>
+                                <CheckIcon className="w-4 h-4" />
+                              </IconButton>
+                              <IconButton variant="text" size="sm" color="red"
+                                onClick={() => handleStatusChange(app.id, "refusee")} title="Refuser"
+                                disabled={app.status === "refusee"}>
+                                <XCircleIcon className="w-4 h-4" />
+                              </IconButton>
                             </div>
                           </div>
                         </div>
 
-                        {/* Statut + Actions */}
-                        <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                          <span className={`${status.bg} text-xs font-medium px-3 py-1 rounded-full`}>
-                            {status.label}
-                          </span>
-                          <div className="flex gap-1">
-                            <IconButton variant="text" size="sm" color="blue"
-                              onClick={() => { setSelectedApplication(app); setSelectedEncadrant(""); fetchEvaluation(app.id); setOpenModal(true); }}
-                              title="Voir détails">
-                              <EyeIcon className="w-4 h-4" />
-                            </IconButton>
-                            <IconButton variant="text" size="sm" color="violet"
-                              onClick={() => handleViewHistory(app.student)}
-                              title="Historique des stages">
-                              <ClockIcon className="w-4 h-4" />
-                            </IconButton>
-                            <IconButton variant="text" size="sm" color="purple"
-                              onClick={() => setPlanAppId(app.id)} title="Planifier entretien">
-                              <CalendarIcon className="w-4 h-4" />
-                            </IconButton>
-                            {app.status === "entretien" && (
-                              <IconButton variant="text" size="sm" color="amber"
-                                onClick={() => setHistoryAppId(app.id)} title="Historique entretiens">
-                                <span className="text-sm">📜</span>
-                              </IconButton>
+                        {/* Section affectation encadrant (inline) */}
+                        {app.status === "acceptee" && isEncadrantOpen && (
+                          <div className="bg-blue-50 border-t border-blue-gray-200 p-5 space-y-4">
+                            <Typography variant="small" className="font-bold text-blue-gray-900">
+                              👨‍🏫 Affectation de l'encadrant
+                            </Typography>
+
+                            {/* Encadrant actuel */}
+                            {app.encadrant ? (
+                              <div className="mb-4 p-4 bg-white border border-blue-100 rounded-xl flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                                    {getInitial(app.encadrant.name)}
+                                  </div>
+                                  <div>
+                                    <Typography variant="small" className="font-bold text-blue-gray-900">
+                                      {app.encadrant.name}
+                                    </Typography>
+                                    <Typography variant="small" className="text-blue-gray-500 text-xs">
+                                      Affecté
+                                    </Typography>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  color="red"
+                                  variant="text"
+                                  className="flex items-center gap-2"
+                                  onClick={() => unassignEncadrant(app.id)}
+                                  disabled={assignLoading}
+                                >
+                                  <XCircleIcon className="w-4 h-4" /> Supprimer
+                                </Button>
+                              </div>
+                            ) : (
+                              <Typography variant="small" className="text-gray-500 italic bg-white border border-dashed border-gray-300 rounded-lg p-3">
+                                Aucun encadrant affecté
+                              </Typography>
                             )}
-                            <IconButton variant="text" size="sm" color="green"
-                              onClick={() => handleStatusChange(app.id, "acceptee")} title="Accepter"
-                              disabled={app.status === "acceptee"}>
-                              <CheckIcon className="w-4 h-4" />
-                            </IconButton>
-                            <IconButton variant="text" size="sm" color="red"
-                              onClick={() => handleStatusChange(app.id, "refusee")} title="Refuser"
-                              disabled={app.status === "refusee"}>
-                              <XCircleIcon className="w-4 h-4" />
-                            </IconButton>
+
+                            {/* Select + Bouton */}
+                            <div className="flex gap-3">
+                              <Select
+                                label={app.encadrant ? "Changer d'encadrant" : "Choisir un encadrant"}
+                                value={selectedEncadrantId}
+                                onChange={(v) => setSelectedEncadrantId(v)}
+                              >
+                                {encadrants.length === 0 ? (
+                                  <Option disabled value="">Aucun encadrant</Option>
+                                ) : (
+                                  encadrants.map((enc) => (
+                                    <Option key={enc.id} value={enc.id}>{enc.name}</Option>
+                                  ))
+                                )}
+                              </Select>
+                              <Button
+                                color="blue"
+                                onClick={() => assignEncadrant(app.id)}
+                                disabled={assignLoading || !selectedEncadrantId}
+                              >
+                                {assignLoading ? "..." : "Affecter"}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
@@ -588,7 +764,7 @@ export default function ReceivedApplications() {
         </div>
       </BaseLayout>
 
-      {/* ✅ Modal Détails */}
+      {/* Modal Détails */}
       <Dialog open={openModal} handler={() => setOpenModal(false)} size="lg">
         <DialogHeader className="flex justify-between items-center border-b border-blue-gray-100">
           <Typography variant="h5" className="font-bold text-blue-gray-900">
@@ -605,7 +781,6 @@ export default function ReceivedApplications() {
               {/* 👤 Candidat */}
               <div>
                 <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">👤 Informations du candidat</Typography>
-                {/* ✅ Photo du candidat dans le modal */}
                 {selectedApplication.student?.photo_url && (
                   <div className="flex justify-center mb-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-100 shadow-md">
@@ -732,78 +907,13 @@ export default function ReceivedApplications() {
                 </div>
               </div>
 
-              <div className="border-t border-blue-gray-100"></div>
-
-              {/* 👨‍🏫 Affecter encadrant */}
-              <div>
-                <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">👨‍🏫 Affectation de l'encadrant</Typography>
-                {selectedApplication.encadrant ? (
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {getInitial(selectedApplication.encadrant.name)}
-                      </div>
-                      <div>
-                        <Typography variant="small" className="font-bold text-blue-gray-900">
-                          {selectedApplication.encadrant.name}
-                        </Typography>
-                        <Typography variant="small" className="text-blue-gray-500 text-xs">
-                          Encadrant affecté
-                        </Typography>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      color="red"
-                      variant="text"
-                      className="flex items-center gap-2"
-                      onClick={() => unassignEncadrant(selectedApplication.id)}
-                      disabled={assignLoading}
-                    >
-                      <XCircleIcon className="w-4 h-4" /> Supprimer
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="mb-4 p-4 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center">
-                    <Typography variant="small" className="text-gray-500 italic">
-                      Aucun encadrant n'est encore affecté à ce stagiaire.
-                    </Typography>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <Select
-                      label={selectedApplication.encadrant ? "Changer d'encadrant" : "Choisir un encadrant"}
-                      value={selectedEncadrant}
-                      onChange={(v) => setSelectedEncadrant(v)}
-                    >
-                      {encadrants.length === 0 ? (
-                        <Option disabled value="">Aucun encadrant disponible</Option>
-                      ) : (
-                        encadrants.map((enc) => (
-                          <Option key={enc.id} value={enc.id}>{enc.name}</Option>
-                        ))
-                      )}
-                    </Select>
-                  </div>
-                  <Button
-                    color="blue"
-                    onClick={() => assignEncadrant(selectedApplication.id)}
-                    disabled={assignLoading || !selectedEncadrant}
-                  >
-                    {assignLoading ? "Traitement..." : selectedApplication.encadrant ? "Modifier" : "Affecter"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* 📋 Validation du Stage (Manager/RH) - Uniquement si accepté */}
+              {/* Évaluation du stage — uniquement si accepté */}
               {selectedApplication.status === "acceptee" && (
                 <>
                   <div className="border-t border-blue-gray-100"></div>
                   <div>
                     <Typography variant="h6" className="font-bold text-blue-gray-900 mb-4">
-                      ✅ evaluation du stage
+                      ✅ Évaluation du stage
                     </Typography>
                     <div className="bg-white rounded-2xl border border-blue-gray-100 p-5 shadow-sm space-y-4">
                       <p className="text-xs text-blue-gray-500 bg-blue-gray-50 border border-blue-gray-100 rounded-xl px-4 py-2.5">

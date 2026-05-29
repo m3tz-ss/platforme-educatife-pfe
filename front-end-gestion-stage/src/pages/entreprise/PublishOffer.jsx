@@ -19,6 +19,7 @@ import {
   ChatBubbleLeftIcon,
   UserCircleIcon,
   Bars3Icon,
+  LightBulbIcon,
   XMarkIcon,
   ArrowRightOnRectangleIcon,
   MapPinIcon,
@@ -145,8 +146,8 @@ export default function PublishOffer() {
     { icon: HomeIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: null },
-    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: null },
+    { icon: LightBulbIcon, label: "Recommandations", path: "/enterprise/AiRecommendationsPage", badge: null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];
 

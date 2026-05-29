@@ -21,6 +21,7 @@ export function getStudentMenuItems(counts = {}) {
     { icon: BriefcaseIcon, label: "Offres de stage", path: "/student/offers", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "Mes candidatures", path: "/student/applications", badge: counts.applications ?? null },
     { icon: ClipboardDocumentListIcon, label: "Mes tâches", path: "/student/tasks", badge: null },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/student/AiRecommendationPage", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Messages", path: "/message", badge: null },
     { icon: BookmarkIcon, label: "Offres sauvegardées", path: "/student/saved", badge: null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/student/profile", badge: null },
@@ -43,7 +44,7 @@ export function getEnterpriseMenuItems(counts = {}, role = "rh") {
     { icon: PlusIcon, label: "Publier une offre", path: "/enterprise/publish", badge: null },
     { icon: BriefcaseIcon, label: "Mes offres", path: "/enterprise/offersliste", badge: counts.offers ?? null },
     { icon: CheckCircleIcon, label: "Candidatures", path: "/enterprise/condidateurliste", badge: counts.applications ?? null },
-    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
+    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/AiRecommendationsPage", badge: null },
     { icon: ChatBubbleLeftIcon, label: "Entretiens", path: "/enterprise/enterview", badge: counts.interviewApps ?? null },
     { icon: UserCircleIcon, label: "Mon profil", path: "/enterprise/profile", badge: null },
   ];

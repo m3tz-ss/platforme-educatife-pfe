@@ -93,9 +93,9 @@ export default function ManagerOffers() {
     { icon: UsersIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager" },
     { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications" },
     { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers" },
-    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations" },
     { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision" },
-    { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations" }
+    { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations" },
+    { icon: ClipboardDocumentCheckIcon, label: "Managervalidations", path: "/enterprise/manager/Managervalidations" },
   ];
 
   return (
@@ -157,12 +157,7 @@ export default function ManagerOffers() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         Actualiser
                     </Button>
-                    <Link to="/enterprise/publish">
-                        <Button color="blue" className="flex items-center gap-2">
-                            <PlusIcon className="w-4 h-4" />
-                            Nouvelle offre
-                        </Button>
-                    </Link>
+                    
                 </div>
               </div>
 

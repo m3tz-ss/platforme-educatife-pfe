@@ -137,7 +137,7 @@ export function ManagerDashboard() {
     { icon: UsersIcon, label: "Gestion Utilisateurs", path: "/enterprise/manager", badge: null },
     { icon: MagnifyingGlassIcon, label: "Candidatures & Validations", path: "/enterprise/manager/applications", badge: null },
     { icon: BriefcaseIcon, label: "Toutes les Offres", path: "/enterprise/manager/offers", badge: null },
-    { icon: SparklesIcon, label: "Recommandations IA", path: "/enterprise/ai-recommendations", badge: null },
+    
     { icon: ChartBarIcon, label: "Suivi & Supervision", path: "/enterprise/manager/supervision", badge: null },
     { icon: ClipboardDocumentCheckIcon, label: "Évaluations Encadrants", path: "/enterprise/manager/evaluations", badge: null }
   ];
@@ -207,12 +207,7 @@ export function ManagerDashboard() {
                 <div className="flex items-center gap-3">
                   <NotificationBell apiPrefix="rh" />
                   <div className="h-8 w-px bg-gray-200 mx-1" />
-                  <Link to="/enterprise/manager/applications">
-                    <Button color="green" variant="outlined" className="flex items-center gap-2 bg-white">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      Candidatures & Validations
-                    </Button>
-                  </Link>
+                  
                   <Button color="blue" className="flex items-center gap-2" onClick={() => setOpenModal(true)}>
                     <UserPlusIcon className="w-4 h-4" />
                     Nouveau compte

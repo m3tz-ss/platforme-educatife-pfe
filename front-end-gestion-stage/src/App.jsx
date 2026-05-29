@@ -7,6 +7,8 @@ import Message from "./pages/messaging/Message";
 import AdminUsers from "./pages/Adminusers";
 import AdminEnterprise from "./pages/AdminEnterprises";
 import AdminOffers from "./pages/AdminOffers";
+import ManagerValidations from "./pages/entreprise/Managervalidations";
+
 
 
 
@@ -24,11 +26,12 @@ const SavedOffersPage = lazy(() => import("./pages/student/SavedOffersPage"));
 const Offertable = lazy(() => import("./pages/entreprise/offerstable"));
 const ReceivedApplications = lazy(() => import("./pages/entreprise/ReceivedApplications"));
 const InterviewsHistoryPage = lazy(() => import("./pages/entreprise/InterviewsHistoryPage"));
-const AiCandidateRecommendations = lazy(() => import("./pages/entreprise/AiCandidateRecommendations"));
+const AiRecommendationsPage = lazy(() => import("./pages/entreprise/AiRecommendationsPage.jsx"));
 const EspaceEntreprise = lazy(() => import("./pages/entreprise/EspaceEntreprise"));
 const ManagerDashboard = lazy(() => import("./pages/entreprise/ManagerDashboard"));
 const ManagerApplications = lazy(() => import("./pages/entreprise/ManagerApplications"));
 const ManagerSupervision = lazy(() => import("./pages/entreprise/ManagerSupervision"));
+const Managervalidations  = lazy(() => import("./pages/entreprise/Managervalidations"));
 const ManagerOffers = lazy(() => import("./pages/entreprise/ManagerOffers"));
 const ManagerEvaluations = lazy(() => import("./pages/entreprise/ManagerEvaluations"));
 const AdminDashboard = lazy(() => import("./pages/Admindashboard"));
@@ -40,6 +43,7 @@ const EncadrantTaskDetail = lazy(() => import("./pages/entreprise/EncadrantTaskD
 const EncadrantEvaluationHistory = lazy(() => import("./pages/entreprise/EncadrantEvaluationHistory"));
 const StudentProfile = lazy(() => import("./pages/student/Studentprofile"));
 const EnterpriseProfile = lazy(() => import("./pages/entreprise/Enterpriseprofile"));
+const AiRecommendationPage = lazy(() => import("./pages/student/AiRecommendationPage.jsx"));
 const EnterpriseLogin = lazy(() => import("./pages/entreprise/EnterpriseLogin"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 
@@ -82,6 +86,7 @@ function App() {
         <Route path="/student/applications/:applicationId/tasks/:taskId" element={<ProtectedRoute allowedRoles={["student"]}><StudentTaskDetail /></ProtectedRoute>} />
         <Route path="/student/profile" element={<ProtectedRoute allowedRoles={["student"]}><StudentProfile /></ProtectedRoute>} />
         <Route path="/student/saved" element={<ProtectedRoute allowedRoles={["student"]}><SavedOffersPage /></ProtectedRoute>} />
+        <Route path="/student/AiRecommendationPage" element={<ProtectedRoute allowedRoles={["student"]}><AiRecommendationPage /></ProtectedRoute>} />
 
         {/* Connexion entreprise - public */}
         <Route path="/enterprise/login" element={<EspaceEntreprise />} />
@@ -95,7 +100,8 @@ function App() {
         <Route path="/enterprise/condidateurliste" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><ReceivedApplications /></ProtectedRoute>} />
         <Route path="/enterprise/enterview" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><InterviewsHistoryPage /></ProtectedRoute>} />
         <Route path="/enterprise/profile" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><EnterpriseProfile /></ProtectedRoute>} />
-        <Route path="/enterprise/ai-recommendations" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><AiCandidateRecommendations /></ProtectedRoute>} />
+          <Route path="/enterprise/AiRecommendationsPage" element={<ProtectedRoute allowedRoles={["manager", "rh", "encadrant", "enterprise"]}><AiRecommendationsPage /></ProtectedRoute>} />
+
 
         {/* Manager uniquement - gestion des utilisateurs internes */}
         <Route path="/enterprise/manager" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerDashboard /></ProtectedRoute>} />
@@ -104,7 +110,7 @@ function App() {
         <Route path="/enterprise/manager/supervision" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerSupervision /></ProtectedRoute>} />
         <Route path="/enterprise/manager/evaluations" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerEvaluations /></ProtectedRoute>} />
         <Route path="/enterprise/addmanager" element={<ProtectedRoute allowedRoles={["manager"]}><Manager /></ProtectedRoute>} />
-
+        <Route path="/enterprise/manager/Managervalidations" element={<ProtectedRoute allowedRoles={["manager"]}><ManagerValidations /></ProtectedRoute>} />
         {/* Encadrant uniquement */}
         <Route path="/enterprise/encadrant" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantDashboard /></ProtectedRoute>} />
         <Route path="/enterprise/encadrant/student/:applicationId" element={<ProtectedRoute allowedRoles={["encadrant"]}><EncadrantStudentDetail /></ProtectedRoute>} />

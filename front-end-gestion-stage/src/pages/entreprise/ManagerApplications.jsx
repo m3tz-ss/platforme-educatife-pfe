@@ -101,15 +101,16 @@ const MENU_ITEMS = [
     label: "Toutes les Offres",
     path: "/enterprise/manager/offers",
   },
-  {
-    icon: SparklesIcon,
-    label: "Recommandations IA",
-    path: "/enterprise/ai-recommendations",
-  },
+  
   {
     icon: ChartBarIcon,
     label: "Suivi & Supervision",
     path: "/enterprise/manager/supervision",
+  },
+  {
+    icon: ClipboardDocumentCheckIcon,
+    label: "Managervalidations",
+    path: "/enterprise/manager/evaluations",
   },
   {
     icon: ClipboardDocumentCheckIcon,
